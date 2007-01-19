@@ -1,0 +1,711 @@
+#!/usr/bin/perl
+# Copyright (c) 2006, J. A. Zanardo Jr. <zanardo@gmail.com>
+# All rights reserved.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE AUTHOR AND CONTRIBUTORS BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI qw(:standard);
+use CGI::Carp qw(fatalsToBrowser);
+use POSIX qw(strftime);
+
+my $db = '/var/ticket/ticket.db';
+my $uri = '/ticket';
+my $css = '/ticket.css';
+
+my $user = $ENV{'REMOTE_USER'} || '';
+
+if(not -f $db) { die "$db não encontrado." }
+
+my $dbh = DBI->connect("dbi:SQLite:$db","","")
+	or die $!;
+
+my $q = $ENV{'PATH_INFO'} || '';
+
+# Descrição das Prioridades
+my %priodesc = (
+	'1' => '1. Ação Urgente',
+	'2' => '2. Atenção',
+	'3' => '3. Prioridade Normal',
+	'4' => '4. Baixa Prioridade',
+	'5' => '5. Baixíssima Prioridade'
+);
+
+if(defined param('search')) {
+	my $search = param('search');
+	my $searchq = $dbh->quote("\%$search\%");
+	my $searche = escapeHTML($search);
+
+    my $limit = 'LIMIT 100';
+    if ( defined param('nolimit') ) {
+		$limit = '';
+    }
+
+	# Show ticket.
+	if($search =~ /^#(\d+)$/) {
+		print redirect("$uri/$1");
+		exit;
+	}
+
+	my $count = 0;
+	
+	my $sth = $dbh->prepare("
+		SELECT *
+		FROM TICKET AS t
+		WHERE ( TYPE = 1 OR TYPE = 2 )
+		  AND ( TEXT LIKE $searchq OR
+			EXISTS (
+			  SELECT ID
+			  FROM TICKET
+			  WHERE IDPARENT = t.ID
+				AND TEXT LIKE $searchq
+				AND TYPE <> 1
+				AND TYPE <> 2
+			  LIMIT 1
+			)
+		  )
+		ORDER BY DATEMODIFIED DESC
+		$limit
+	") or die $dbh->errstr;
+	$sth->execute or die $dbh->errstr;
+
+	print header(-expires => 'now'), 
+		start_html(-style => 
+			{'src' => $css}, -title => "Procura Tickets: '$searche'" );
+
+	emit_header();
+	print qq{<span class="title">Procura Tickets: '$searche'</span>}, p;
+
+	while(my $r = $sth->fetchrow_hashref) {
+		$count++;
+		show_ticket($r);
+	}
+
+	print p, "$count ticket(s) encontrado(s).";
+	
+	if($limit ne '' and $count == 100) {
+		print p;
+		print qq{
+			<form method="post" action="$uri" enctype="multipart/form-data">
+				<input type="hidden" name="search" value="$search" />
+				<input type="hidden" name="nolimit" value="1" />
+				<input type="submit" name="search" value="ver todos os resultados" />
+			</form>
+		};
+	}
+}
+elsif(defined param('action') and param('action') eq 'create-new-ticket') {
+	my $type;
+	if(param('type') eq 'Simples Registro') { $type = 1 }
+	elsif(param('type') eq 'Normal') { $type = 2 }
+	else { die 'invalid type' }
+	my $status = '';
+	if($type == 2) { $status = 0 }
+	my $text = param('text') || '';
+	die 'O texto deve ser preenchido.' if $text =~ /^[\s\t\r\n]*$/;
+	$dbh->begin_work;
+ 	my $sth = $dbh->prepare(
+ 		'INSERT INTO TICKET 
+ 		  (STATUS, TYPE, DATECREATED, DATEMODIFIED, USER, PRIO, TEXT)
+ 		 VALUES
+ 		  (?, ?, ?, ?, ?, 3, ?)') or die $dbh->errstr;
+	$sth->execute($status, $type, &timestamp_now(), &timestamp_now(), $user, $text)
+		or die $dbh->errstr;
+	$dbh->commit;
+	print redirect("$uri/" . $dbh->func('last_insert_rowid'));
+}
+elsif(defined param('action') and param('action') eq 'create-new-note') {
+	my $text = param('text') || '';
+	die if $text =~ /^[\s\t\r\n]*$/;
+	my $parent = param('parent');
+	$dbh->begin_work;
+ 	my $sth = $dbh->prepare(
+ 		'INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, TEXT)
+ 		 VALUES (3, ?, ?, ?, ?)') or die $dbh->errstr;
+	$sth->execute(&timestamp_now(), $parent, $user, $text) or die $dbh->errstr;
+	&update_ticket_mtime($parent);
+	$dbh->commit;
+	print redirect("$uri/$parent");
+}
+elsif(defined param('action') and param('action') eq 'close-ticket') {
+	my $id = param('id') or die 'no id';
+	my $text = param('text') || ' ';
+	$dbh->begin_work;
+	$dbh->do("UPDATE TICKET SET STATUS=1, DATECLOSED=? WHERE ID=?", 
+		undef, &timestamp_now(), $id) or die $dbh->errstr;
+	&update_ticket_mtime($id);
+	$dbh->do("INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, TEXT)
+		VALUES (5, ?, ?, ?, ?)", undef, &timestamp_now(), $id, $user, $text)
+		or die $dbh->errstr;
+	$dbh->commit;
+	print redirect("$uri/$id");
+}
+elsif(defined param('action') and param('action') eq 'reopen-ticket') {
+	my $id = param('id') or die 'no id';
+	my $text = param('text') || ' ';
+	$dbh->begin_work;
+	$dbh->do("UPDATE TICKET SET STATUS=0, DATECLOSED=NULL WHERE ID=?", undef, $id)
+		or die $dbh->errstr;
+	&update_ticket_mtime($id);
+	$dbh->do("INSERT INTO TICKET (TYPE, DATECREATED, USER, IDPARENT, TEXT)
+		VALUES (6, ?, ?, ?, ?)", undef, &timestamp_now(), $user, $id, $text)
+		or die $dbh->errstr;
+	$dbh->commit;
+	print redirect("$uri/$id");
+}
+elsif(defined param('action') and param('action') eq 'save-tags-ticket') {
+	my $id = param('id') or die 'no id';
+	my $tags = param('text') || ' ';
+	my @tags = split /[\s\t\r\n]+/, $tags;
+	$dbh->begin_work;
+	$dbh->do("DELETE FROM TAG WHERE TICKET=?", undef, $id);
+	foreach(@tags) {
+		$dbh->do("INSERT INTO TAG (TICKET, TAG)
+			VALUES (?, ?)", undef, $id, $_)
+			or die $dbh->errstr;
+	}
+	$dbh->commit;
+	print redirect("$uri/$id");
+}
+elsif(defined param('action') and param('action') eq 'save-owners-ticket') {
+	my $id = param('id') or die 'no id';
+	my $owners = param('text') || ' ';
+	my @owners = split /[\s\t\r\n]+/, $owners;
+	$dbh->begin_work;
+	$dbh->do("DELETE FROM OWNER WHERE TICKET=?", undef, $id);
+	foreach(@owners) {
+		$dbh->do("INSERT INTO OWNER (TICKET, OWNER)
+			VALUES (?, ?)", undef, $id, $_)
+			or die $dbh->errstr;
+	}
+	$dbh->commit;
+	print redirect("$uri/$id");
+}
+elsif(defined param('action') and param('action') eq 'change-ticket-prio') {
+	my $id = param('id') or die 'no id';
+	my $text = param('text') || ' ';
+	my $prio = param('prio');
+	die 'invalid prio' unless $prio =~ /^[1-5]$/;
+	$dbh->begin_work;
+	$dbh->do("UPDATE TICKET SET PRIO=? WHERE ID=?", undef, $prio, $id)
+		or die $dbh->errstr;
+	$dbh->commit;
+	print redirect("$uri/$id");
+}
+
+# Lista tickets em aberto, ordenados por prioridade.
+elsif($q eq '') {
+	my $count = 0;
+
+	# Owner
+	my @action = ();
+	my $sth2 = $dbh->prepare("
+		SELECT DISTINCT(OWNER)
+		FROM OWNER
+		WHERE TICKET IN (
+			SELECT ID
+			FROM TICKET
+			WHERE TYPE = 2
+			  AND STATUS = 0
+		)
+		ORDER BY OWNER
+	") or die $dbh->errstr;
+	$sth2->execute or die $dbh->errstr;
+	while(my $r = $sth2->fetchrow_hashref) {
+		push @action, $r->{'OWNER'};
+	}
+
+	my @tag = ();
+	$sth2 = $dbh->prepare("
+		SELECT DISTINCT(TAG)
+		FROM TAG
+		ORDER BY TAG
+	") or die $dbh->errstr;
+	$sth2->execute or die $dbh->errstr;
+	while(my $r = $sth2->fetchrow_hashref) {
+		push @tag, $r->{'TAG'};
+	}
+
+	my $sql = 'SELECT * 
+		FROM TICKET
+		WHERE TYPE=2
+		  AND STATUS=0
+		ORDER BY PRIO ASC, DATECREATED ASC';
+	my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+	$sth->execute or die $dbh->errstr;
+
+	my $script = qq|
+		function loadPageOwner(list) {
+			if(list.options[list.selectedIndex].value == '') { return True }
+			location.href="$uri/owner/" + list.options[list.selectedIndex].value
+		}
+		function loadPageTag(list) {
+			if(list.options[list.selectedIndex].value == '') { return True }
+			location.href="$uri/tag/" + list.options[list.selectedIndex].value
+		}
+	|;
+
+	print header( -expires => 'now' ),
+      start_html(
+        -style  => { 'src' => $css },
+        -title  => 'Tickets Abertos',
+        -script => $script
+      );
+
+	emit_header();
+
+	print q{<span class="title">Tickets Abertos</span>}, p;
+
+	while(my $r = $sth->fetchrow_hashref) {
+		$count++;
+		show_ticket($r);
+	}
+
+	print p, "$count ticket(s) encontrado(s).";
+
+	print q{<table class="tags" border="0" width="100%"><tr><td>};
+	print q{
+		<form>
+		<b>Responsável: </b>
+		<select name="owner"
+			onchange="loadPageOwner(this.form.elements[0])"
+			onmouseclick="this.focus()">
+			<option value> </option>
+	};
+	foreach(sort @action) {
+		print qq{<option value="$_">$_</option>};
+	}
+	print q{
+		</select>
+		<b> Tag: </b>
+		<select name="tag"
+			onchange="loadPageTag(this.form.elements[1])"
+			onmouseclick="this.focus()">
+			<option value> </option>
+	};
+	foreach(sort @tag) {
+		print qq{<option value="$_">$_</option>};
+	}
+	print q{</select>};
+	print q{</form></td></tr></table>};
+
+}
+
+# Tela de detalhes de um ticket, onde é possível efetuar-se ações como
+# adição de notas, fechamento, etc.
+elsif($q =~ /^\/(\d+)$/) {
+	my $id = $1;
+	my $head = <<'	END';
+	  var panels = new Array('note', 'close', 'prio', 'tags', 'owners', 'reopen');
+	  var selectedTab = null;
+	  function showPanel(tab, name)
+	  {
+		if (selectedTab) 
+		{
+		  selectedTab.style.backgroundColor = '';
+		}
+		selectedTab = tab;
+		selectedTab.style.backgroundColor = 'lightgray';
+		for(i = 0; i < panels.length; i++)
+		{
+		  document.getElementById(panels[i]).style.display = (name == panels[i]) ? 'block':'none';
+		}
+		return false;
+	  }
+	END
+	print header(-expires => 'now');
+	print start_html(-style => {'src' => $css}, 
+		-title => "Detalhe: Ticket #$id", 
+		-script => $head
+	);
+	my $sth = $dbh->prepare('SELECT * FROM TICKET WHERE ID=?')
+		or die $dbh->errstr;
+	$sth->execute($id) or die $dbh->errstr;
+	my $r = $sth->fetchrow_hashref;
+	if(not defined $r) { die "Ticket $id not found." }
+	unless($r->{'TYPE'} == 1 or $r->{'TYPE'} == 2) {
+		die "Ticket $id is not a Simples Registro or Normal type. (Tipo: $r->{'TYPE'})";
+	}
+
+	&emit_header;
+	print qq{<span class="title">Detalhe: Ticket #$id</span>},p ;
+	show_ticket($r);
+	if(($r->{'TYPE'} == 2) and ($r->{'STATUS'} == 0) ) {
+		print q{<table class="actions" border="0"><tr><td>};
+		print q{<a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'close');">Fechar Ticket</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de Ação</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'owners');">Responsável pelo Ticket</a>};
+		print q{</td></tr></table>}, br;
+	}
+	elsif(($r->{'TYPE'} == 2) and ($r->{'STATUS'} == 1) ) {
+		print q{<table class="actions" border="0"><tr><td>};
+		print q{<a class="tab" onclick="return showPanel(this, 'reopen');">Reabrir Ticket</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a>};
+		print q{</td></tr></table>};
+	}
+	elsif($r->{'TYPE'} == 1) {
+		print q{<table class="actions" border="0"><tr><td>};
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a>};
+		print q{</td></tr></table>};
+	}
+	show_form_new_note($id);
+	show_form_close_ticket($id);
+	show_form_change_prio($id, $r->{'PRIO'});
+	show_form_edit_tags_ticket($id);
+	show_form_edit_owners_ticket($id);
+	show_form_reopen_ticket($id);
+}
+elsif($q eq '/new-ticket') {
+	print header(-expires => 'now'), start_html(-style => {'src' => $css}, -title => 'Novo Ticket' );
+	emit_header();
+	print q{<span class="title">Novo Ticket</span>}, p;
+    print q{<a name='new'></a>}, start_form(), 'Tipo: ',
+      radio_group(
+        -name   => 'type',
+        -values => [ 'Normal', 'Simples Registro' ]
+      ),
+      br, textarea( -name => 'text', -rows => 10, -columns => 70 ), br,
+      hidden(
+        -name     => 'action',
+        -value    => 'create-new-ticket',
+        -override => 1
+      ),
+      submit( 'submit', 'Criar' ), end_form;
+}
+
+# Lista tickets por tag. Mostra tickets em aberto e fechados, e registros simples.
+elsif($q =~ /^\/tag\/(.+?)$/) {
+	my $tag = $1;
+	my $count = 0;
+	my $sth = $dbh->prepare(
+		"SELECT TICKET.*
+		 FROM TICKET, TAG
+		 WHERE TAG.TAG = ?
+		   AND TAG.TICKET = TICKET.ID
+		   AND ( TICKET.TYPE = 1 OR TICKET.TYPE = 2 )
+		 ORDER BY TICKET.DATECREATED DESC
+		"
+	) or die $dbh->errstr;
+	$sth->execute($tag) or die $dbh->errstr;
+
+    print header( -expires => 'now' ),
+      start_html( -style => { 'src' => $css }, -title => "Tag: $tag" );
+
+	&emit_header;
+	print qq{<span class="title">Tag: $tag</span>}, p;
+
+	while(my $r = $sth->fetchrow_hashref) {
+		$count++;
+		show_ticket($r);
+	}
+
+	print p, "$count ticket(s) encontrado(s).";
+}
+
+# Lista tickets por Responsável. Lista apenas tickets em aberto, ordenados
+# por prioridade.
+elsif($q =~ /^\/owner\/(.+?)$/) {
+	my $owner = $1;
+	my $count = 0;
+	my $sth = $dbh->prepare(
+		"SELECT TICKET.*
+		 FROM TICKET, OWNER
+		 WHERE OWNER.OWNER = ?
+		   AND OWNER.TICKET = TICKET.ID
+		   AND TICKET.TYPE = 2
+		   AND TICKET.STATUS = 0
+		 ORDER BY PRIO ASC, DATECREATED ASC
+		"
+	) or die $dbh->errstr;
+	$sth->execute($owner) or die $dbh->errstr;
+
+    print header( -expires => 'now' ),
+      start_html(
+        -style => { 'src' => $css },
+        -title => "Responsável: $owner"
+      );
+
+	&emit_header;
+	print qq{<span class="title">Responsável: $owner</span>}, p;
+
+	while(my $r = $sth->fetchrow_hashref) {
+		$count++;
+		show_ticket($r);
+	}
+
+	print p, "$count ticket(s) encontrado(s).";
+}
+else { die 'invalid url' }
+
+$dbh->disconnect;
+
+sub sanitize_text {
+	my $text = shift || return;
+	$text =~ s/\r//sg;
+	$text =~ s/&/&amp;/gs;
+	$text =~ s/</&lt;/gs;
+	$text =~ s/>/&gt;/gs;
+	$text =~ s/\r?\n/<br>/sg;
+	$text =~ s/\t/&nbsp;&nbsp;&nbsp;/sg;
+	$text =~ s/(<br>){1,}$//;
+	$text =~ s/#([0-9]+)/<a title="Ver Ticket #$1" href='$uri\/$1'>#$1<\/a>/sg;
+	return $text;
+}
+
+sub show_form_new_note {
+	my $id = shift;
+	print q{<div class="panel" id="note" style="display: none">};
+	print start_form(),
+		textarea(-name => 'text', -rows=>4, -columns=>70), br,
+		hidden(-name => 'action', -value => 'create-new-note', -override => 1),
+		hidden('parent', $id),
+		submit('submit', 'Adicionar Nota'),
+		end_form;
+	print q{</div>};
+}
+
+sub show_form_change_prio {
+	my $id = shift; my $prio = shift;
+	print q{<div class="panel" id="prio" style="display: none">};
+	print qq{
+		<form method="post" action="" enctype="multipart/form-data">
+		<select name="prio" >};
+	foreach(sort keys %priodesc) {
+		if($_ == $prio) {
+			print qq{<option selected="selected" value="$_">$priodesc{$_}</option>};
+		}
+		else {
+			print qq{<option value="$_">$priodesc{$_}</option>};
+		}
+	}
+	print qq{
+		</select> <input type="hidden" name="action" 
+			value="change-ticket-prio"  />
+		<input type="hidden" name="id" value="$id"  />
+		<input type="submit" name="submit" value="Mudar Prioridade de Ação" /></form>
+	};
+	print q{</div>};
+}
+
+sub show_form_close_ticket {
+	my $id = shift;
+	print q{<div class="panel" id="close" style="display: none">};
+	print start_form(),
+		textarea(-name => 'text', -rows=>4, -columns=>70), br,
+		hidden(-name => 'action', -value => 'close-ticket', -override => 1),
+		hidden('id', $id),
+		submit('submit', 'Fechar Ticket'),
+		end_form;
+	print q{</div>};
+}
+
+sub show_form_reopen_ticket {
+	my $id = shift;
+	print q{<div class="panel" id="reopen" style="display: none">};
+	print start_form(),
+		textarea(-name => 'text', -rows=>4, -columns=>70), br,
+		hidden(-name => 'action', -value => 'reopen-ticket', -override => 1),
+		hidden('id', $id),
+		submit('submit', 'Reabrir Ticket'),
+		end_form;
+	print q{</div>};
+}
+
+sub show_form_edit_tags_ticket {
+	my $id = shift;
+	print q{<div class="panel" id="tags" style="display: none">};
+	my $sth = $dbh->prepare('SELECT TAG FROM TAG WHERE TICKET=?')
+		or die $dbh->errstr;
+	$sth->execute($id) or die $dbh->errstr;
+	my @tags;
+	while(my $r = $sth->fetchrow_hashref) {
+		push @tags, $r->{'TAG'};
+	}
+	my $tags = join ' ', @tags;
+	print start_form(),
+		textarea(-name => 'text', -rows=>1, -columns=>70, -value=>$tags), br,
+		hidden(-name => 'action', -value => 'save-tags-ticket', -override => 1),
+		hidden('id', $id),
+		submit('submit', 'Tags'),
+		end_form;
+	print q{</div>};
+}
+sub show_form_edit_owners_ticket {
+	my $id = shift;
+	print q{<div class="panel" id="owners" style="display: none">};
+	my $sth = $dbh->prepare('SELECT OWNER FROM OWNER WHERE TICKET=?')
+		or die $dbh->errstr;
+	$sth->execute($id) or die $dbh->errstr;
+	my @owners;
+	while(my $r = $sth->fetchrow_hashref) {
+		push @owners, $r->{'OWNER'};
+	}
+	my $owners = join ' ', @owners;
+	print start_form(),
+		textarea(-name => 'text', -rows=>1, -columns=>70, -value=>$owners), br,
+		hidden(-name => 'action', -value => 'save-owners-ticket', -override => 1),
+		hidden('id', $id),
+		submit('submit', 'Responsável pelo Ticket'),
+		end_form;
+	print q{</div>};
+}
+
+sub timestamp_now {
+	return strftime("%Y-%m-%d %H:%M:%S", localtime);
+}
+
+sub show_ticket {
+	my $r = shift;
+	my %types = (1=>'Simples Registro', 2=>'Normal');
+	my $bgcolor;
+	my $priocolor = '';
+	if($r->{'TYPE'} == 1) { 
+		$bgcolor = '#FFFFB8';
+		$bgcolor = '#d5f9bf';
+	}
+	elsif($r->{'TYPE'} == 2 and $r->{'STATUS'} == 0) {
+		#$bgcolor = '#20F8FF';
+		#$bgcolor = '#2ddcff';
+		$bgcolor = '';
+	}
+	elsif($r->{'TYPE'} == 2 and $r->{'STATUS'} == 1) {
+		#$bgcolor = '#e9eae6';
+		$bgcolor = '#e1e1e1';
+	}
+	if($r->{'TYPE'} == 2 and $r->{'STATUS'} == 0) {
+		if($r->{'PRIO'} == 1)    { $priocolor = '#FF8D8F' }
+		elsif($r->{'PRIO'} == 2) { $priocolor = '#EDFF9F' }
+		elsif($r->{'PRIO'} == 3) { $priocolor = '' }
+		elsif($r->{'PRIO'} == 4) { $priocolor = '#6DF2B2' }
+		elsif($r->{'PRIO'} == 5) { $priocolor = '#9FEFF2' }
+	}
+	print qq{<table class="ticket" width="100%" border="0" bgcolor="$bgcolor">};
+	print qq{<tr><td width="5px" title="$priodesc{$r->{PRIO}}" bgcolor="$priocolor">&nbsp;</td>};
+	print qq{<td width="120px" valign="top">};
+	print qq{<b><a class="ticketlabel" href="$uri/$r->{'ID'}">Ticket #$r->{'ID'}</a></b><br>};
+	my $datec = strip_date($r->{'DATECREATED'});
+	print qq{Criado: <span title="$r->{'DATECREATED'}">$datec</span><br>};
+	if($r->{'TYPE'} == 2 and $r->{'STATUS'} == 1) {
+		my $dated = strip_date($r->{'DATECLOSED'});
+		print qq{Fechado: <span title="$r->{'DATECLOSED'}">$dated</span><br>};
+	}
+	print qq{Autor: $r->{'USER'}<br>};
+	my @tags = get_tags_from_ticket($r->{'ID'});
+	my @owners = get_owners_from_ticket($r->{'ID'});
+	if(@tags) { 
+		print qq{Tags: };
+		print join ', ', @tags;
+		print br;
+	}
+	if(@owners) { 
+		print qq{Responsável: };
+		print join ', ', @owners;
+		print br;
+	}
+	print q{</td><td valign="top">};
+	print sanitize_text($r->{'TEXT'});
+	my $sth_c = $dbh->prepare('SELECT * FROM TICKET WHERE IDPARENT=? ORDER BY ID')
+		or die $dbh->errstr;
+	$sth_c->execute($r->{'ID'}) or die $dbh->errstr;
+	while(my $c = $sth_c->fetchrow_hashref) {
+		if($c->{'TYPE'} == 3) {
+			# Nota de um ticket
+			my $date = strip_date($c->{'DATECREATED'});
+			print br, qq{<b title="$c->{'DATECREATED'}">$date - $c->{'USER'}: </b>}, 
+				sanitize_text($c->{'TEXT'});
+		}
+		elsif($c->{'TYPE'} == 5) {
+			# Fechamento de um ticket
+			my $date = strip_date($c->{'DATECREATED'});
+			print br, qq{<b title="$c->{'DATECREATED'}">$date - $c->{'USER'} - Fechado: </b>},
+				sanitize_text($c->{'TEXT'});
+		}
+		elsif($c->{'TYPE'} == 6) {
+			# Reabertura de um ticket
+			my $date = strip_date($c->{'DATECREATED'});
+			print br, qq{<b title="$c->{'DATECREATED'}">$date - $c->{'USER'} - Reaberto: </b>},
+				sanitize_text($c->{'TEXT'});
+		}
+	}
+	print q{</td></tr></table><p>};
+}
+
+sub get_tags_from_ticket {
+	my $id = shift;
+	my @tags = ();
+	my $sth = $dbh->prepare('SELECT TAG FROM TAG WHERE TICKET = ? ORDER BY TAG')
+		or die $dbh->errstr;
+	$sth->execute($id) or die $dbh->errstr;
+	while(my $r = $sth->fetchrow_hashref) {
+		push @tags, $r->{'TAG'};
+	}
+	return @tags;
+}
+
+sub get_owners_from_ticket {
+	my $id = shift;
+	my @owners = ();
+	my $sth = $dbh->prepare('SELECT OWNER FROM OWNER WHERE TICKET = ? 
+		ORDER BY OWNER') or die $dbh->errstr;
+	$sth->execute($id) or die $dbh->errstr;
+	while(my $r = $sth->fetchrow_hashref) {
+		push @owners, $r->{'OWNER'};
+	}
+	return @owners;
+}
+
+# Emite o cabeçalho padrão das páginas, com menu no topo e barra de pesquisa.
+sub emit_header {
+	print qq{
+		<table border="0" align="right">
+		<tr>
+		<td class="topmenu">
+			olá <b>$user</b>! 
+			<a href='$uri'>tickets abertos</a>
+			| <a href='$uri/new-ticket'>novo ticket</a>
+		</td> <tr></tr> <td align=right>
+		<form method="post" action="$uri" enctype="multipart/form-data">
+			<input type="text" name="search" size="15" />
+			<input type="submit" name="search" value="procura" />
+		</form>
+		</td></tr></table>
+	};
+}
+
+# Recebe "2005-05-05 05:05:05" e converte para "2005-05-05".
+sub strip_date {
+	my $datetime = shift;
+	$datetime =~ s/^(\d{4}-\d{2}-\d{2}) .*$/$1/;
+	return $datetime;
+}
+
+# Atualiza o campo DATEMODIFIED de um Ticket (tipo Registro Simples ou Normal). 
+# Chamada ao criar-se uma nova Nota, fechar-se, ou reabrir-se um Ticket. Este
+# campo facilita a procura ordenada por últimas modificações.
+sub update_ticket_mtime {
+	my $id = shift;
+	$dbh->do("UPDATE TICKET SET DATEMODIFIED=? WHERE ID=?", 
+		undef, &timestamp_now(), $id) or die $dbh->errstr;
+}
