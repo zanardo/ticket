@@ -59,11 +59,6 @@ if(defined param('search')) {
 	my $searchq = $dbh->quote("\%$search\%");
 	my $searche = escapeHTML($search);
 
-    my $limit = 'LIMIT 100';
-    if ( defined param('nolimit') ) {
-		$limit = '';
-    }
-
 	# Show ticket.
 	if($search =~ /^#(\d+)$/) {
 		print redirect("$uri/$1");
@@ -79,6 +74,7 @@ if(defined param('search')) {
 	emit_header();
 	print qq{<span class="title">Procura Tickets: '$searche'</span>}, p;
 
+    my $limit = defined param('nolimit') ? '' : 'LIMIT 100';
 	my $sql = qq{
 		SELECT *
 		FROM TICKET AS t
