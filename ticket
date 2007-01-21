@@ -685,10 +685,7 @@ body {
 	margin: 1em 2em 2em 2em;
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 9pt;
-	background-image: url(ticket.png);
-	background-attachment: scroll;
-	background-position: top left;
-	background-repeat: repeat-x;
+	background-color: #F1F3F4;
 }
 
 .tab { 
@@ -703,22 +700,11 @@ a:visited { color: #0000EE; }
 a:active { color: #0000EE; }
 a:hover { color: #FF0000; }
 
-submit {
-	background-color:#e9e9e9; 
-	border: 1px solid #336699; 
-	margin: 0 5px 0 5px; 
-	vertical-align: bottom
-}
-
-input, textarea, select { 
+input, textarea, select, submit { 
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 8pt;
-/*	background-color:#f7f7f7;  */
+	background-color: #F1F3F4;
 	border: 1px solid #336699; 
-	background-image: url(ticket.png);
-	background-attachment: scroll;
-	background-position: top left;
-	background-repeat: repeat-x;
 }
 
 .topmenu {
