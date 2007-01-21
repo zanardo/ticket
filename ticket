@@ -29,10 +29,13 @@ use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
 
-my $db = '/var/ticket/ticket.db';
-my $uri = '/ticket';
-my $css = "$uri?action=get-css";
+## Configure -------------------------------------------------------
+my $db = '/var/ticket/ticket.db';		# Caminho do banco de dados
+my $uri = '/ticket';					# URI para o script ticket
+## -----------------------------------------------------------------
 
+my $css = "$uri?action=get-css";
+my $VERSION = '0.6';
 my $user = $ENV{'REMOTE_USER'} || '';
 
 if(not -f $db) { die "$db não encontrado." }
@@ -111,6 +114,9 @@ if(defined param('search')) {
 			</form>
 		};
 	}
+
+	emit_footer();
+
 }
 elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	my $type;
@@ -277,6 +283,8 @@ elsif($q eq '') {
 	print q{</select>};
 	print q{</form></td></tr></table>};
 
+	emit_footer();
+
 }
 
 # Tela de detalhes de um ticket, onde é possível efetuar-se ações como
@@ -341,6 +349,9 @@ elsif($q =~ /^\/(\d+)$/) {
 	show_form_edit_tags_ticket($id);
 	show_form_edit_owners_ticket($id);
 	show_form_reopen_ticket($id);
+
+	emit_footer();
+
 }
 elsif($q eq '/new-ticket') {
 	print header(-expires => 'now'), start_html(-style => {'src' => $css}, -title => 'Novo Ticket' );
@@ -358,6 +369,9 @@ elsif($q eq '/new-ticket') {
         -override => 1
       ),
       submit( 'submit', 'Criar' ), end_form;
+
+	  emit_footer();
+
 }
 
 # Lista tickets por tag. Mostra tickets em aberto e fechados, e registros simples.
@@ -385,6 +399,9 @@ elsif($q =~ /^\/tag\/(.+?)$/) {
 	}
 
 	print p, "$count ticket(s) encontrado(s).";
+
+	emit_footer()
+
 }
 
 # Lista tickets por Responsável. Lista apenas tickets em aberto, ordenados
@@ -418,6 +435,9 @@ elsif($q =~ /^\/owner\/(.+?)$/) {
 	}
 
 	print p, "$count ticket(s) encontrado(s).";
+
+	emit_footer();
+
 }
 else { die 'invalid url' }
 
@@ -628,6 +648,13 @@ sub emit_header {
 		</td></tr></table>
 	};
 }
+
+# Emite rodapé com nome do sistema e versão.
+sub emit_footer {
+	print qq{<p><small><font color="gray"><div align="right">sistema
+		<a href="http://zanardo.org/ticket.txt">ticket</a> versão $VERSION</small></div></font>};
+}
+
 
 # Recebe "2005-05-05 05:05:05" e converte para "2005-05-05".
 sub strip_date {
