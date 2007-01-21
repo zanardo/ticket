@@ -68,8 +68,15 @@ if(defined param('search')) {
 	}
 
 	my $count = 0;
-	
-	my $sth = $dbh->prepare("
+
+	print header(-expires => 'now'), 
+		start_html(-style => 
+			{'src' => $css}, -title => "Procura Tickets: '$searche'" );
+
+	emit_header();
+	print qq{<span class="title">Procura Tickets: '$searche'</span>}, p;
+
+	my $sql = qq{
 		SELECT *
 		FROM TICKET AS t
 		WHERE ( TYPE = 1 OR TYPE = 2 )
@@ -86,19 +93,10 @@ if(defined param('search')) {
 		  )
 		ORDER BY DATEMODIFIED DESC
 		$limit
-	") or die $dbh->errstr;
-	$sth->execute or die $dbh->errstr;
-
-	print header(-expires => 'now'), 
-		start_html(-style => 
-			{'src' => $css}, -title => "Procura Tickets: '$searche'" );
-
-	emit_header();
-	print qq{<span class="title">Procura Tickets: '$searche'</span>}, p;
-
-	while(my $r = $sth->fetchrow_hashref) {
+	};
+	foreach(@{sql($sql)}) {
 		$count++;
-		show_ticket($r);
+		show_ticket($_);
 	}
 
 	print p, "$count ticket(s) encontrado(s).";
@@ -123,15 +121,9 @@ elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	if($type == 2) { $status = 0 }
 	my $text = param('text') || '';
 	die 'O texto deve ser preenchido.' if $text =~ /^[\s\t\r\n]*$/;
-	$dbh->begin_work;
- 	my $sth = $dbh->prepare(
- 		'INSERT INTO TICKET 
- 		  (STATUS, TYPE, DATECREATED, DATEMODIFIED, USER, PRIO, TEXT)
- 		 VALUES
- 		  (?, ?, ?, ?, ?, 3, ?)') or die $dbh->errstr;
-	$sth->execute($status, $type, &timestamp_now(), &timestamp_now(), $user, $text)
-		or die $dbh->errstr;
-	$dbh->commit;
+	sql('INSERT INTO TICKET (STATUS, TYPE, DATECREATED, DATEMODIFIED, USER, PRIO, TEXT)
+ 		 VALUES (?, ?, ?, ?, ?, 3, ?)', 
+		 $status, $type, &timestamp_now(), &timestamp_now(), $user, $text);
 	print redirect("$uri/" . $dbh->func('last_insert_rowid'));
 }
 elsif(defined param('action') and param('action') eq 'create-new-note') {
@@ -139,10 +131,8 @@ elsif(defined param('action') and param('action') eq 'create-new-note') {
 	die if $text =~ /^[\s\t\r\n]*$/;
 	my $parent = param('parent');
 	$dbh->begin_work;
- 	my $sth = $dbh->prepare(
- 		'INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, TEXT)
- 		 VALUES (3, ?, ?, ?, ?)') or die $dbh->errstr;
-	$sth->execute(&timestamp_now(), $parent, $user, $text) or die $dbh->errstr;
+	sql('INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, TEXT)
+ 		 VALUES (3, ?, ?, ?, ?)', &timestamp_now(), $parent, $user, $text);
 	&update_ticket_mtime($parent);
 	$dbh->commit;
 	print redirect("$uri/$parent");
@@ -151,12 +141,10 @@ elsif(defined param('action') and param('action') eq 'close-ticket') {
 	my $id = param('id') or die 'no id';
 	my $text = param('text') || ' ';
 	$dbh->begin_work;
-	$dbh->do("UPDATE TICKET SET STATUS=1, DATECLOSED=? WHERE ID=?", 
-		undef, &timestamp_now(), $id) or die $dbh->errstr;
+	sql("UPDATE TICKET SET STATUS=1, DATECLOSED=? WHERE ID=?", &timestamp_now(), $id);
 	&update_ticket_mtime($id);
-	$dbh->do("INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, TEXT)
-		VALUES (5, ?, ?, ?, ?)", undef, &timestamp_now(), $id, $user, $text)
-		or die $dbh->errstr;
+	sql("INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, TEXT)
+		VALUES (5, ?, ?, ?, ?)", &timestamp_now(), $id, $user, $text);
 	$dbh->commit;
 	print redirect("$uri/$id");
 }
@@ -164,12 +152,10 @@ elsif(defined param('action') and param('action') eq 'reopen-ticket') {
 	my $id = param('id') or die 'no id';
 	my $text = param('text') || ' ';
 	$dbh->begin_work;
-	$dbh->do("UPDATE TICKET SET STATUS=0, DATECLOSED=NULL WHERE ID=?", undef, $id)
-		or die $dbh->errstr;
+	sql("UPDATE TICKET SET STATUS=0, DATECLOSED=NULL WHERE ID=?", $id);
 	&update_ticket_mtime($id);
-	$dbh->do("INSERT INTO TICKET (TYPE, DATECREATED, USER, IDPARENT, TEXT)
-		VALUES (6, ?, ?, ?, ?)", undef, &timestamp_now(), $user, $id, $text)
-		or die $dbh->errstr;
+	sql("INSERT INTO TICKET (TYPE, DATECREATED, USER, IDPARENT, TEXT)
+		VALUES (6, ?, ?, ?, ?)", &timestamp_now(), $user, $id, $text);
 	$dbh->commit;
 	print redirect("$uri/$id");
 }
@@ -178,11 +164,9 @@ elsif(defined param('action') and param('action') eq 'save-tags-ticket') {
 	my $tags = param('text') || ' ';
 	my @tags = split /[\s\t\r\n]+/, $tags;
 	$dbh->begin_work;
-	$dbh->do("DELETE FROM TAG WHERE TICKET=?", undef, $id);
+	sql("DELETE FROM TAG WHERE TICKET=?", $id);
 	foreach(@tags) {
-		$dbh->do("INSERT INTO TAG (TICKET, TAG)
-			VALUES (?, ?)", undef, $id, $_)
-			or die $dbh->errstr;
+		sql("INSERT INTO TAG (TICKET, TAG) VALUES (?, ?)", $id, $_);
 	}
 	$dbh->commit;
 	print redirect("$uri/$id");
@@ -192,11 +176,9 @@ elsif(defined param('action') and param('action') eq 'save-owners-ticket') {
 	my $owners = param('text') || ' ';
 	my @owners = split /[\s\t\r\n]+/, $owners;
 	$dbh->begin_work;
-	$dbh->do("DELETE FROM OWNER WHERE TICKET=?", undef, $id);
+	sql('DELETE FROM OWNER WHERE TICKET=?', $id);
 	foreach(@owners) {
-		$dbh->do("INSERT INTO OWNER (TICKET, OWNER)
-			VALUES (?, ?)", undef, $id, $_)
-			or die $dbh->errstr;
+		sql("INSERT INTO OWNER (TICKET, OWNER) VALUES (?, ?)", $id, $_);
 	}
 	$dbh->commit;
 	print redirect("$uri/$id");
@@ -206,53 +188,13 @@ elsif(defined param('action') and param('action') eq 'change-ticket-prio') {
 	my $text = param('text') || ' ';
 	my $prio = param('prio');
 	die 'invalid prio' unless $prio =~ /^[1-5]$/;
-	$dbh->begin_work;
-	$dbh->do("UPDATE TICKET SET PRIO=? WHERE ID=?", undef, $prio, $id)
-		or die $dbh->errstr;
-	$dbh->commit;
+	sql('UPDATE TICKET SET PRIO=? WHERE ID=?', $prio, $id);
 	print redirect("$uri/$id");
 }
 
 # Lista tickets em aberto, ordenados por prioridade.
 elsif($q eq '') {
 	my $count = 0;
-
-	# Owner
-	my @action = ();
-	my $sth2 = $dbh->prepare("
-		SELECT DISTINCT(OWNER)
-		FROM OWNER
-		WHERE TICKET IN (
-			SELECT ID
-			FROM TICKET
-			WHERE TYPE = 2
-			  AND STATUS = 0
-		)
-		ORDER BY OWNER
-	") or die $dbh->errstr;
-	$sth2->execute or die $dbh->errstr;
-	while(my $r = $sth2->fetchrow_hashref) {
-		push @action, $r->{'OWNER'};
-	}
-
-	my @tag = ();
-	$sth2 = $dbh->prepare("
-		SELECT DISTINCT(TAG)
-		FROM TAG
-		ORDER BY TAG
-	") or die $dbh->errstr;
-	$sth2->execute or die $dbh->errstr;
-	while(my $r = $sth2->fetchrow_hashref) {
-		push @tag, $r->{'TAG'};
-	}
-
-	my $sql = 'SELECT * 
-		FROM TICKET
-		WHERE TYPE=2
-		  AND STATUS=0
-		ORDER BY PRIO ASC, DATECREATED ASC';
-	my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-	$sth->execute or die $dbh->errstr;
 
 	my $script = qq|
 		function loadPageOwner(list) {
@@ -276,9 +218,15 @@ elsif($q eq '') {
 
 	print q{<span class="title">Tickets Abertos</span>}, p;
 
-	while(my $r = $sth->fetchrow_hashref) {
+	my $sql = qq{
+		SELECT * 
+		FROM TICKET 
+		WHERE TYPE=2 
+		  AND STATUS=0 
+	  	ORDER BY PRIO ASC, DATECREATED ASC};
+	foreach(@{sql($sql)}) {	
 		$count++;
-		show_ticket($r);
+		show_ticket($_);
 	}
 
 	print p, "$count ticket(s) encontrado(s).";
@@ -292,7 +240,19 @@ elsif($q eq '') {
 			onmouseclick="this.focus()">
 			<option value> </option>
 	};
-	foreach(sort @action) {
+
+	# Responsáveis
+	my $sql = qq{
+		SELECT DISTINCT(OWNER) owner 
+		FROM OWNER 
+		WHERE TICKET IN ( 
+			SELECT ID 
+			FROM TICKET 
+			WHERE TYPE = 2 
+			  AND STATUS = 0
+		) 
+		ORDER BY OWNER };
+	foreach(sort map { $_ = $_->{'owner'} } @{sql($sql)}) {
 		print qq{<option value="$_">$_</option>};
 	}
 	print q{
@@ -303,6 +263,10 @@ elsif($q eq '') {
 			onmouseclick="this.focus()">
 			<option value> </option>
 	};
+
+	# Tags
+	my @tag = map { $_ = $_->{'tag'} }
+		@{sql('SELECT DISTINCT(TAG) tag FROM TAG ORDER BY TAG')};
 	foreach(sort @tag) {
 		print qq{<option value="$_">$_</option>};
 	}
@@ -338,10 +302,7 @@ elsif($q =~ /^\/(\d+)$/) {
 		-title => "Detalhe: Ticket #$id", 
 		-script => $head
 	);
-	my $sth = $dbh->prepare('SELECT * FROM TICKET WHERE ID=?')
-		or die $dbh->errstr;
-	$sth->execute($id) or die $dbh->errstr;
-	my $r = $sth->fetchrow_hashref;
+	my $r = sql('SELECT * FROM TICKET WHERE ID=?', $id)->[0];
 	if(not defined $r) { die "Ticket $id not found." }
 	unless($r->{'TYPE'} == 1 or $r->{'TYPE'} == 2) {
 		die "Ticket $id is not a Simples Registro or Normal type. (Tipo: $r->{'TYPE'})";
@@ -399,16 +360,14 @@ elsif($q eq '/new-ticket') {
 elsif($q =~ /^\/tag\/(.+?)$/) {
 	my $tag = $1;
 	my $count = 0;
-	my $sth = $dbh->prepare(
-		"SELECT TICKET.*
-		 FROM TICKET, TAG
-		 WHERE TAG.TAG = ?
-		   AND TAG.TICKET = TICKET.ID
-		   AND ( TICKET.TYPE = 1 OR TICKET.TYPE = 2 )
-		 ORDER BY TICKET.DATECREATED DESC
-		"
-	) or die $dbh->errstr;
-	$sth->execute($tag) or die $dbh->errstr;
+	my $sql = q{
+		SELECT TICKET.*
+		FROM TICKET, TAG
+		WHERE TAG.TAG = ?
+		  AND TAG.TICKET = TICKET.ID
+		  AND ( TICKET.TYPE = 1 OR TICKET.TYPE = 2 )
+		ORDER BY TICKET.DATECREATED DESC
+	};
 
     print header( -expires => 'now' ),
       start_html( -style => { 'src' => $css }, -title => "Tag: $tag" );
@@ -416,9 +375,9 @@ elsif($q =~ /^\/tag\/(.+?)$/) {
 	&emit_header;
 	print qq{<span class="title">Tag: $tag</span>}, p;
 
-	while(my $r = $sth->fetchrow_hashref) {
+	foreach(@{sql($sql, $tag)}) {
 		$count++;
-		show_ticket($r);
+		show_ticket($_);
 	}
 
 	print p, "$count ticket(s) encontrado(s).";
@@ -429,17 +388,16 @@ elsif($q =~ /^\/tag\/(.+?)$/) {
 elsif($q =~ /^\/owner\/(.+?)$/) {
 	my $owner = $1;
 	my $count = 0;
-	my $sth = $dbh->prepare(
-		"SELECT TICKET.*
-		 FROM TICKET, OWNER
-		 WHERE OWNER.OWNER = ?
-		   AND OWNER.TICKET = TICKET.ID
-		   AND TICKET.TYPE = 2
-		   AND TICKET.STATUS = 0
-		 ORDER BY PRIO ASC, DATECREATED ASC
-		"
-	) or die $dbh->errstr;
-	$sth->execute($owner) or die $dbh->errstr;
+
+	my $sql = q{
+		SELECT TICKET.*
+		FROM TICKET, OWNER
+		WHERE OWNER.OWNER = ?
+		  AND OWNER.TICKET = TICKET.ID
+		  AND TICKET.TYPE = 2
+		  AND TICKET.STATUS = 0
+		ORDER BY PRIO ASC, DATECREATED ASC
+	};
 
     print header( -expires => 'now' ),
       start_html(
@@ -450,9 +408,9 @@ elsif($q =~ /^\/owner\/(.+?)$/) {
 	&emit_header;
 	print qq{<span class="title">Responsável: $owner</span>}, p;
 
-	while(my $r = $sth->fetchrow_hashref) {
+	foreach(@{sql($sql, $owner)}) {
 		$count++;
-		show_ticket($r);
+		show_ticket($_);
 	}
 
 	print p, "$count ticket(s) encontrado(s).";
@@ -536,14 +494,7 @@ sub show_form_reopen_ticket {
 sub show_form_edit_tags_ticket {
 	my $id = shift;
 	print q{<div class="panel" id="tags" style="display: none">};
-	my $sth = $dbh->prepare('SELECT TAG FROM TAG WHERE TICKET=?')
-		or die $dbh->errstr;
-	$sth->execute($id) or die $dbh->errstr;
-	my @tags;
-	while(my $r = $sth->fetchrow_hashref) {
-		push @tags, $r->{'TAG'};
-	}
-	my $tags = join ' ', @tags;
+	my $tags = join ' ', get_tags_from_ticket($id);
 	print start_form(),
 		textarea(-name => 'text', -rows=>1, -columns=>70, -value=>$tags), br,
 		hidden(-name => 'action', -value => 'save-tags-ticket', -override => 1),
@@ -555,14 +506,7 @@ sub show_form_edit_tags_ticket {
 sub show_form_edit_owners_ticket {
 	my $id = shift;
 	print q{<div class="panel" id="owners" style="display: none">};
-	my $sth = $dbh->prepare('SELECT OWNER FROM OWNER WHERE TICKET=?')
-		or die $dbh->errstr;
-	$sth->execute($id) or die $dbh->errstr;
-	my @owners;
-	while(my $r = $sth->fetchrow_hashref) {
-		push @owners, $r->{'OWNER'};
-	}
-	my $owners = join ' ', @owners;
+	my $owners = join ' ', get_owners_from_ticket($id);
 	print start_form(),
 		textarea(-name => 'text', -rows=>1, -columns=>70, -value=>$owners), br,
 		hidden(-name => 'action', -value => 'save-owners-ticket', -override => 1),
@@ -626,27 +570,24 @@ sub show_ticket {
 	}
 	print q{</td><td valign="top">};
 	print sanitize_text($r->{'TEXT'});
-	my $sth_c = $dbh->prepare('SELECT * FROM TICKET WHERE IDPARENT=? ORDER BY ID')
-		or die $dbh->errstr;
-	$sth_c->execute($r->{'ID'}) or die $dbh->errstr;
-	while(my $c = $sth_c->fetchrow_hashref) {
-		if($c->{'TYPE'} == 3) {
+	foreach(@{sql('SELECT * FROM TICKET WHERE IDPARENT=? ORDER BY ID', $r->{'ID'})}) {
+		if($_->{'TYPE'} == 3) {
 			# Nota de um ticket
-			my $date = strip_date($c->{'DATECREATED'});
-			print br, qq{<b title="$c->{'DATECREATED'}">$date - $c->{'USER'}: </b>}, 
-				sanitize_text($c->{'TEXT'});
+			my $date = strip_date($_->{'DATECREATED'});
+			print br, qq{<b title="$_->{'DATECREATED'}">$date - $_->{'USER'}: </b>}, 
+				sanitize_text($_->{'TEXT'});
 		}
-		elsif($c->{'TYPE'} == 5) {
+		elsif($_->{'TYPE'} == 5) {
 			# Fechamento de um ticket
-			my $date = strip_date($c->{'DATECREATED'});
-			print br, qq{<b title="$c->{'DATECREATED'}">$date - $c->{'USER'} - Fechado: </b>},
-				sanitize_text($c->{'TEXT'});
+			my $date = strip_date($_->{'DATECREATED'});
+			print br, qq{<b title="$_->{'DATECREATED'}">$date - $_->{'USER'} - Fechado: </b>},
+				sanitize_text($_->{'TEXT'});
 		}
-		elsif($c->{'TYPE'} == 6) {
+		elsif($_->{'TYPE'} == 6) {
 			# Reabertura de um ticket
-			my $date = strip_date($c->{'DATECREATED'});
-			print br, qq{<b title="$c->{'DATECREATED'}">$date - $c->{'USER'} - Reaberto: </b>},
-				sanitize_text($c->{'TEXT'});
+			my $date = strip_date($_->{'DATECREATED'});
+			print br, qq{<b title="$_->{'DATECREATED'}">$date - $_->{'USER'} - Reaberto: </b>},
+				sanitize_text($_->{'TEXT'});
 		}
 	}
 	print q{</td></tr></table><p>};
@@ -654,25 +595,15 @@ sub show_ticket {
 
 sub get_tags_from_ticket {
 	my $id = shift;
-	my @tags = ();
-	my $sth = $dbh->prepare('SELECT TAG FROM TAG WHERE TICKET = ? ORDER BY TAG')
-		or die $dbh->errstr;
-	$sth->execute($id) or die $dbh->errstr;
-	while(my $r = $sth->fetchrow_hashref) {
-		push @tags, $r->{'TAG'};
-	}
-	return @tags;
+	my @tags = map { $_ = $_->{'TAG'} }
+      @{ sql( 'SELECT TAG FROM TAG WHERE TICKET=?', $id ) };
+	return sort @tags;
 }
 
 sub get_owners_from_ticket {
 	my $id = shift;
-	my @owners = ();
-	my $sth = $dbh->prepare('SELECT OWNER FROM OWNER WHERE TICKET = ? 
-		ORDER BY OWNER') or die $dbh->errstr;
-	$sth->execute($id) or die $dbh->errstr;
-	while(my $r = $sth->fetchrow_hashref) {
-		push @owners, $r->{'OWNER'};
-	}
+	my @owners = map { $_ = $_->{'OWNER'} }
+      @{ sql( 'SELECT OWNER FROM OWNER WHERE TICKET=?', $id ) };
 	return @owners;
 }
 
@@ -706,6 +637,18 @@ sub strip_date {
 # campo facilita a procura ordenada por últimas modificações.
 sub update_ticket_mtime {
 	my $id = shift;
-	$dbh->do("UPDATE TICKET SET DATEMODIFIED=? WHERE ID=?", 
-		undef, &timestamp_now(), $id) or die $dbh->errstr;
+	sql('UPDATE TICKET SET DATEMODIFIED=? WHERE ID=?', &timestamp_now(), $id);
+}
+
+# Executa uma sentença SQL, opcionalmente com parâmetros, e retorna uma arrayref
+# de hashrefs com os resultados.
+sub sql {
+	my $sql = shift;
+	my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+	$sth->execute(@_) or die $dbh->errstr;
+	my $result = [ ];
+	while(my $r = $sth->fetchrow_hashref) {
+		push @$result, $r;
+	}
+	return $result;
 }
