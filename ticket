@@ -674,6 +674,7 @@ sub sql {
 	my $sql = shift;
 	my $sth = $dbh->prepare($sql) or die $dbh->errstr;
 	$sth->execute(@_) or die $dbh->errstr;
+	return unless $sql =~ /^[\s\n\r\t]*SELECT/i;
 	my $result = [ ];
 	while(my $r = $sth->fetchrow_hashref) {
 		push @$result, $r;
