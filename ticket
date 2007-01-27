@@ -336,6 +336,7 @@ elsif($q =~ /^\/(\d+)$/) {
 	}
 	elsif($r->{'TYPE'} == 1) {
 		print q{<table class="actions" border="0"><tr><td>};
+		print q{<a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a>};
 		print q{</td></tr></table>};
 	}
