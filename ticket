@@ -35,7 +35,7 @@ my $uri = '/ticket';					# URI para o script ticket
 ## -----------------------------------------------------------------
 
 my $css = "$uri?action=get-css";
-my $VERSION = '0.6';
+my $VERSION = '0.7';
 my $user = $ENV{'REMOTE_USER'} || '';
 
 if(not -f $db) { die "$db não encontrado." }
@@ -193,6 +193,12 @@ elsif(defined param('action') and param('action') eq 'change-ticket-prio') {
 	sql('UPDATE TICKET SET PRIO=? WHERE ID=?', $prio, $id);
 	print redirect("$uri/$id");
 }
+elsif(defined param('action') and param('action') eq 'edit-desc') {
+	my $id = param('id') or die 'no id';
+	my $desc = param('desc') || '';
+	sql('UPDATE TICKET SET DESC=? WHERE ID=?', $desc, $id);
+	print redirect("$uri/$id");
+}
 elsif(defined param('action') and param('action') eq 'get-css') {
 	print header(-type => 'text/css', -expires => '+1d');
 	while(<DATA>) { print }
@@ -288,7 +294,7 @@ elsif($q eq '') {
 elsif($q =~ /^\/(\d+)$/) {
 	my $id = $1;
 	my $head = <<'	END';
-	  var panels = new Array('note', 'close', 'prio', 'tags', 'owners', 'reopen');
+	  var panels = new Array('note', 'close', 'prio', 'tags', 'owners', 'reopen', 'desc');
 	  var selectedTab = null;
 	  function showPanel(tab, name)
 	  {
@@ -325,19 +331,22 @@ elsif($q =~ /^\/(\d+)$/) {
 		print q{<a class="tab" onclick="return showPanel(this, 'close');">Fechar Ticket</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de Ação</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'owners');">Responsável pelo Ticket</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'owners');">Responsável pelo Ticket</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'desc');">Descrição</a>};
 		print q{</td></tr></table>}, br;
 	}
 	elsif(($r->{'TYPE'} == 2) and ($r->{'STATUS'} == 1) ) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'reopen');">Reabrir Ticket</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'desc');">Descrição</a>};
 		print q{</td></tr></table>};
 	}
 	elsif($r->{'TYPE'} == 1) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'desc');">Descrição</a>};
 		print q{</td></tr></table>};
 	}
 	show_form_new_note($id);
@@ -346,6 +355,7 @@ elsif($q =~ /^\/(\d+)$/) {
 	show_form_edit_tags_ticket($id);
 	show_form_edit_owners_ticket($id);
 	show_form_reopen_ticket($id);
+	show_form_edit_desc($id);
 
 	emit_footer();
 
@@ -464,6 +474,20 @@ sub show_form_new_note {
 		end_form;
 	print q{</div>};
 }
+
+sub show_form_edit_desc {
+	my $id = shift;
+	my $desc = get_desc_from_ticket($id);
+	print q{<div class="panel" id="desc" style="display: none">};
+	print start_form(),
+		textarea(-name => 'desc', -rows=>4, -columns=>70, -value=>$desc), br,
+		hidden(-name => 'action', -value => 'edit-desc', -override => 1),
+		hidden('id', $id),
+		submit('submit', 'Salvar Descrição'),
+		end_form;
+	print q{</div>};
+}
+
 
 sub show_form_change_prio {
 	my $id = shift; my $prio = shift;
@@ -619,6 +643,12 @@ sub get_tags_from_ticket {
 	my @tags = map { $_ = $_->{'TAG'} }
       @{ sql( 'SELECT TAG FROM TAG WHERE TICKET=?', $id ) };
 	return sort @tags;
+}
+
+sub get_desc_from_ticket {
+	my $id = shift;
+	my $desc = sql( 'SELECT DESC FROM TICKET WHERE ID=?', $id )->[0]->{'DESC'};
+	return $desc
 }
 
 sub get_owners_from_ticket {
