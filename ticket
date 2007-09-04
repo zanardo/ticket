@@ -649,7 +649,7 @@ sub emit_header {
 # Emite rodapé com nome do sistema e versão.
 sub emit_footer {
 	print qq{<p><small><font color="gray"><div align="right">sistema
-		<a href="http://zanardo.org/ticket.txt">ticket</a> versão $VERSION</small></div></font>};
+		<a href="http://zanardo.org/ticket.html">ticket</a> versão $VERSION</small></div></font>};
 }
 
 
