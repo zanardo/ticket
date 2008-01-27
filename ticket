@@ -83,7 +83,7 @@ if(defined param('search')) {
 	my $search = param('search');
 	my $searchq = $dbh->quote("\%$search\%");
 	my $searche = escapeHTML($search);
-	my $limitview = 25;
+	my $limitview = 100;
 
 	# Show ticket.
 	if($search =~ /^#(\d+)$/) {
