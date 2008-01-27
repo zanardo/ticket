@@ -146,10 +146,17 @@ elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	if($type == 2) { $status = 0 }
 	my $text = param('text') || '';
 	die 'O texto deve ser preenchido.' if $text =~ /^[\s\t\r\n]*$/;
+	$dbh->begin_work;
 	sql('INSERT INTO TICKET (STATUS, TYPE, DATECREATED, DATEMODIFIED, USER, PRIO, TEXT)
  		 VALUES (?, ?, ?, ?, ?, 3, ?)', 
 		 $status, $type, &timestamp_now(), &timestamp_now(), $user, $text);
-	print redirect("$uri/" . $dbh->func('last_insert_rowid'));
+	# Se for Normal, insere o usuário como responsável do Ticket.
+	my $id = $dbh->func('last_insert_rowid');
+	if($type == 2) {
+		sql('INSERT INTO OWNER VALUES (?, ?)', $id, $user);
+	}
+	$dbh->commit;
+	print redirect("$uri/" . $id);
 }
 elsif(defined param('action') and param('action') eq 'create-new-note') {
 	my $text = param('text') || '';
@@ -576,16 +583,12 @@ sub show_ticket {
 	my $bgcolor;
 	my $priocolor = '';
 	if($r->{'TYPE'} == 1) { 
-		$bgcolor = '#FFFFB8';
 		$bgcolor = '#d5f9bf';
 	}
 	elsif($r->{'TYPE'} == 2 and $r->{'STATUS'} == 0) {
-		#$bgcolor = '#20F8FF';
-		#$bgcolor = '#2ddcff';
 		$bgcolor = '';
 	}
 	elsif($r->{'TYPE'} == 2 and $r->{'STATUS'} == 1) {
-		#$bgcolor = '#e9eae6';
 		$bgcolor = '#e1e1e1';
 	}
 	if($r->{'TYPE'} == 2 and $r->{'STATUS'} == 0) {
