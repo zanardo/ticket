@@ -60,7 +60,7 @@ my $uri = '/ticket';					# URI para o script ticket
 ## -----------------------------------------------------------------
 
 my $css = "$uri?action=get-css";
-my $VERSION = '0.7-dev';
+my $VERSION = '0.7';
 my $user = $ENV{'REMOTE_USER'} || 'guest';
 
 if(not -f $db) { die "$db não encontrado." }
