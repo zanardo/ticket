@@ -21,6 +21,31 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
+#
+# SQLite schema:
+#
+# CREATE TABLE OWNER (
+#         TICKET INTEGER,
+#         OWNER VARCHAR(100)
+# );
+# CREATE TABLE TAG (
+#     TICKET INTEGER,
+#     TAG VARCHAR(100)
+# );
+# CREATE TABLE TICKET (
+#     ID INTEGER PRIMARY KEY,
+#     STATUS INTEGER(1),
+#     TYPE INTEGER(1),
+#     PRIO INTEGER(1),
+#     IDPARENT INTEGER,
+#     DATECREATED DATETIME,
+#     DATECLOSED DATETIME,
+#     DATEMODIFIED DATETIME,
+#     USER VARCHAR(50),
+#     TEXT BLOB
+# );
+# CREATE INDEX IDTICKET ON TICKET (ID);
+
 use strict;
 use warnings;
 
@@ -35,8 +60,8 @@ my $uri = '/ticket';					# URI para o script ticket
 ## -----------------------------------------------------------------
 
 my $css = "$uri?action=get-css";
-my $VERSION = '0.7';
-my $user = $ENV{'REMOTE_USER'} || '';
+my $VERSION = '0.7-dev';
+my $user = $ENV{'REMOTE_USER'} || 'guest';
 
 if(not -f $db) { die "$db não encontrado." }
 
@@ -58,6 +83,7 @@ if(defined param('search')) {
 	my $search = param('search');
 	my $searchq = $dbh->quote("\%$search\%");
 	my $searche = escapeHTML($search);
+	my $limitview = 25;
 
 	# Show ticket.
 	if($search =~ /^#(\d+)$/) {
@@ -74,25 +100,22 @@ if(defined param('search')) {
 	emit_header();
 	print qq{<span class="title">Procura Tickets: '$searche'</span>}, p;
 
-    my $limit = defined param('nolimit') ? '' : 'LIMIT 100';
+    my $limit = defined param('nolimit') ? '' : 'LIMIT ' . $limitview;
+
 	my $sql = qq{
 		SELECT *
-		FROM TICKET AS t
-		WHERE ( TYPE = 1 OR TYPE = 2 )
-		  AND ( TEXT LIKE $searchq OR
-			EXISTS (
-			  SELECT ID
-			  FROM TICKET
-			  WHERE IDPARENT = t.ID
-				AND TEXT LIKE $searchq
-				AND TYPE <> 1
-				AND TYPE <> 2
-			  LIMIT 1
-			)
-		  )
-		ORDER BY DATEMODIFIED DESC
+		FROM ticket
+		WHERE ( type = 1 OR type = 2 )
+		  AND ( text like $searchq OR
+	            id IN ( 
+				  SELECT idparent
+				  FROM ticket 
+				  WHERE ( type <> 1 AND type <> 2 )
+				    AND text LIKE $searchq ) )
+		ORDER BY datemodified DESC
 		$limit
 	};
+
 	foreach(@{sql($sql)}) {
 		$count++;
 		show_ticket($_);
@@ -100,7 +123,7 @@ if(defined param('search')) {
 
 	print p, "$count ticket(s) encontrado(s).";
 	
-	if($limit ne '' and $count == 100) {
+	if($limit ne '' and $count == $limitview) {
 		print p;
 		print qq{
 			<form method="post" action="$uri" enctype="multipart/form-data">
@@ -193,12 +216,6 @@ elsif(defined param('action') and param('action') eq 'change-ticket-prio') {
 	sql('UPDATE TICKET SET PRIO=? WHERE ID=?', $prio, $id);
 	print redirect("$uri/$id");
 }
-elsif(defined param('action') and param('action') eq 'edit-desc') {
-	my $id = param('id') or die 'no id';
-	my $desc = param('desc') || '';
-	sql('UPDATE TICKET SET DESC=? WHERE ID=?', $desc, $id);
-	print redirect("$uri/$id");
-}
 elsif(defined param('action') and param('action') eq 'get-css') {
 	print header(-type => 'text/css', -expires => '+1d');
 	while(<DATA>) { print }
@@ -247,14 +264,14 @@ elsif($q eq '') {
 	print q{
 		<form>
 		<b>Responsável: </b>
-		<select name="owner"
+		<select name="owner" accesskey='R'
 			onchange="loadPageOwner(this.form.elements[0])"
 			onmouseclick="this.focus()">
 			<option value> </option>
 	};
 
 	# Responsáveis
-	my $sql = qq{
+	$sql = qq{
 		SELECT DISTINCT(OWNER) owner 
 		FROM OWNER 
 		WHERE TICKET IN ( 
@@ -269,7 +286,7 @@ elsif($q eq '') {
 	}
 	print q{
 		</select>
-		<b> Tag: </b>
+		<b> Palavras-chave: </b>
 		<select name="tag"
 			onchange="loadPageTag(this.form.elements[1])"
 			onmouseclick="this.focus()">
@@ -294,7 +311,7 @@ elsif($q eq '') {
 elsif($q =~ /^\/(\d+)$/) {
 	my $id = $1;
 	my $head = <<'	END';
-	  var panels = new Array('note', 'close', 'prio', 'tags', 'owners', 'reopen', 'desc');
+	  var panels = new Array('note', 'close', 'prio', 'tags', 'owners', 'reopen');
 	  var selectedTab = null;
 	  function showPanel(tab, name)
 	  {
@@ -303,7 +320,7 @@ elsif($q =~ /^\/(\d+)$/) {
 		  selectedTab.style.backgroundColor = '';
 		}
 		selectedTab = tab;
-		selectedTab.style.backgroundColor = 'lightgray';
+		selectedTab.style.backgroundColor = '#D3D3D3';
 		for(i = 0; i < panels.length; i++)
 		{
 		  document.getElementById(panels[i]).style.display = (name == panels[i]) ? 'block':'none';
@@ -330,23 +347,20 @@ elsif($q =~ /^\/(\d+)$/) {
 		print q{<a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'close');">Fechar Ticket</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de Ação</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'owners');">Responsável pelo Ticket</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'desc');">Descrição</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'owners');">Responsável pelo Ticket</a>};
 		print q{</td></tr></table>}, br;
 	}
 	elsif(($r->{'TYPE'} == 2) and ($r->{'STATUS'} == 1) ) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'reopen');">Reabrir Ticket</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'desc');">Descrição</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a>};
 		print q{</td></tr></table>};
 	}
 	elsif($r->{'TYPE'} == 1) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Tags</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'desc');">Descrição</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a>};
 		print q{</td></tr></table>};
 	}
 	show_form_new_note($id);
@@ -355,16 +369,16 @@ elsif($q =~ /^\/(\d+)$/) {
 	show_form_edit_tags_ticket($id);
 	show_form_edit_owners_ticket($id);
 	show_form_reopen_ticket($id);
-	show_form_edit_desc($id);
 
 	emit_footer();
 
 }
 elsif($q eq '/new-ticket') {
-	print header(-expires => 'now'), start_html(-style => {'src' => $css}, -title => 'Novo Ticket' );
+	print header(-expires => 'now'), start_html(-style => {'src' => $css}, 
+		-title => 'Novo Ticket', -onload => 'document.f.text.focus();' );
 	emit_header();
 	print q{<span class="title">Novo Ticket</span>}, p;
-    print q{<a name='new'></a>}, start_form(), 'Tipo: ',
+    print q{<a name='new'></a>}, start_form(-name => 'f'), 'Tipo: ',
       radio_group(
         -name   => 'type',
         -values => [ 'Normal', 'Simples Registro' ]
@@ -395,10 +409,10 @@ elsif($q =~ /^\/tag\/(.+?)$/) {
 	};
 
     print header( -expires => 'now' ),
-      start_html( -style => { 'src' => $css }, -title => "Tag: $tag" );
+      start_html( -style => { 'src' => $css }, -title => "Palavra-chave: $tag" );
 
 	&emit_header;
-	print qq{<span class="title">Tag: $tag</span>}, p;
+	print qq{<span class="title">Palavra-chave: $tag</span>}, p;
 
 	foreach(@{sql($sql, $tag)}) {
 		$count++;
@@ -470,24 +484,10 @@ sub show_form_new_note {
 		textarea(-name => 'text', -rows=>4, -columns=>70), br,
 		hidden(-name => 'action', -value => 'create-new-note', -override => 1),
 		hidden('parent', $id),
-		submit('submit', 'Adicionar Nota'),
+		submit('submit', 'Adicionar nota'),
 		end_form;
 	print q{</div>};
 }
-
-sub show_form_edit_desc {
-	my $id = shift;
-	my $desc = get_desc_from_ticket($id);
-	print q{<div class="panel" id="desc" style="display: none">};
-	print start_form(),
-		textarea(-name => 'desc', -rows=>4, -columns=>70, -value=>$desc), br,
-		hidden(-name => 'action', -value => 'edit-desc', -override => 1),
-		hidden('id', $id),
-		submit('submit', 'Salvar Descrição'),
-		end_form;
-	print q{</div>};
-}
-
 
 sub show_form_change_prio {
 	my $id = shift; my $prio = shift;
@@ -507,7 +507,7 @@ sub show_form_change_prio {
 		</select> <input type="hidden" name="action" 
 			value="change-ticket-prio"  />
 		<input type="hidden" name="id" value="$id"  />
-		<input type="submit" name="submit" value="Mudar Prioridade de Ação" /></form>
+		<input type="submit" name="submit" value="Mudar prioridade de ação" /></form>
 	};
 	print q{</div>};
 }
@@ -544,7 +544,10 @@ sub show_form_edit_tags_ticket {
 		textarea(-name => 'text', -rows=>1, -columns=>70, -value=>$tags), br,
 		hidden(-name => 'action', -value => 'save-tags-ticket', -override => 1),
 		hidden('id', $id),
-		submit('submit', 'Tags'),
+		submit('submit', 'Salvar palavras-chave'), p,
+		font({-color => '#A5A5A5'}, 
+		small('Palavras-chave podem ser utilizadas para classificar os Tickets. ',
+		'Separar as palavras-chave por espaços.')),
 		end_form;
 	print q{</div>};
 }
@@ -556,7 +559,9 @@ sub show_form_edit_owners_ticket {
 		textarea(-name => 'text', -rows=>1, -columns=>70, -value=>$owners), br,
 		hidden(-name => 'action', -value => 'save-owners-ticket', -override => 1),
 		hidden('id', $id),
-		submit('submit', 'Responsável pelo Ticket'),
+		submit('submit', 'Salvar responsáveis'),
+		p, font({-color => '#A5A5A5'}, small('Defina abaixo o(s) responsável(is) pelo Ticket.',
+			'Separar os responsáveis por espaços.')),
 		end_form;
 	print q{</div>};
 }
@@ -604,7 +609,7 @@ sub show_ticket {
 	my @tags = get_tags_from_ticket($r->{'ID'});
 	my @owners = get_owners_from_ticket($r->{'ID'});
 	if(@tags) { 
-		print qq{Tags: };
+		print qq{Palavras-Chave: };
 		print join ', ', @tags;
 		print br;
 	}
@@ -645,12 +650,6 @@ sub get_tags_from_ticket {
 	return sort @tags;
 }
 
-sub get_desc_from_ticket {
-	my $id = shift;
-	my $desc = sql( 'SELECT DESC FROM TICKET WHERE ID=?', $id )->[0]->{'DESC'};
-	return $desc
-}
-
 sub get_owners_from_ticket {
 	my $id = shift;
 	my @owners = map { $_ = $_->{'OWNER'} }
@@ -665,11 +664,11 @@ sub emit_header {
 		<tr>
 		<td class="topmenu">
 			olá <b>$user</b>! 
-			<a href='$uri'>tickets abertos</a>
-			| <a href='$uri/new-ticket'>novo ticket</a>
+			<a href='$uri' accesskey='A'>tickets abertos</a>
+			| <a href='$uri/new-ticket' accesskey='N'>novo ticket</a>
 		</td> <tr></tr> <td align=right>
 		<form method="post" action="$uri" enctype="multipart/form-data">
-			<input type="text" name="search" size="15" />
+			<input type="text" name="search" size="15" accesskey='S'>
 			<input type="submit" name="search" value="procura" />
 		</form>
 		</td></tr></table>
