@@ -1,1 +1,49 @@
-For documentation, go to http://zanardo.org/ticket.html
+  ticket é um sistema simples de chamados para pequenos departamentos, para
+  o acompanhamento de casos em abertos sobre qualquer coisa (bugs de
+  software, tarefas e ações, etc). Ele é desenvolvido para rodar em Linux.
+
+dependências
+
+  ticket precisa do Perl 5.8.x e da biblioteca DBD::SQLite para rodar.
+
+instalando ticket
+
+  A última versão disponível é a 0.7. Baixe em
+  http://zanardo.org/ticket.tgz.  O guia abaixo foi testado para o servidor
+  web Apache.
+
+  Como root:
+
+    # tar xvzf ticket.tgz
+    # cd ticket
+    # mkdir /var/ticket
+    # cp ticket.db /var/ticket
+
+  Os arquivos devem ser copiados para um diretório do seu servidor web.
+  Neste exemplo, vamos supor que ele esteja lendo documentos de
+  /var/www/htdocs:
+
+    # cp ticket /var/www/htdocs
+    # cp ticket.css /var/www/htdocs
+    # cp ticket.png /var/www/htdocs
+
+  Você deve dar permissões de escrita ao usuário que o servidor web está
+  rodando. Vamos utilizar nobody:
+
+    # chown nobody /var/ticket /var/ticket/ticket.db
+
+  Basta configurar o servidor web para executar ticket como um CGI. No caso
+  do Apache, configurar em httpd.conf:
+
+    <Files ticket>
+      AuthType Basic
+      AuthName User
+      Require valid-user
+      AuthUserFile /var/ticket/apache.auth
+      Satisfy All
+      SetHandler cgi-script
+    </Files>
+
+  Crie os usuários para autenticação com:
+
+    # htpasswd -c /var/ticket/apache.auth usuario
