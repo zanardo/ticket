@@ -24,16 +24,13 @@
 #
 # SQLite schema:
 #
-# CREATE TABLE OWNER (
-#         TICKET INTEGER,
-#         OWNER VARCHAR(100)
-# );
 # CREATE TABLE TAG (
 #     TICKET INTEGER,
 #     TAG VARCHAR(100)
 # );
 # CREATE TABLE TICKET (
 #     ID INTEGER PRIMARY KEY,
+#	  TITLE TEXT,
 #     STATUS INTEGER(1),
 #     TYPE INTEGER(1),
 #     PRIO INTEGER(1),
@@ -53,15 +50,14 @@ use DBI;
 use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
-use Data::Dumper;
 
 ## Configure -------------------------------------------------------
 my $db = 'ticket.db';		# Caminho do banco de dados
-my $uri = '/ti/ticket';					# URI para o script ticket
+my $uri = '/ti/ticket';		# URI para o script ticket
 ## -----------------------------------------------------------------
 
 my $css = "$uri?action=get-css";
-my $VERSION = '0.8-dev';
+my $VERSION = '0.8';
 my $user = $ENV{'REMOTE_USER'} || 'guest';
 
 if(not -f $db) { die "$db não encontrado." }
@@ -84,7 +80,7 @@ if(defined param('search')) {
 	my $search = param('search');
 	my $searchq = $dbh->quote("\%$search\%");
 	my $searche = escapeHTML($search);
-	my $limitview = 100;
+	my $limitview = 1000000;
 
 	# Show ticket.
 	if($search =~ /^#(\d+)$/) {
@@ -147,17 +143,10 @@ elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	if($type == 2) { $status = 0 }
 	my $text = param('text') || '';
 	die 'O texto deve ser preenchido.' if $text =~ /^[\s\t\r\n]*$/;
-	$dbh->begin_work;
 	sql('INSERT INTO TICKET (STATUS, TYPE, DATECREATED, DATEMODIFIED, USER, PRIO, TEXT)
  		 VALUES (?, ?, ?, ?, ?, 3, ?)', 
 		 $status, $type, &timestamp_now(), &timestamp_now(), $user, $text);
-	# Se for Normal, insere o usuário como responsável do Ticket.
-	my $id = $dbh->func('last_insert_rowid');
-	if($type == 2) {
-		sql('INSERT INTO OWNER VALUES (?, ?)', $id, $user);
-	}
-	$dbh->commit;
-	print redirect("$uri/" . $id);
+	print redirect("$uri/" . $dbh->func('last_insert_rowid'));
 }
 elsif(defined param('action') and param('action') eq 'create-new-note') {
 	my $text = param('text') || '';
@@ -195,23 +184,11 @@ elsif(defined param('action') and param('action') eq 'reopen-ticket') {
 elsif(defined param('action') and param('action') eq 'save-tags-ticket') {
 	my $id = param('id') or die 'no id';
 	my $tags = param('text') || ' ';
-	my @tags = split /[\s\t\r\n]+/, $tags;
+	my %tags = map { $_, 1 } split /[\s\t\r\n]+/, $tags;
 	$dbh->begin_work;
 	sql("DELETE FROM TAG WHERE TICKET=?", $id);
-	foreach(@tags) {
+	foreach(keys %tags) {
 		sql("INSERT INTO TAG (TICKET, TAG) VALUES (?, ?)", $id, $_);
-	}
-	$dbh->commit;
-	print redirect("$uri/$id");
-}
-elsif(defined param('action') and param('action') eq 'save-owners-ticket') {
-	my $id = param('id') or die 'no id';
-	my $owners = param('text') || ' ';
-	my @owners = split /[\s\t\r\n]+/, $owners;
-	$dbh->begin_work;
-	sql('DELETE FROM OWNER WHERE TICKET=?', $id);
-	foreach(@owners) {
-		sql("INSERT INTO OWNER (TICKET, OWNER) VALUES (?, ?)", $id, $_);
 	}
 	$dbh->commit;
 	print redirect("$uri/$id");
@@ -224,37 +201,55 @@ elsif(defined param('action') and param('action') eq 'change-ticket-prio') {
 	sql('UPDATE TICKET SET PRIO=? WHERE ID=?', $prio, $id);
 	print redirect("$uri/$id");
 }
+elsif(defined param('action') and param('action') eq 'save-title-ticket') {
+	my $id = param('id') or die 'no id';
+	my $text = param('text') || '(sem título)';
+	sql('UPDATE TICKET SET TITLE=? WHERE ID=?', $text, $id);
+	print redirect("$uri/$id");
+}
 elsif(defined param('action') and param('action') eq 'get-css') {
 	print header(-type => 'text/css', -expires => '+1d');
 	while(<DATA>) { print }
 }
 
-# Lista a página inicial, contendo os tagclouds dos responsáveis
-# e dos tags.
+# Lista tickets em aberto, ordenados por prioridade.
 elsif($q eq '') {
+	my $count = 0;
+
+	my $script = qq|
+		function loadPageOwner(list) {
+			if(list.options[list.selectedIndex].value == '') { return True }
+			location.href="$uri/owner/" + list.options[list.selectedIndex].value
+		}
+		function loadPageTag(list) {
+			if(list.options[list.selectedIndex].value == '') { return True }
+			location.href="$uri/tag/" + list.options[list.selectedIndex].value
+		}
+	|;
+
 	print header( -expires => 'now' ),
       start_html(
         -style  => { 'src' => $css },
-        -title  => 'Sistema Ticket'
+        -title  => 'Tickets Abertos',
+        -script => $script
       );
 
 	emit_header();
 
-	print q{<span class="title">Sistema Ticket</span>}, p;
+	print q{<span class="title">Tickets Abertos</span>}, p;
 
-	my %tags = map {$_->{'TAG'}, $_->{'C'}} @{sql('SELECT TAG, COUNT(*) C FROM TAG GROUP BY TAG ORDER BY TAG')};
-	my $min = (sort {$a <=> $b} values %tags)[0];
-	my $max = (sort {$a <=> $b} values %tags)[-1];
-	my $tmin = '9';
-	my $tmax = '45';
-	if(($max - $min) == 0) { $max = $min + 1 }
-
-	print qq{<div align="center" class="tagcloud">};
-	foreach(keys %tags) {
-		my $size = ( ( ( $tags{$_} - $min ) * ( $tmax - $tmin ) ) / ( $max - $min ) ) + $tmin;
-		print qq{ <a title="$tags{$_}" style="font-size: ${size}px;" class="tagcloud" href="$uri?a=tag&t=$_">$_</a> };
+	my $sql = qq{
+		SELECT *, cast(julianday('now') - julianday(DATECREATED) as int) as age
+		FROM TICKET 
+		WHERE TYPE=2 
+		  AND STATUS=0 
+	  	ORDER BY PRIO ASC, DATECREATED};
+	foreach(@{sql($sql)}) {	
+		$count++;
+		show_ticket_small($_);
 	}
-	print qq{</div>};
+
+	print p, "$count ticket(s) encontrado(s).";
 
 	emit_footer();
 
@@ -265,7 +260,7 @@ elsif($q eq '') {
 elsif($q =~ /^\/(\d+)$/) {
 	my $id = $1;
 	my $head = <<'	END';
-	  var panels = new Array('note', 'close', 'prio', 'tags', 'owners', 'reopen');
+	  var panels = new Array('note', 'close', 'prio', 'tags', 'reopen', 'title');
 	  var selectedTab = null;
 	  function showPanel(tab, name)
 	  {
@@ -302,31 +297,33 @@ elsif($q =~ /^\/(\d+)$/) {
 		print q{<a class="tab" onclick="return showPanel(this, 'close');">Fechar Ticket</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de Ação</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'owners');">Responsável pelo Ticket</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a>};
 		print q{</td></tr></table>}, br;
 	}
 	elsif(($r->{'TYPE'} == 2) and ($r->{'STATUS'} == 1) ) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'reopen');">Reabrir Ticket</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a>};
 		print q{</td></tr></table>};
 	}
 	elsif($r->{'TYPE'} == 1) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a>};
 		print q{</td></tr></table>};
 	}
 	show_form_new_note($id);
 	show_form_close_ticket($id);
 	show_form_change_prio($id, $r->{'PRIO'});
 	show_form_edit_tags_ticket($id);
-	show_form_edit_owners_ticket($id);
 	show_form_reopen_ticket($id);
+	show_form_title_ticket($id, $r->{'TITLE'});
 
 	emit_footer();
-
 }
+
 elsif($q eq '/new-ticket') {
 	print header(-expires => 'now'), start_html(-style => {'src' => $css}, 
 		-title => 'Novo Ticket', -onload => 'document.f.text.focus();' );
@@ -354,12 +351,13 @@ elsif($q =~ /^\/tag\/(.+?)$/) {
 	my $tag = $1;
 	my $count = 0;
 	my $sql = q{
-		SELECT TICKET.*
+		SELECT TICKET.*, cast(julianday('now') - julianday(TICKET.DATECREATED) as int) as age
 		FROM TICKET, TAG
 		WHERE TAG.TAG = ?
 		  AND TAG.TICKET = TICKET.ID
 		  AND ( TICKET.TYPE = 1 OR TICKET.TYPE = 2 )
-		ORDER BY TICKET.DATECREATED DESC
+	  	  AND TICKET.STATUS = 0
+		ORDER BY TICKET.PRIO, TICKET.DATECREATED
 	};
 
     print header( -expires => 'now' ),
@@ -370,48 +368,12 @@ elsif($q =~ /^\/tag\/(.+?)$/) {
 
 	foreach(@{sql($sql, $tag)}) {
 		$count++;
-		show_ticket($_);
+		show_ticket_small($_);
 	}
 
 	print p, "$count ticket(s) encontrado(s).";
 
 	emit_footer()
-
-}
-
-# Lista tickets por Responsável. Lista apenas tickets em aberto, ordenados
-# por prioridade.
-elsif($q =~ /^\/owner\/(.+?)$/) {
-	my $owner = $1;
-	my $count = 0;
-
-	my $sql = q{
-		SELECT TICKET.*
-		FROM TICKET, OWNER
-		WHERE OWNER.OWNER = ?
-		  AND OWNER.TICKET = TICKET.ID
-		  AND TICKET.TYPE = 2
-		  AND TICKET.STATUS = 0
-		ORDER BY PRIO ASC, DATECREATED ASC
-	};
-
-    print header( -expires => 'now' ),
-      start_html(
-        -style => { 'src' => $css },
-        -title => "Responsável: $owner"
-      );
-
-	&emit_header;
-	print qq{<span class="title">Responsável: $owner</span>}, p;
-
-	foreach(@{sql($sql, $owner)}) {
-		$count++;
-		show_ticket($_);
-	}
-
-	print p, "$count ticket(s) encontrado(s).";
-
-	emit_footer();
 
 }
 else { die 'invalid url' }
@@ -505,17 +467,16 @@ sub show_form_edit_tags_ticket {
 		end_form;
 	print q{</div>};
 }
-sub show_form_edit_owners_ticket {
+
+sub show_form_title_ticket {
 	my $id = shift;
-	print q{<div class="panel" id="owners" style="display: none">};
-	my $owners = join ' ', get_owners_from_ticket($id);
+	my $title = shift;
+	print q{<div class="panel" id="title" style="display: none">};
 	print start_form(),
-		textarea(-name => 'text', -rows=>1, -columns=>70, -value=>$owners), br,
-		hidden(-name => 'action', -value => 'save-owners-ticket', -override => 1),
+		textarea(-name => 'text', -rows=>1, -columns=>70, -value=>$title), br,
+		hidden(-name => 'action', -value => 'save-title-ticket', -override => 1),
 		hidden('id', $id),
-		submit('submit', 'Salvar responsáveis'),
-		p, font({-color => '#A5A5A5'}, small('Defina abaixo o(s) responsável(is) pelo Ticket.',
-			'Separar os responsáveis por espaços.')),
+		submit('submit', 'Salvar título'),
 		end_form;
 	print q{</div>};
 }
@@ -524,11 +485,50 @@ sub timestamp_now {
 	return strftime("%Y-%m-%d %H:%M:%S", localtime);
 }
 
+sub show_ticket_small {
+	my $r = shift;
+	my %types = (1=>'Simples Registro', 2=>'Normal');
+	my $bgcolor;
+	my $priocolor = '';
+	my $title = $r->{'TITLE'} || '';
+	if($r->{'TYPE'} == 1) { 
+		$bgcolor = '#d5f9bf';
+	}
+	elsif($r->{'TYPE'} == 2 and $r->{'STATUS'} == 0) {
+		$bgcolor = '';
+	}
+	elsif($r->{'TYPE'} == 2 and $r->{'STATUS'} == 1) {
+		$bgcolor = '#e1e1e1';
+	}
+	if($r->{'TYPE'} == 2 and $r->{'STATUS'} == 0) {
+		if($r->{'PRIO'} == 1)    { $priocolor = '#FF8D8F' }
+		elsif($r->{'PRIO'} == 2) { $priocolor = '#EDFF9F' }
+		elsif($r->{'PRIO'} == 3) { $priocolor = '' }
+		elsif($r->{'PRIO'} == 4) { $priocolor = '#6DF2B2' }
+		elsif($r->{'PRIO'} == 5) { $priocolor = '#9FEFF2' }
+	}
+	print qq{<table class="ticket" width="100%" border="0" bgcolor="$bgcolor">};
+	print qq{<tr><td width="5px" title="$priodesc{$r->{PRIO}}" bgcolor="$priocolor">&nbsp;</td>};
+	print qq{<td width="80px" valign="top">};
+	print qq{<b><a class="ticketlabel" href="$uri/$r->{'ID'}">#$r->{'ID'}</a></b><br>};
+	print "$r->{'age'} dias";
+	my @tags = get_tags_from_ticket($r->{'ID'});
+	print q{</td><td valign="top">};
+	print span({-class => 'tktitle'}, $title);
+	print "</td><td valign='top' align='right'>";
+	foreach(@tags) {
+		my $tag = CGI::escape($_);
+		print " <a href='$uri/tag/$tag' class='tag'>$_</a>";
+	}
+	print q{</td></tr></table>};
+}
+
 sub show_ticket {
 	my $r = shift;
 	my %types = (1=>'Simples Registro', 2=>'Normal');
 	my $bgcolor;
 	my $priocolor = '';
+	my $title = $r->{'TITLE'} || '';
 	if($r->{'TYPE'} == 1) { 
 		$bgcolor = '#d5f9bf';
 	}
@@ -557,18 +557,12 @@ sub show_ticket {
 	}
 	print qq{Autor: $r->{'USER'}<br>};
 	my @tags = get_tags_from_ticket($r->{'ID'});
-	my @owners = get_owners_from_ticket($r->{'ID'});
-	if(@tags) { 
-		print qq{Palavras-Chave: };
-		print join ', ', @tags;
-		print br;
-	}
-	if(@owners) { 
-		print qq{Responsável: };
-		print join ', ', @owners;
-		print br;
+	foreach(@tags) {
+		my $tag = CGI::escape($_);
+		print "<a href='$uri/tag/$tag' class='tag'>$_</a>", " ";
 	}
 	print q{</td><td valign="top">};
+	print b($title), p;
 	print sanitize_text($r->{'TEXT'});
 	foreach(@{sql('SELECT * FROM TICKET WHERE IDPARENT=? ORDER BY ID', $r->{'ID'})}) {
 		if($_->{'TYPE'} == 3) {
@@ -600,13 +594,6 @@ sub get_tags_from_ticket {
 	return sort @tags;
 }
 
-sub get_owners_from_ticket {
-	my $id = shift;
-	my @owners = map { $_ = $_->{'OWNER'} }
-      @{ sql( 'SELECT OWNER FROM OWNER WHERE TICKET=?', $id ) };
-	return @owners;
-}
-
 # Emite o cabeçalho padrão das páginas, com menu no topo e barra de pesquisa.
 sub emit_header {
 	print qq{
@@ -614,7 +601,7 @@ sub emit_header {
 		<tr>
 		<td class="topmenu">
 			olá <b>$user</b>! 
-			<a href='$uri' accesskey='A'>página inicial</a>
+			<a href='$uri' accesskey='A'>tickets abertos</a>
 			| <a href='$uri/new-ticket' accesskey='N'>novo ticket</a>
 		</td> <tr></tr> <td align=right>
 		<form method="post" action="$uri" enctype="multipart/form-data">
@@ -630,7 +617,6 @@ sub emit_footer {
 	print qq{<p><small><font color="gray"><div align="right">sistema
 		<a href="http://zanardo.org/ticket.html">ticket</a> versão $VERSION</small></div></font>};
 }
-
 
 # Recebe "2005-05-05 05:05:05" e converte para "2005-05-05".
 sub strip_date {
@@ -711,21 +697,17 @@ input, textarea, select, submit {
 .ticket {
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 10px;
-	border: 2px dotted #ffffff; 
-	border: 1px dotted green; 
-	border: 1px dotted #336699; 
+	border: 3px solid #ffffff; 
 }
 
 .ticketlabel {
 	font-size: 12px;
 }
 
-.tagcloud {
+.tag {
+	background-color: yellow;
 	text-decoration: none;
-	text-align: center;
-	background-color: #F2F2F2; 
+	font-weight: bold;
 }
 
-a.tagcloud:hover {
-	background-color: rgb(195,217,255);
-}
+.tktitle { font-family: "Verdana"; font-size: 12px; font-weight: bold; }
