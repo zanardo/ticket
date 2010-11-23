@@ -78,8 +78,10 @@ my %priodesc = (
 	'5' => '5. Baixíssima Prioridade'
 );
 
-if(defined param('search')) {
-	my $search = param('search');
+if(defined param('searchtkt')) {
+	my $search = param('searchtkt');
+	my $open = 'STATUS = 0';
+	if($search =~ s/^ALL //) { $open = '(1=1)' }
 	my $searche = escapeHTML($search);
 
 	my $title = '';
@@ -122,6 +124,7 @@ if(defined param('search')) {
 			FROM ticket
 			WHERE type = 1
 			  AND id IN ( SELECT docid FROM search WHERE search MATCH ? )
+		      AND $open
 			ORDER BY datemodified DESC
 		};
 	}
@@ -144,8 +147,8 @@ elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	sql('INSERT INTO TICKET (STATUS, TYPE, DATECREATED, DATEMODIFIED, USER, MINUTES, PRIO, TITLE)
  		 VALUES (?, ?, ?, ?, ?, 0, 3, ?)', 
 		 0, 1, &timestamp_now(), &timestamp_now(), $user, $title);
-	populate_search($dbh->func('last_insert_rowid'));
 	print redirect("$uri/" . $dbh->func('last_insert_rowid'));
+	populate_search($dbh->func('last_insert_rowid'));
 }
 elsif(defined param('action') and param('action') eq 'create-new-note') {
 	my $text = param('text') || '';
@@ -156,8 +159,8 @@ elsif(defined param('action') and param('action') eq 'create-new-note') {
  		 VALUES (3, ?, ?, ?, ?)', &timestamp_now(), $parent, $user, $text);
 	&update_ticket_mtime($parent);
 	$dbh->commit;
-	populate_search($parent);
 	print redirect("$uri/$parent");
+	populate_search($parent);
 }
 elsif(defined param('action') and param('action') eq 'register-minutes') {
 	my $minutes = param('minutes') || 0;
@@ -531,7 +534,9 @@ sub show_ticket_small {
 	print qq{<table class="ticket" width="100%" border="0" bgcolor="$bgcolor">};
 	print qq{<tr><td width="5px" title="$priodesc{$r->{PRIO}}" bgcolor="$priocolor">&nbsp;</td>};
 	print qq{<td width="80px" valign="top">};
-	print qq{<b><a class="ticketlabel" href="$uri/$r->{'ID'}">#$r->{'ID'}</a></b>};
+	my $lab = "Criado: $r->{DATECREATED} \nModificado: $r->{DATEMODIFIED} \nAutor: $r->{USER} ";
+	if($r->{STATUS} == 1) { $lab .= "\nFechado: $r->{DATECLOSED}" }
+	print qq{<b><a class="ticketlabel" title="$lab" href="$uri/$r->{'ID'}">#$r->{'ID'}</a></b>};
 	my @tags = get_tags_from_ticket($r->{'ID'});
 	print q{</td><td valign="top">};
 	print span({-class => 'tktitle'}, $title);
@@ -630,7 +635,7 @@ sub emit_header {
 			| <a href='$uri/new-ticket' accesskey='N'>novo ticket</a>
 		</td> <tr></tr> <td align=right>
 		<form method="post" action="$uri" enctype="multipart/form-data">
-			<input type="text" name="search" size="15" accesskey='S'>
+			<input type="text" name="searchtkt" size="15" accesskey='S'>
 			<input type="submit" name="search" value="procura" />
 		</form>
 		</td></tr></table>
