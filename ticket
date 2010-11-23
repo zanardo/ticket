@@ -24,26 +24,11 @@
 #
 # SQLite schema:
 #
-# CREATE TABLE TAG (
-#     TICKET INTEGER,
-#     TAG VARCHAR(100)
-# );
-# CREATE TABLE TICKET (
-#     ID INTEGER PRIMARY KEY,
-#     TITLE TEXT,
-#     STATUS INTEGER(1),
-#     TYPE INTEGER(1),
-#     PRIO INTEGER(1),
-#     IDPARENT INTEGER,
-#     DATECREATED DATETIME,
-#     DATECLOSED DATETIME,
-#     DATEMODIFIED DATETIME,
-#     USER VARCHAR(50),
-#     MINUTES INT,
-#     TEXT BLOB
-# );
-# CREATE VIRTUAL TABLE SEARCH USING fts3 ( title, text, tag, user );
-# CREATE INDEX IDTICKET ON TICKET (ID);
+#CREATE TABLE comments ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, comment text not null );
+#CREATE TABLE statustrack ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, status text not null );
+#CREATE TABLE tags ( ticket_id integer not null references ticket ( id ), tag text not null );
+#CREATE TABLE tickets ( id integer primary key not null, title text not null, status integer not null default ( 0 ), priority integer not null default ( 3 ), datecreated datetime not null default ( datetime('now', 'localtime') ), datemodified datetime not null default ( datetime('now', 'localtime') ), dateclosed datetime, user text not null );
+#CREATE TABLE timetrack ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, minutes integer not null );
 
 use strict;
 use warnings;
@@ -86,10 +71,10 @@ if(defined param('searchtkt')) {
 
 	my $title = '';
 	if($search eq '') {
-		$title = 'Últimos tickets modificados';
+		$title = 'Últimos Tickets Modificados';
 	}
 	else {
-		$title = "Procura tickets: '$searche'";
+		$title = "Procura Tickets: '$searche'";
 	}
 
 	# Show ticket.
@@ -111,9 +96,8 @@ if(defined param('searchtkt')) {
 	if($search eq '') {
 		$sql = qq{
 			SELECT *
-			FROM ticket
-			WHERE type = 1
-			  AND title <> ?
+			FROM tickets
+			WHERE title <> ?
 			ORDER BY datemodified DESC
 			LIMIT 100
 		};
@@ -121,9 +105,8 @@ if(defined param('searchtkt')) {
 	else {
 		$sql = qq{
 			SELECT *
-			FROM ticket
-			WHERE type = 1
-			  AND id IN ( SELECT docid FROM search WHERE search MATCH ? )
+			FROM tickets
+				WHERE id IN ( SELECT docid FROM search WHERE search MATCH ? )
 		      AND $open
 			ORDER BY datemodified DESC
 		};
@@ -144,85 +127,77 @@ if(defined param('searchtkt')) {
 elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	my $title = param('title') || '';
 	die 'O título deve ser preenchido.' if $title =~ /^[\s\t\r\n]*$/;
-	sql('INSERT INTO TICKET (STATUS, TYPE, DATECREATED, DATEMODIFIED, USER, MINUTES, PRIO, TITLE)
- 		 VALUES (?, ?, ?, ?, ?, 0, 3, ?)', 
-		 0, 1, &timestamp_now(), &timestamp_now(), $user, $title);
+	sql('insert into tickets ( title, user ) values ( ?, ? )', $title, $user);
 	print redirect("$uri/" . $dbh->func('last_insert_rowid'));
 	populate_search($dbh->func('last_insert_rowid'));
 }
 elsif(defined param('action') and param('action') eq 'create-new-note') {
 	my $text = param('text') || '';
 	die if $text =~ /^[\s\t\r\n]*$/;
-	my $parent = param('parent');
+	my $id = param('id');
 	$dbh->begin_work;
-	sql('INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, TEXT)
- 		 VALUES (3, ?, ?, ?, ?)', &timestamp_now(), $parent, $user, $text);
-	&update_ticket_mtime($parent);
+	sql('insert into comments ( ticket_id, user, comment ) values ( ?,?,? )', $id, $user, $text);
+	sql('update tickets set datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
 	$dbh->commit;
-	print redirect("$uri/$parent");
-	populate_search($parent);
+	print redirect("$uri/$id");
+	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'register-minutes') {
 	my $minutes = param('minutes') || 0;
 	die if $minutes !~ /^[\d]+$/;
-	my $parent = param('parent');
+	my $id = param('parent');
 	$dbh->begin_work;
-	sql('INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, MINUTES)
- 		 VALUES (7, ?, ?, ?, ?)', &timestamp_now(), $parent, $user, $minutes);
+	sql('insert into timetrack ( ticket_id, user, minutes ) values ( ?,?,? )', $id, $user, $minutes);
+	sql('update tickets set datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
 	$dbh->commit;
-	print redirect("$uri/$parent");
+	print redirect("$uri/$id");
 }
 elsif(defined param('action') and param('action') eq 'close-ticket') {
 	my $id = param('id') or die 'no id';
-	my $text = param('text') || ' ';
 	$dbh->begin_work;
-	sql("UPDATE TICKET SET STATUS=1, DATECLOSED=? WHERE ID=?", &timestamp_now(), $id);
-	&update_ticket_mtime($id);
-	sql("INSERT INTO TICKET (TYPE, DATECREATED, IDPARENT, USER, TEXT)
-		VALUES (5, ?, ?, ?, ?)", &timestamp_now(), $id, $user, $text);
+	sql('update tickets set status = 1, dateclosed = datetime(\'now\', \'localtime\'), 
+		datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
+	sql('insert into statustrack ( ticket_id, user, status ) values ( ?,?,\'close\')', $id, $user);
 	$dbh->commit;
-	populate_search($id);
 	print redirect("$uri/$id");
+	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'reopen-ticket') {
 	my $id = param('id') or die 'no id';
-	my $text = param('text') || ' ';
 	$dbh->begin_work;
-	sql("UPDATE TICKET SET STATUS=0, DATECLOSED=NULL WHERE ID=?", $id);
-	&update_ticket_mtime($id);
-	sql("INSERT INTO TICKET (TYPE, DATECREATED, USER, IDPARENT, TEXT)
-		VALUES (6, ?, ?, ?, ?)", &timestamp_now(), $user, $id, $text);
+	sql('update tickets set status = 0, dateclosed = null, 
+		datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
+	sql('insert into statustrack ( ticket_id, user, status ) values ( ?,?,\'reopen\')', $id, $user);
 	$dbh->commit;
-	populate_search($id);
 	print redirect("$uri/$id");
+	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'save-tags-ticket') {
 	my $id = param('id') or die 'no id';
 	my $tags = param('text') || ' ';
 	my %tags = map { $_, 1 } split /[\s\t\r\n]+/, $tags;
 	$dbh->begin_work;
-	sql("DELETE FROM TAG WHERE TICKET=?", $id);
+	sql('delete from tags where ticket_id = ?', $id);
 	foreach(keys %tags) {
-		sql("INSERT INTO TAG (TICKET, TAG) VALUES (?, ?)", $id, $_);
+		sql('insert into tags ( ticket_id, tag ) values ( ?,? )', $id, $_);
 	}
-	populate_search($id);
 	$dbh->commit;
 	print redirect("$uri/$id");
+	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'change-ticket-prio') {
 	my $id = param('id') or die 'no id';
-	my $text = param('text') || ' ';
 	my $prio = param('prio');
 	die 'invalid prio' unless $prio =~ /^[1-5]$/;
-	sql('UPDATE TICKET SET PRIO=? WHERE ID=?', $prio, $id);
+	sql('update tickets set priority = ? where id = ?', $prio, $id);
 	print redirect("$uri/$id");
 }
 elsif(defined param('action') and param('action') eq 'save-title-ticket') {
 	my $id = param('id') or die 'no id';
 	my $text = param('text') || '(sem título)';
-	sql('UPDATE TICKET SET TITLE=? WHERE ID=?', $text, $id);
-	populate_search($id);
+	sql('update tickets set title = ? where id = ?', $text, $id);
 	print redirect("$uri/$id");
+	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'get-css') {
 	print header(-type => 'text/css', -expires => '+1d');
@@ -244,11 +219,11 @@ elsif($q eq '') {
 	print q{<span class="title">Tickets Abertos</span>}, p;
 
 	my $sql = qq{
-		SELECT *
-		FROM TICKET 
-		WHERE TYPE=1 
-		  AND STATUS=0 
-	  	ORDER BY PRIO ASC, DATECREATED};
+		select *
+		from tickets
+		where status = 0
+		order by priority asc, datecreated desc};
+
 	foreach(@{sql($sql)}) {	
 		$count++;
 		show_ticket_small($_);
@@ -265,7 +240,7 @@ elsif($q eq '') {
 elsif($q =~ /^\/(\d+)$/) {
 	my $id = $1;
 	my $head = <<'	END';
-	  var panels = new Array('note', 'close', 'prio', 'tags', 'reopen', 'title', 'minutes');
+	  var panels = new Array('note', 'prio', 'tags', 'title', 'minutes');
 	  var selectedTab = null;
 	  function showPanel(tab, name)
 	  {
@@ -287,39 +262,32 @@ elsif($q =~ /^\/(\d+)$/) {
 		-title => "Detalhe: Ticket #$id", 
 		-script => $head
 	);
-	my $r = sql('SELECT * FROM TICKET WHERE ID=?', $id)->[0];
+	my $r = sql('select * from tickets where id = ?', $id)->[0];
 	if(not defined $r) { die "Ticket $id not found." }
-	unless($r->{'TYPE'} == 1) {
-		die "Ticket $id is not a Normal type. (Tipo: $r->{'TYPE'})";
-	}
 
 	&emit_header;
 	print qq{<span class="title">Detalhe: Ticket #$id</span>},p ;
 	show_ticket($r);
-	if(($r->{'TYPE'} == 1) and ($r->{'STATUS'} == 0) ) {
+	if($r->{'status'} == 0) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'close');">Fechar Ticket</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de Ação</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a>};
 		print q{</td></tr></table>}, br;
 	}
-	elsif(($r->{'TYPE'} == 1) and ($r->{'STATUS'} == 1) ) {
+	elsif($r->{'status'} == 1) {
 		print q{<table class="actions" border="0"><tr><td>};
-		print q{<a class="tab" onclick="return showPanel(this, 'reopen');">Reabrir Ticket</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a>};
 		print q{</td></tr></table>};
 	}
 	show_form_new_note($id);
-	show_form_close_ticket($id);
-	show_form_change_prio($id, $r->{'PRIO'});
+	show_form_change_prio($id, $r->{'priority'});
 	show_form_edit_tags_ticket($id);
-	show_form_reopen_ticket($id);
-	show_form_title_ticket($id, $r->{'TITLE'});
+	show_form_title_ticket($id, $r->{'title'});
 	show_form_minutes_ticket($id);
 
 	emit_footer();
@@ -347,13 +315,11 @@ elsif($q =~ /^\/(.+?)$/) {
 	my $tag = $1;
 	my $count = 0;
 	my $sql = q{
-		SELECT TICKET.*
-		FROM TICKET, TAG
-		WHERE TAG.TAG = ?
-		  AND TAG.TICKET = TICKET.ID
-		  AND TICKET.TYPE = 1
-	  	  AND TICKET.STATUS = 0
-		ORDER BY TICKET.PRIO, TICKET.DATECREATED
+		select t.*
+		from tickets as t inner join tags as g on ( g.ticket_id = t.id ) 
+		where g.tag = ?
+		  and t.status = 0
+	    order by t.priority, t.datecreated 
 	};
 
     print header( -expires => 'now' ),
@@ -395,7 +361,7 @@ sub show_form_new_note {
 	print start_form(),
 		textarea(-name => 'text', -rows=>4, -columns=>70), br,
 		hidden(-name => 'action', -value => 'create-new-note', -override => 1),
-		hidden('parent', $id),
+		hidden('id', $id),
 		submit('submit', 'Adicionar nota'),
 		end_form;
 	print q{</div>};
@@ -421,30 +387,6 @@ sub show_form_change_prio {
 		<input type="hidden" name="id" value="$id"  />
 		<input type="submit" name="submit" value="Mudar prioridade de ação" /></form>
 	};
-	print q{</div>};
-}
-
-sub show_form_close_ticket {
-	my $id = shift;
-	print q{<div class="panel" id="close" style="display: none">};
-	print start_form(),
-		textarea(-name => 'text', -rows=>4, -columns=>70), br,
-		hidden(-name => 'action', -value => 'close-ticket', -override => 1),
-		hidden('id', $id),
-		submit('submit', 'Fechar Ticket'),
-		end_form;
-	print q{</div>};
-}
-
-sub show_form_reopen_ticket {
-	my $id = shift;
-	print q{<div class="panel" id="reopen" style="display: none">};
-	print start_form(),
-		textarea(-name => 'text', -rows=>4, -columns=>70), br,
-		hidden(-name => 'action', -value => 'reopen-ticket', -override => 1),
-		hidden('id', $id),
-		submit('submit', 'Reabrir Ticket'),
-		end_form;
 	print q{</div>};
 }
 
@@ -490,26 +432,22 @@ sub show_form_minutes_ticket {
 	print q{</div>};
 }
 
-sub timestamp_now {
-	return strftime("%Y-%m-%d %H:%M:%S", localtime);
-}
-
 sub populate_search {
 	my $id = shift;
 	my $text = '';
 	my $tag = '';
 	my $user = ''; # todos os usuários que alteraram o ticket
 	$dbh->begin_work;
-	sql('DELETE FROM SEARCH WHERE docid = ?', $id);
-	my $title = sql('SELECT TITLE FROM ticket WHERE id = ?', $id)->[0]->{'TITLE'};
-	foreach(@{sql('SELECT text, user FROM ticket WHERE idparent = ?', $id)}) {
-		$text .= $_->{'TEXT'} . ' ';
-		$user .= $_->{'USER'} . ' ';
+	sql('delete from search where docid = ?', $id);
+	my $title = sql('select title from tickets where id = ?', $id)->[0]->{'title'};
+	foreach(@{sql('select comment, user from comments where ticket_id = ?', $id)}) {
+		$text .= $_->{'comment'} . ' ';
+		$user .= $_->{'user'} . ' ';
 	}
-	foreach(@{sql('SELECT tag FROM tag WHERE ticket = ?', $id)}) {
-		$tag .= $_->{'TAG'} . ' ';
+	foreach(@{sql('select tag from tags where ticket_id = ?', $id)}) {
+		$tag .= $_->{'tag'} . ' ';
 	}
-	sql('INSERT INTO search (docid, title, text, tag, user) VALUES (?,?,?,?,?)', $id, $title, $text, $tag, $user);
+	sql('insert into search (docid, title, text, tag, user) values (?,?,?,?,?)', $id, $title, $text, $tag, $user);
 	$dbh->commit;
 }
 
@@ -517,27 +455,25 @@ sub show_ticket_small {
 	my $r = shift;
 	my $bgcolor;
 	my $priocolor = '';
-	my $title = $r->{'TITLE'} || '';
-	if($r->{'TYPE'} == 1 and $r->{'STATUS'} == 0) {
-		$bgcolor = '';
-	}
-	elsif($r->{'TYPE'} == 1 and $r->{'STATUS'} == 1) {
+	my $title = $r->{'title'} || '';
+	if($r->{'status'} == 1) {
 		$bgcolor = '#e1e1e1';
 	}
-	if($r->{'TYPE'} == 1 and $r->{'STATUS'} == 0) {
-		if($r->{'PRIO'} == 1)    { $priocolor = '#FF8D8F' }
-		elsif($r->{'PRIO'} == 2) { $priocolor = '#EDFF9F' }
-		elsif($r->{'PRIO'} == 3) { $priocolor = '' }
-		elsif($r->{'PRIO'} == 4) { $priocolor = '#6DF2B2' }
-		elsif($r->{'PRIO'} == 5) { $priocolor = '#9FEFF2' }
+	elsif($r->{'status'} == 0) {
+		$bgcolor = '';
+		if($r->{'priority'} == 1)    { $priocolor = '#FF8D8F' }
+		elsif($r->{'priority'} == 2) { $priocolor = '#EDFF9F' }
+		elsif($r->{'priority'} == 3) { $priocolor = '' }
+		elsif($r->{'priority'} == 4) { $priocolor = '#6DF2B2' }
+		elsif($r->{'priority'} == 5) { $priocolor = '#9FEFF2' }
 	}
 	print qq{<table class="ticket" width="100%" border="0" bgcolor="$bgcolor">};
-	print qq{<tr><td width="5px" title="$priodesc{$r->{PRIO}}" bgcolor="$priocolor">&nbsp;</td>};
+	print qq{<tr><td width="5px" title="$priodesc{$r->{priority}}" bgcolor="$priocolor">&nbsp;</td>}; #"
 	print qq{<td width="80px" valign="top">};
-	my $lab = "Criado: $r->{DATECREATED} \nModificado: $r->{DATEMODIFIED} \nAutor: $r->{USER} ";
-	if($r->{STATUS} == 1) { $lab .= "\nFechado: $r->{DATECLOSED}" }
-	print qq{<b><a class="ticketlabel" title="$lab" href="$uri/$r->{'ID'}">#$r->{'ID'}</a></b>};
-	my @tags = get_tags_from_ticket($r->{'ID'});
+	my $lab = "Criado: $r->{datecreated} \nModificado: $r->{datemodified} \nAutor: $r->{user} ";
+	if($r->{status} == 1) { $lab .= "\nFechado: $r->{dateclosed}" }
+	print qq{<b><a class="ticketlabel" title="$lab" href="$uri/$r->{'id'}">#$r->{'id'}</a></b>}; #"
+	my @tags = get_tags_from_ticket($r->{'id'});
 	print q{</td><td valign="top">};
 	print span({-class => 'tktitle'}, $title);
 	print "</td><td valign='top' align='right'>";
@@ -552,75 +488,89 @@ sub show_ticket {
 	my $r = shift;
 	my $bgcolor;
 	my $priocolor = '';
-	my $title = $r->{'TITLE'} || '';
-	if($r->{'TYPE'} == 1 and $r->{'STATUS'} == 0) {
-		$bgcolor = '';
-	}
-	elsif($r->{'TYPE'} == 1 and $r->{'STATUS'} == 1) {
+	my $title = $r->{'title'} || '';
+	if($r->{'status'} == 1) {
 		$bgcolor = '#e1e1e1';
 	}
-	if($r->{'TYPE'} == 1 and $r->{'STATUS'} == 0) {
-		if($r->{'PRIO'} == 1)    { $priocolor = '#FF8D8F' }
-		elsif($r->{'PRIO'} == 2) { $priocolor = '#EDFF9F' }
-		elsif($r->{'PRIO'} == 3) { $priocolor = '' }
-		elsif($r->{'PRIO'} == 4) { $priocolor = '#6DF2B2' }
-		elsif($r->{'PRIO'} == 5) { $priocolor = '#9FEFF2' }
+	elsif($r->{'status'} == 0) {
+		$bgcolor = '';
+		if($r->{'priority'} == 1)    { $priocolor = '#FF8D8F' }
+		elsif($r->{'priority'} == 2) { $priocolor = '#EDFF9F' }
+		elsif($r->{'priority'} == 3) { $priocolor = '' }
+		elsif($r->{'priority'} == 4) { $priocolor = '#6DF2B2' }
+		elsif($r->{'priority'} == 5) { $priocolor = '#9FEFF2' }
 	}
 	print qq{<table class="ticket" width="100%" border="0" bgcolor="$bgcolor">};
-	print qq{<tr><td width="5px" title="$priodesc{$r->{PRIO}}" bgcolor="$priocolor">&nbsp;</td>};
+	print qq{<tr><td width="5px" title="$priodesc{$r->{priority}}" bgcolor="$priocolor">&nbsp;</td>}; #"
 	print qq{<td width="120px" valign="top">};
-	print qq{<b><a class="ticketlabel" href="$uri/$r->{'ID'}">Ticket #$r->{'ID'}</a></b><br>};
-	my $datec = strip_date($r->{'DATECREATED'});
-	print qq{Criado: <span title="$r->{'DATECREATED'}">$datec</span><br>};
-	if($r->{'TYPE'} == 1 and $r->{'STATUS'} == 1) {
-		my $dated = strip_date($r->{'DATECLOSED'});
-		print qq{Fechado: <span title="$r->{'DATECLOSED'}">$dated</span><br>};
+	print qq{<b><a class="ticketlabel" href="$uri/$r->{'id'}">Ticket #$r->{'id'}</a></b><br>}; #"
+	my $datec = strip_date($r->{'datecreated'});
+	print qq{Criado: <span title="$r->{'datecreated'}">$datec</span><br>}; #"
+	if($r->{'status'} == 1) {
+		my $dated = strip_date($r->{'dateclosed'});
+		print qq{Fechado: <span title="$r->{'dateclosed'}">$dated</span><br>}; #"
 	}
-	print qq{Autor: $r->{'USER'}<br>};
-	my @tags = get_tags_from_ticket($r->{'ID'});
+	print qq{Autor: $r->{'user'}<br>};
+	my @tags = get_tags_from_ticket($r->{'id'});
 	foreach(@tags) {
 		my $tag = CGI::escape($_);
 		print "<a href='$uri/$tag' class='tag'>$_</a>", " ";
 	}
-	print q{</td><td valign="top">};
-	print b($title);
-	if($r->{'TEXT'} ne '') {
-		print p, sanitize_text($r->{'TEXT'});
+
+	if($r->{'status'} == 0) {
+		print p, start_form(),
+			hidden(-name => 'action', -value => 'close-ticket', -override => 1),
+			hidden('id', $r->{'id'}),
+			submit('submit', 'fechar'),
+			end_form;
 	}
-	else { print br };
-	foreach(@{sql('SELECT * FROM TICKET WHERE IDPARENT=? ORDER BY ID', $r->{'ID'})}) {
-		if($_->{'TYPE'} == 3) {
-			# Nota de um ticket
-			my $date = strip_date($_->{'DATECREATED'});
-			print br, qq{<b title="$_->{'DATECREATED'}">$date - $_->{'USER'}: </b>}, 
-				sanitize_text($_->{'TEXT'});
-		}
-		elsif($_->{'TYPE'} == 5) {
-			# Fechamento de um ticket
-			my $date = strip_date($_->{'DATECREATED'});
-			print br, qq{<b title="$_->{'DATECREATED'}">$date - $_->{'USER'} - Fechado: </b>},
-				sanitize_text($_->{'TEXT'});
-		}
-		elsif($_->{'TYPE'} == 6) {
-			# Reabertura de um ticket
-			my $date = strip_date($_->{'DATECREATED'});
-			print br, qq{<b title="$_->{'DATECREATED'}">$date - $_->{'USER'} - Reaberto: </b>},
-				sanitize_text($_->{'TEXT'});
-		}
-		elsif($_->{'TYPE'} == 7) {
-			# Contabilização de tempo
-			my $date = strip_date($_->{'DATECREATED'});
-			print br, qq{<b title="$_->{'DATECREATED'}">$date - $_->{'USER'} - Minutos: </b>},
-				$_->{'MINUTES'};
-		}
+	else {
+		print p, start_form(),
+			hidden(-name => 'action', -value => 'reopen-ticket', -override => 1),
+			hidden('id', $r->{'id'}),
+			submit('submit', 'reabrir'),
+			end_form;
+	}
+	print q{</td><td valign="top">};
+	print span({-class => 'tktitle'}, $title), p;
+	foreach(@{sql('
+		select *
+		from (
+		  select datecreated
+		    , user
+			, case status when \'close\' then \'fechado\' when \'reopen\' then \'reaberto\' end as comment
+			, 1 as negrito
+		  from statustrack
+		  where ticket_id = ?
+		  union all
+		  select datecreated
+		    , user
+			, comment
+			, 0 as negrito
+		  from comments
+		  where ticket_id = ?
+		  union all
+		  select datecreated
+		    , user
+			, minutes || \' minutos trabalhados\' 
+			, 1 as negrito
+		  from timetrack
+		  where ticket_id = ?
+		)
+		order by datecreated
+	', $r->{'id'}, $r->{'id'}, $r->{'id'})}) {
+		my $date = strip_date($_->{'datecreated'});
+		print br, qq{<b title="$_->{'datecreated'}">$date - $_->{'user'}: </b>}; #"
+		if($_->{'negrito'} == 1) { print '<b><i>' . sanitize_text($_->{'comment'}) . '</i></b>' }
+		else { print sanitize_text($_->{'comment'}) }
 	}
 	print q{</td></tr></table><p>};
 }
 
 sub get_tags_from_ticket {
 	my $id = shift;
-	my @tags = map { $_ = $_->{'TAG'} }
-      @{ sql( 'SELECT TAG FROM TAG WHERE TICKET=?', $id ) };
+	my @tags = map { $_ = $_->{'tag'} }
+      @{ sql( 'select tag from tags where ticket_id = ?', $id ) };
 	return sort @tags;
 }
 
@@ -653,14 +603,6 @@ sub strip_date {
 	my $datetime = shift;
 	$datetime =~ s/^(\d{4}-\d{2}-\d{2}) .*$/$1/;
 	return $datetime;
-}
-
-# Atualiza o campo DATEMODIFIED de um Ticket (tipo Registro Simples ou Normal). 
-# Chamada ao criar-se uma nova Nota, fechar-se, ou reabrir-se um Ticket. Este
-# campo facilita a procura ordenada por últimas modificações.
-sub update_ticket_mtime {
-	my $id = shift;
-	sql('UPDATE TICKET SET DATEMODIFIED=? WHERE ID=?', &timestamp_now(), $id);
 }
 
 # Executa uma sentença SQL, opcionalmente com parâmetros, e retorna uma arrayref
