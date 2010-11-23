@@ -53,14 +53,15 @@ use DBI;
 use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
+use Data::Dumper;
 
 ## Configure -------------------------------------------------------
-my $db = '/var/ticket/ticket.db';		# Caminho do banco de dados
-my $uri = '/ticket';					# URI para o script ticket
+my $db = 'ticket.db';		# Caminho do banco de dados
+my $uri = '/ti/ticket';					# URI para o script ticket
 ## -----------------------------------------------------------------
 
 my $css = "$uri?action=get-css";
-my $VERSION = '0.7';
+my $VERSION = '0.8-dev';
 my $user = $ENV{'REMOTE_USER'} || 'guest';
 
 if(not -f $db) { die "$db não encontrado." }
@@ -228,86 +229,32 @@ elsif(defined param('action') and param('action') eq 'get-css') {
 	while(<DATA>) { print }
 }
 
-# Lista tickets em aberto, ordenados por prioridade.
+# Lista a página inicial, contendo os tagclouds dos responsáveis
+# e dos tags.
 elsif($q eq '') {
-	my $count = 0;
-
-	my $script = qq|
-		function loadPageOwner(list) {
-			if(list.options[list.selectedIndex].value == '') { return True }
-			location.href="$uri/owner/" + list.options[list.selectedIndex].value
-		}
-		function loadPageTag(list) {
-			if(list.options[list.selectedIndex].value == '') { return True }
-			location.href="$uri/tag/" + list.options[list.selectedIndex].value
-		}
-	|;
-
 	print header( -expires => 'now' ),
       start_html(
         -style  => { 'src' => $css },
-        -title  => 'Tickets Abertos',
-        -script => $script
+        -title  => 'Sistema Ticket'
       );
 
 	emit_header();
 
-	print q{<span class="title">Tickets Abertos</span>}, p;
+	print q{<span class="title">Sistema Ticket</span>}, p;
 
-	my $sql = qq{
-		SELECT * 
-		FROM TICKET 
-		WHERE TYPE=2 
-		  AND STATUS=0 
-	  	ORDER BY PRIO ASC, DATECREATED ASC};
-	foreach(@{sql($sql)}) {	
-		$count++;
-		show_ticket($_);
+	my %tags = map {$_->{'TAG'}, $_->{'C'}} @{sql('SELECT TAG, COUNT(*) C FROM TAG GROUP BY TAG ORDER BY TAG')};
+	my $min = (sort {$a <=> $b} values %tags)[0];
+	my $max = (sort {$a <=> $b} values %tags)[-1];
+	my $tmin = '9';
+	my $tmax = '45';
+	if(($max - $min) == 0) { $max = $min + 1 }
+
+	print qq{<div align="center" class="tagcloud">};
+	foreach(keys %tags) {
+		my $size = ( ( ( $tags{$_} - $min ) * ( $tmax - $tmin ) ) / ( $max - $min ) ) + $tmin;
+		print qq{ <a title="$tags{$_}" style="font-size: ${size}px;" class="tagcloud" href="$uri?a=tag&t=$_">$_</a> };
 	}
-
-	print p, "$count ticket(s) encontrado(s).";
-
-	print q{<table class="tags" border="0" width="100%"><tr><td>};
-	print q{
-		<form>
-		<b>Responsável: </b>
-		<select name="owner" accesskey='R'
-			onchange="loadPageOwner(this.form.elements[0])"
-			onmouseclick="this.focus()">
-			<option value> </option>
-	};
-
-	# Responsáveis
-	$sql = qq{
-		SELECT DISTINCT(OWNER) owner 
-		FROM OWNER 
-		WHERE TICKET IN ( 
-			SELECT ID 
-			FROM TICKET 
-			WHERE TYPE = 2 
-			  AND STATUS = 0
-		) 
-		ORDER BY OWNER };
-	foreach(sort map { $_ = $_->{'owner'} } @{sql($sql)}) {
-		print qq{<option value="$_">$_</option>};
-	}
-	print q{
-		</select>
-		<b> Palavras-chave: </b>
-		<select name="tag"
-			onchange="loadPageTag(this.form.elements[1])"
-			onmouseclick="this.focus()">
-			<option value> </option>
-	};
-
-	# Tags
-	my @tag = map { $_ = $_->{'tag'} }
-		@{sql('SELECT DISTINCT(TAG) tag FROM TAG ORDER BY TAG')};
-	foreach(sort @tag) {
-		print qq{<option value="$_">$_</option>};
-	}
-	print q{</select>};
-	print q{</form></td></tr></table>};
+	print qq{</div>};
 
 	emit_footer();
 
@@ -667,7 +614,7 @@ sub emit_header {
 		<tr>
 		<td class="topmenu">
 			olá <b>$user</b>! 
-			<a href='$uri' accesskey='A'>tickets abertos</a>
+			<a href='$uri' accesskey='A'>página inicial</a>
 			| <a href='$uri/new-ticket' accesskey='N'>novo ticket</a>
 		</td> <tr></tr> <td align=right>
 		<form method="post" action="$uri" enctype="multipart/form-data">
@@ -771,4 +718,14 @@ input, textarea, select, submit {
 
 .ticketlabel {
 	font-size: 12px;
+}
+
+.tagcloud {
+	text-decoration: none;
+	text-align: center;
+	background-color: #F2F2F2; 
+}
+
+a.tagcloud:hover {
+	background-color: rgb(195,217,255);
 }
