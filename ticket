@@ -29,6 +29,7 @@
 #CREATE TABLE tags ( ticket_id integer not null references ticket ( id ), tag text not null );
 #CREATE TABLE tickets ( id integer primary key not null, title text not null, status integer not null default ( 0 ), priority integer not null default ( 3 ), datecreated datetime not null default ( datetime('now', 'localtime') ), datemodified datetime not null default ( datetime('now', 'localtime') ), dateclosed datetime, user text not null );
 #CREATE TABLE timetrack ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, minutes integer not null );
+#CREATE TABLE tagsdesc ( tag text not null primary key, description text, fgcolor text, bgcolor text );
 
 use strict;
 use warnings;
@@ -44,13 +45,12 @@ my $db = 'ticket.db';		# Caminho do banco de dados
 
 my $uri = $ENV{'SCRIPT_NAME'};
 my $css = "$uri?action=get-css";
-my $VERSION = '0.9';
+my $VERSION = '1.0';
 my $user = $ENV{'REMOTE_USER'} || 'anônimo';
 
 if(not -f $db) { die "$db não encontrado." }
 
-my $dbh = DBI->connect("dbi:SQLite:$db","","")
-	or die $!;
+my $dbh = DBI->connect("dbi:SQLite:$db","","") or die $!;
 
 my $q = $ENV{'PATH_INFO'} || '';
 
@@ -63,63 +63,150 @@ my %priodesc = (
 	'5' => '5. Baixíssima Prioridade'
 );
 
-if(defined param('searchtkt')) {
-	my $search = param('searchtkt');
-	my $open = 'STATUS = 0';
-	if($search =~ s/^ALL //) { $open = '(1=1)' }
-	my $searche = escapeHTML($search);
+# Descrição / cores das Tags
+my %tagsdesc = ();
+foreach(@{sql('select * from tagsdesc')}) {
+	$tagsdesc{$_->{'tag'}} = {
+		'description' => $_->{'description'},
+		'bgcolor' => $_->{'bgcolor'} || 'yellow',
+		'fgcolor' => $_->{'fgcolor'} || 'red'
+	};
+}
 
-	my $title = '';
-	if($search eq '') {
-		$title = 'Últimos Tickets Modificados';
+if(defined param('filter')) {
+	my $filter = param('filter');
+	if($filter eq '') {
+		$filter = 'T o:m l:100';
 	}
-	else {
-		$title = "Procura Tickets: '$searche'";
-	}
+	my $filtere = escapeHTML($filter);
+	my $s = $filter;
 
 	# Show ticket.
-	if($search =~ /^#(\d+)$/) {
+	if($filter =~ /^#(\d+)$/) {
 		print redirect("$uri/$1");
 		exit;
+	}
+
+	# l:N -> limite de resultados
+	my $limit = '';
+	while($s =~ s/l:(\d+) *//) {
+		$limit = "LIMIT $1";
+	}
+
+	# A -> abertos
+	# F -> fechados
+	# T -> todos
+	my $status = 'AND status = 0';
+	if($s =~ s/^F *//) { $status = 'AND status = 1' }
+	elsif($s =~ s/^T *//) { $status = '' }
+	elsif($s =~ s/^A *//) { $status = 'AND status = 0' }
+
+	# t:foo -> tag "foo"
+	my $tag = '';
+	while($s =~ s/t:([^ ]+) *//) {
+		my $t = $dbh->quote($1);
+		$tag .= "AND id IN ( SELECT ticket_id FROM tags WHERE tag = $t ) ";
+	}
+
+	# o:[mcfp] -> ordem de modificação, criação, fechamento, prioridade
+	my $order = 'ORDER BY datemodified DESC';
+	while($s =~ s/o:([mcfp]) *//) {
+		if($1 eq 'c') { $order = 'ORDER BY datecreated DESC' }
+		elsif($1 eq 'm') { $order = 'ORDER BY datemodified DESC' }
+		elsif($1 eq 'f') { $order = 'ORDER BY dateclosed DESC' }
+		elsif($1 eq 'p') { $order = 'ORDER BY priority ASC, dateclosed ASC' }
+	}
+
+	# u:usuario -> usuário de criação, fechamento, comentário, etc
+	my $user = '';
+	while($s =~ s/u:([^ ]+) *//) {
+		my $u = $dbh->quote($1);
+		$user = "AND ( ( user = $u ) ";
+		$user .= "OR ( id IN ( SELECT ticket_id FROM comments WHERE user = $u ) ) ";
+		$user .= "OR ( id IN ( SELECT ticket_id FROM timetrack WHERE user = $u ) ) ";
+		$user .= "OR ( id IN ( SELECT ticket_id FROM statustrack WHERE user = $u ) ) ) ";
+	}
+
+	# d[cmf]:YYYYMMDD-YYYYMMDD -> faixa de data de criação, modificação, fechamento
+	my $datecreated = '';
+	while($s =~ s/d([cmf])\:(\d{8})-(\d{8}) *//) {
+		my $dt = $1;
+		my $from = $2;
+		my $to = $3;
+		$from =~ s/^(\d{4})(\d{2})(\d{2})$/$1-$2-$3 00:00:00/;
+		$to =~ s/^(\d{4})(\d{2})(\d{2})$/$1-$2-$3 23:59:59/;
+		$from = $dbh->quote($from);
+		$to = $dbh->quote($to);
+		my $c = '';
+		if($dt eq 'c') { $c = 'datecreated' }
+		elsif($dt eq 'm') { $c = 'datemodified' }
+		elsif($dt eq 'f') { $c = 'dateclosed' }
+		$datecreated = "AND $c BETWEEN $from AND $to";
+	}
+
+	# d[cmf]:YYYYMMDD -> data de criação, modificação, fechamento
+	while($s =~ s/d([cmf])\:(\d{8}) *//) {
+		my $dt = $1;
+		my $d = $2;
+		$d =~ s/^(\d{4})(\d{2})(\d{2})$/$1-$2-$3/;
+		my $from = "$d 00:00:00";
+		my $to = "$d 23:59:59";
+		$from = $dbh->quote($from);
+		$to = $dbh->quote($to);
+		my $c = '';
+		if($dt eq 'c') { $c = 'datecreated' }
+		elsif($dt eq 'm') { $c = 'datemodified' }
+		elsif($dt eq 'f') { $c = 'dateclosed' }
+		$datecreated = "AND $c BETWEEN $from AND $to";
+	}
+
+	# p:X-Y -> prioridade de X a Y
+	my $prio = '';
+	while($s =~ s/p\:(\d)-(\d) *//) {
+		$prio = "AND priority BETWEEN $1 AND $2";
+	}
+
+	# p:X-Y -> prioridade X
+	while($s =~ s/p\:(\d) *//) {
+		$prio = "AND priority = $1";
+	}
+
+	# match -> texto que sobrou
+	my $match = '';
+	if($s =~ /\w/) {
+		my $m = $dbh->quote($s);
+		$match = "AND id IN ( SELECT docid FROM search WHERE search MATCH $m )";
 	}
 
 	my $count = 0;
 
 	print header(-expires => 'now'), 
 		start_html(-style => 
-			{'src' => $css}, -title => $title );
+			{'src' => $css}, -title => "Tickets: $filtere" );
 
 	emit_header();
-	print qq{<span class="title">$title</span>}, p;
+	print qq{<span class="title">Tickets</span>}, p;
 
-	my $sql = '';
-	if($search eq '') {
-		$sql = qq{
-			SELECT *
-			FROM tickets
-			WHERE title <> ?
-			ORDER BY datemodified DESC
-			LIMIT 100
-		};
-	}
-	else {
-		$sql = qq{
-			SELECT *
-			FROM tickets
-				WHERE id IN ( SELECT docid FROM search WHERE search MATCH ? )
-		      AND $open
-			ORDER BY datemodified DESC
-		};
-	}
+	my $sql = qq{
+		SELECT *
+		FROM tickets
+		WHERE ( 1 = 1 )
+		  $status
+		  $match
+		  $tag
+		  $user
+		  $datecreated
+		  $prio
+		$order
+		$limit
+	};
 
-	foreach(@{sql($sql, $search)}) {
+	foreach(@{sql($sql)}) {
 		$count++;
 		show_ticket_small($_);
 	}
 
-	print p;
-	if($count == 100) { print "$count ticket(s) encontrado(s) - busca limitada a 100 tickets." }
-	else { print "$count ticket(s) encontrado(s)." }
+	print p, "$count ticket(s) filtrado(s)";
 	
 	emit_footer();
 
@@ -201,38 +288,12 @@ elsif(defined param('action') and param('action') eq 'save-title-ticket') {
 }
 elsif(defined param('action') and param('action') eq 'get-css') {
 	print header(-type => 'text/css', -expires => '+1d');
-	while(<DATA>) { print }
+	print thecss();
 }
 
 # Lista tickets em aberto, ordenados por prioridade.
 elsif($q eq '') {
-	my $count = 0;
-
-	print header( -expires => 'now' ),
-      start_html(
-        -style  => { 'src' => $css },
-        -title  => 'Tickets Abertos',
-      );
-
-	emit_header();
-
-	print q{<span class="title">Tickets Abertos</span>}, p;
-
-	my $sql = qq{
-		select *
-		from tickets
-		where status = 0
-		order by priority asc, datecreated desc};
-
-	foreach(@{sql($sql)}) {	
-		$count++;
-		show_ticket_small($_);
-	}
-
-	print p, "$count ticket(s) encontrado(s).";
-
-	emit_footer();
-
+	print redirect("$uri?filter=o:p");
 }
 
 # Tela de detalhes de um ticket, onde é possível efetuar-se ações como
@@ -256,10 +317,29 @@ elsif($q =~ /^\/(\d+)$/) {
 		}
 		return false;
 	  }
+
+	  var cron;
+	  function startCron()
+	  {
+		  cron = setTimeout(doCron, 60000);
+		  document.fminutes.bstartcron.style.visibility = 'hidden';
+		  document.fminutes.bstopcron.style.visibility = 'visible';
+	  }
+	  function stopCron()
+	  {
+		  clearTimeout(cron);
+		  document.fminutes.bstartcron.style.visibility = 'visible';
+		  document.fminutes.bstopcron.style.visibility = 'hidden';
+	  }
+	  function doCron()
+	  {
+		  document.fminutes.minutes.value++;
+		  cron = setTimeout(doCron, 60000);
+	  }
 	END
 	print header(-expires => 'now');
 	print start_html(-style => {'src' => $css}, 
-		-title => "Detalhe: Ticket #$id", 
+		-title => "Ticket #$id", 
 		-script => $head
 	);
 	my $r = sql('select * from tickets where id = ?', $id)->[0];
@@ -280,8 +360,7 @@ elsif($q =~ /^\/(\d+)$/) {
 	elsif($r->{'status'} == 1) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a>};
 		print q{</td></tr></table>};
 	}
 	show_form_new_note($id);
@@ -299,7 +378,7 @@ elsif($q eq '/new-ticket') {
 	emit_header();
 	print q{<span class="title">Novo Ticket</span>}, p;
     print q{<a name='new'></a>}, start_form(-name => 'f'),
-      textfield( -name => 'title', -size => 90 ), br,
+      textfield( -name => 'title', -size => 90 ),
       hidden(
         -name     => 'action',
         -value    => 'create-new-ticket',
@@ -307,40 +386,20 @@ elsif($q eq '/new-ticket') {
       ),
       submit( 'submit', 'Criar' ), end_form;
 
+	  print	p, font({-color => '#A5A5A5'}, 
+		small('Digite uma descrição sucinta. Você poderá adicionar mais informações detalhadas depois.'));
+
 	  emit_footer();
-}
-
-# Lista tickets por tag. Mostra tickets em aberto e fechados, e registros simples.
-elsif($q =~ /^\/(.+?)$/) {
-	my $tag = $1;
-	my $count = 0;
-	my $sql = q{
-		select t.*
-		from tickets as t inner join tags as g on ( g.ticket_id = t.id ) 
-		where g.tag = ?
-		  and t.status = 0
-	    order by t.priority, t.datecreated 
-	};
-
-    print header( -expires => 'now' ),
-      start_html( -style => { 'src' => $css }, -title => "Palavra-chave: $tag" );
-
-	&emit_header;
-	print qq{<span class="title">Palavra-chave: $tag</span>}, p;
-
-	foreach(@{sql($sql, $tag)}) {
-		$count++;
-		show_ticket_small($_);
-	}
-
-	print p, "$count ticket(s) encontrado(s).";
-
-	emit_footer()
-
 }
 else { die 'invalid url' }
 
 $dbh->disconnect;
+
+#########################################################################################
+#########################################################################################
+## Funções auxiliares
+#########################################################################################
+#########################################################################################
 
 sub sanitize_text {
 	my $text = shift || return;
@@ -394,8 +453,8 @@ sub show_form_edit_tags_ticket {
 	my $id = shift;
 	print q{<div class="panel" id="tags" style="display: none">};
 	my $tags = join ' ', get_tags_from_ticket($id);
-	print start_form(),
-		textfield(-name => 'text', -size => 70, -value=>$tags), br,
+	print start_form(-name => 'ftag'),
+		textfield(-name => 'text', -size => 70, -value=>$tags),
 		hidden(-name => 'action', -value => 'save-tags-ticket', -override => 1),
 		hidden('id', $id),
 		submit('submit', 'Salvar palavras-chave'), p,
@@ -403,6 +462,15 @@ sub show_form_edit_tags_ticket {
 		small('Palavras-chave podem ser utilizadas para classificar os Tickets. ',
 		'Separar as palavras-chave por espaços.')),
 		end_form;
+	if(scalar %tagsdesc > 0) {
+		foreach(sort keys %tagsdesc) {
+			my $tag = CGI::escape($_);
+			my $desc = $tagsdesc{$_}->{'description'} || '';
+			my $bgcolor = $tagsdesc{$_}->{'bgcolor'} || 'yellow';
+			my $fgcolor = $tagsdesc{$_}->{'fgcolor'} || 'red';
+			print small("<a href='#' onclick='document.ftag.text.value+=\" $tag\"' title='$desc' class='tag' style='background-color:$bgcolor;color:$fgcolor;'>$_</a>"), " ";
+		}
+	}
 	print q{</div>};
 }
 
@@ -411,7 +479,7 @@ sub show_form_title_ticket {
 	my $title = shift;
 	print q{<div class="panel" id="title" style="display: none">};
 	print start_form(),
-		textfield(-name => 'text', -size=>70, -value=>$title), br,
+		textfield(-name => 'text', -size=>70, -value=>$title),
 		hidden(-name => 'action', -value => 'save-title-ticket', -override => 1),
 		hidden('id', $id),
 		submit('submit', 'Salvar título'),
@@ -423,12 +491,15 @@ sub show_form_minutes_ticket {
 	my $id = shift;
 	my $title = shift;
 	print q{<div class="panel" id="minutes" style="display: none">};
-	print start_form(),
-		textfield(-name => 'minutes', -size => 31,  -value=>''), br,
+	print start_form(-name => 'fminutes'),
+		textfield(-name => 'minutes', -size => 10, -value=>'0'),
 		hidden(-name => 'action', -value => 'register-minutes', -override => 1),
 		hidden('parent', $id),
 		submit('submit', 'Contabilizar minutos'),
+		p, button(-name => 'bstartcron', -value => 'Iniciar Cronômetro', -onclick => 'startCron()'),
+		button(-name => 'bstopcron', -value => 'Parar Cronômetro', -onclick => 'stopCron()', -style => 'visibility:hidden;'),
 		end_form;
+
 	print q{</div>};
 }
 
@@ -451,55 +522,56 @@ sub populate_search {
 	$dbh->commit;
 }
 
+sub get_prio_color {
+	my $prio = shift;
+	my $color = '';
+	if($prio == 1)    { $color = '#FF8D8F' }
+	elsif($prio == 2) { $color = '#EDFF9F' }
+	elsif($prio == 3) { $color = '' }
+	elsif($prio == 4) { $color = '#6DF2B2' }
+	elsif($prio == 5) { $color = '#9FEFF2' }
+	return $color;
+}
+
 sub show_ticket_small {
 	my $r = shift;
-	my $bgcolor;
+	my $bgcolor = '';
 	my $priocolor = '';
+	if($r->{'status'} == 0) { $priocolor = get_prio_color($r->{'priority'}) }
+	else { $bgcolor = '#e1e1e1' }
 	my $title = $r->{'title'} || '';
-	if($r->{'status'} == 1) {
-		$bgcolor = '#e1e1e1';
-	}
-	elsif($r->{'status'} == 0) {
-		$bgcolor = '';
-		if($r->{'priority'} == 1)    { $priocolor = '#FF8D8F' }
-		elsif($r->{'priority'} == 2) { $priocolor = '#EDFF9F' }
-		elsif($r->{'priority'} == 3) { $priocolor = '' }
-		elsif($r->{'priority'} == 4) { $priocolor = '#6DF2B2' }
-		elsif($r->{'priority'} == 5) { $priocolor = '#9FEFF2' }
-	}
 	print qq{<table class="ticket" width="100%" border="0" bgcolor="$bgcolor">};
 	print qq{<tr><td width="5px" title="$priodesc{$r->{priority}}" bgcolor="$priocolor">&nbsp;</td>}; #"
 	print qq{<td width="80px" valign="top">};
 	my $lab = "Criado: $r->{datecreated} \nModificado: $r->{datemodified} \nAutor: $r->{user} ";
 	if($r->{status} == 1) { $lab .= "\nFechado: $r->{dateclosed}" }
 	print qq{<b><a class="ticketlabel" title="$lab" href="$uri/$r->{'id'}">#$r->{'id'}</a></b>}; #"
-	my @tags = get_tags_from_ticket($r->{'id'});
 	print q{</td><td valign="top">};
 	print span({-class => 'tktitle'}, $title);
 	print "</td><td valign='top' align='right'>";
+	print_ticket_tags($r->{'id'});
+	print q{</td></tr></table>};
+}
+
+sub print_ticket_tags {
+	my $id = shift;
+	my @tags = get_tags_from_ticket($id);
 	foreach(@tags) {
 		my $tag = CGI::escape($_);
-		print " <a href='$uri/$tag' class='tag'>$_</a>";
+		my $desc = $tagsdesc{$_}->{'description'} || '';
+		my $bgcolor = $tagsdesc{$_}->{'bgcolor'} || 'yellow';
+		my $fgcolor = $tagsdesc{$_}->{'fgcolor'} || 'red';
+		print "<a href='$uri?filter=t:$tag o:p' title='$desc' class='tag' style='background-color:$bgcolor;color:$fgcolor;'>$_</a>", " ";
 	}
-	print q{</td></tr></table>};
 }
 
 sub show_ticket {
 	my $r = shift;
-	my $bgcolor;
+	my $bgcolor = '';
 	my $priocolor = '';
+	if($r->{'status'} == 0) { $priocolor = get_prio_color($r->{'priority'}) }
+	else { $bgcolor = '#e1e1e1' }
 	my $title = $r->{'title'} || '';
-	if($r->{'status'} == 1) {
-		$bgcolor = '#e1e1e1';
-	}
-	elsif($r->{'status'} == 0) {
-		$bgcolor = '';
-		if($r->{'priority'} == 1)    { $priocolor = '#FF8D8F' }
-		elsif($r->{'priority'} == 2) { $priocolor = '#EDFF9F' }
-		elsif($r->{'priority'} == 3) { $priocolor = '' }
-		elsif($r->{'priority'} == 4) { $priocolor = '#6DF2B2' }
-		elsif($r->{'priority'} == 5) { $priocolor = '#9FEFF2' }
-	}
 	print qq{<table class="ticket" width="100%" border="0" bgcolor="$bgcolor">};
 	print qq{<tr><td width="5px" title="$priodesc{$r->{priority}}" bgcolor="$priocolor">&nbsp;</td>}; #"
 	print qq{<td width="120px" valign="top">};
@@ -511,11 +583,7 @@ sub show_ticket {
 		print qq{Fechado: <span title="$r->{'dateclosed'}">$dated</span><br>}; #"
 	}
 	print qq{Autor: $r->{'user'}<br>};
-	my @tags = get_tags_from_ticket($r->{'id'});
-	foreach(@tags) {
-		my $tag = CGI::escape($_);
-		print "<a href='$uri/$tag' class='tag'>$_</a>", " ";
-	}
+	print_ticket_tags($r->{'id'});
 
 	if($r->{'status'} == 0) {
 		print p, start_form(),
@@ -566,7 +634,8 @@ sub show_ticket {
 	}
 	print q{</td></tr></table><p>};
 }
-
+ 
+# Retorna todas as palavras-chave associadas a um ticket.
 sub get_tags_from_ticket {
 	my $id = shift;
 	my @tags = map { $_ = $_->{'tag'} }
@@ -576,17 +645,21 @@ sub get_tags_from_ticket {
 
 # Emite o cabeçalho padrão das páginas, com menu no topo e barra de pesquisa.
 sub emit_header {
+	my $search = '';
+	if(defined param('filter')) { $search = param('filter') }
+	elsif($q =~ /^\/(\d+)$/) { $search = "#" . $1 }
 	print qq{
 		<table border="0" align="right">
 		<tr>
 		<td class="topmenu">
 			olá <b>$user</b>! 
-			<a href='$uri' accesskey='A'>tickets abertos</a>
-			| <a href='$uri/new-ticket' accesskey='N'>novo ticket</a>
+			<a href='$uri' accesskey='A' title="alt-shift-a">abertos</a>
+			| <a href='$uri?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
+			| <a href='$uri/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
 		</td> <tr></tr> <td align=right>
 		<form method="post" action="$uri" enctype="multipart/form-data">
-			<input type="text" name="searchtkt" size="15" accesskey='S'>
-			<input type="submit" name="search" value="procura" />
+			<input type="text" name="filter" size="25" accesskey='S' value="$search" title="alt-shift-s">
+			<input type="submit" name="filter" value="filtrar" />
 		</form>
 		</td></tr></table>
 	};
@@ -619,67 +692,22 @@ sub sql {
 	return $result;
 }
 
-__DATA__
-body { 
-	margin: 1em 2em 2em 2em;
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 9pt;
-	background-color: #F1F3F4;
+sub thecss {
+	return <<'	CSS';
+	body { margin: 1em 2em 2em 2em; font-family: Verdana, Arial, sans-serif; font-size: 9pt; background-color: #F1F3F4; }
+	.tab { color: #0000EE; text-decoration: underline; font-family: Verdana, Arial, sans-serif; font-size: 8pt; }
+	a:link { color: #0000EE; }
+	a:visited { color: #0000EE; }
+	a:active { color: #0000EE; }
+	a:hover { color: #FF0000; }
+	input, textarea, select, submit { font-family: Verdana, Arial, sans-serif; font-size: 8pt; background-color: #F1F3F4; border: 1px solid #336699; }
+	.topmenu { font-family: Arial, sans-serif; font-size: 9pt; }
+	.title { font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif; font-size: 24pt; font-weight: normal; }
+	.tags { border: 1px dotted #336699; font-family: Verdana, Arial, sans-serif; font-size: 8pt; }
+	.actions { } 
+	.ticket { font-family: Verdana, Arial, sans-serif; font-size: 10px; border: 1px solid #ffffff; }
+	.ticketlabel { font-size: 12px; }
+	.tag { text-decoration: none; font-weight: bold; }
+	.tktitle { font-family: "Verdana"; font-size: 12px; font-weight: bold; }
+	CSS
 }
-
-.tab { 
-	color: #0000EE;
-	text-decoration: underline;
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 8pt;
-}
-
-a:link { color: #0000EE; }
-a:visited { color: #0000EE; }
-a:active { color: #0000EE; }
-a:hover { color: #FF0000; }
-
-input, textarea, select, submit { 
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 8pt;
-	background-color: #F1F3F4;
-	border: 1px solid #336699; 
-}
-
-.topmenu {
-	font-family: Arial, sans-serif;
-	font-size: 9pt;
-}
-
-.title {
-  font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
-  font-size: 24pt;
-  font-weight: normal; 
-}
-
-.tags {
-	border: 1px dotted #336699; 
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 8pt;
-}
-
-.actions {
-}
-
-.ticket {
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 10px;
-	border: 1px solid #ffffff; 
-}
-
-.ticketlabel {
-	font-size: 12px;
-}
-
-.tag {
-	background-color: yellow;
-	text-decoration: none;
-	font-weight: bold;
-}
-
-.tktitle { font-family: "Verdana"; font-size: 12px; font-weight: bold; }
