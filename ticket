@@ -232,6 +232,7 @@ elsif(defined param('action') and param('action') eq 'create-new-note') {
 elsif(defined param('action') and param('action') eq 'register-minutes') {
 	my $minutes = param('minutes') || 0;
 	die if $minutes !~ /^[\d]+$/;
+	die "Minutos devem ser positivos!" unless $minutes > 0;
 	my $id = param('parent');
 	$dbh->begin_work;
 	sql('insert into timetrack ( ticket_id, user, minutes ) values ( ?,?,? )', $id, $user, $minutes);
