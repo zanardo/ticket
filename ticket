@@ -221,8 +221,9 @@ elsif(defined param('action') and param('action') eq 'create-new-note') {
 }
 elsif(defined param('action') and param('action') eq 'register-minutes') {
 	my $minutes = param('minutes') || 0;
-	die if $minutes !~ /^[\d]+$/;
+	die if $minutes !~ /^[\d.]+$/;
 	die "Minutos devem ser positivos!" unless $minutes > 0;
+	$minutes = sprintf("%.2f", $minutes);
 	my $id = param('parent');
 	$dbh->begin_work;
 	sql('insert into timetrack ( ticket_id, user, minutes ) values ( ?,?,? )', $id, $user, $minutes);
@@ -311,9 +312,12 @@ elsif($q =~ /^\/(\d+)$/) {
 	  }
 
 	  var cron;
+	  var minutes = 0;
+	  var seconds = 0;
+	  var title = document.title;
 	  function startCron()
 	  {
-		  cron = setTimeout(doCron, 60000);
+		  cron = setTimeout(doCron, 1000);
 		  document.fminutes.bstartcron.style.visibility = 'hidden';
 		  document.fminutes.bstopcron.style.visibility = 'visible';
 	  }
@@ -325,8 +329,11 @@ elsif($q =~ /^\/(\d+)$/) {
 	  }
 	  function doCron()
 	  {
-		  document.fminutes.minutes.value++;
-		  cron = setTimeout(doCron, 60000);
+		  seconds++;
+		  if(seconds == 60) { seconds = 0; minutes++ };
+		  document.title = '[' + minutes + '\'' + seconds + '"' + '] ' + title;
+		  document.fminutes.minutes.value = minutes + ( seconds / 60 );
+		  cron = setTimeout(doCron, 1000);
 	  }
 	END
 	print header(-expires => 'now');
