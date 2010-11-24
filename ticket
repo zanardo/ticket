@@ -262,7 +262,8 @@ elsif(defined param('action') and param('action') eq 'reopen-ticket') {
 }
 elsif(defined param('action') and param('action') eq 'save-tags-ticket') {
 	my $id = param('id') or die 'no id';
-	my $tags = param('text') || ' ';
+	my $tags = param('text') || '';
+	$tags =~ s/^ +//g; $tags =~ s/ +$//g;
 	my %tags = map { $_, 1 } split /[\s\t\r\n]+/, $tags;
 	$dbh->begin_work;
 	sql('delete from tags where ticket_id = ?', $id);
