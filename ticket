@@ -488,7 +488,6 @@ sub show_form_title_ticket {
 
 sub show_form_minutes_ticket {
 	my $id = shift;
-	my $title = shift;
 	print q{<div class="panel" id="minutes" style="display: none">};
 	print start_form(-name => 'fminutes'),
 		textfield(-name => 'minutes', -size => 10, -value=>'0'),
@@ -498,6 +497,12 @@ sub show_form_minutes_ticket {
 		p, button(-name => 'bstartcron', -value => 'Iniciar Cronômetro', -onclick => 'startCron()'),
 		button(-name => 'bstopcron', -value => 'Parar Cronômetro', -onclick => 'stopCron()', -style => 'visibility:hidden;'),
 		end_form;
+	
+	foreach(@{sql('select user, sum(minutes) as minutes from timetrack where ticket_id = ? and minutes > 0 group by user order by user', $id)}) {
+		my $hours = sprintf('%d', $_->{'minutes'} / 60);
+		my $minutes = sprintf('%02d', $_->{'minutes'} % 60);
+		print small(b($_->{'user'}) . ' contabilizou ' . b($hours.'h'.$minutes.'m') . ' no total') . br;
+	}
 
 	print q{</div>};
 }
