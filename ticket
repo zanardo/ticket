@@ -336,14 +336,15 @@ elsif($q =~ /^\/(\d+)$/) {
 		  cron = setTimeout(doCron, 1000);
 	  }
 	END
+
+	my $r = sql('select * from tickets where id = ?', $id)->[0];
+	if(not defined $r) { die "Ticket $id não existe" }
+
 	print header(-expires => 'now');
 	print start_html(-style => {'src' => $css}, 
-		-title => "Ticket #$id", 
+		-title => "#$id $r->{title}", 
 		-script => $head
 	);
-	my $r = sql('select * from tickets where id = ?', $id)->[0];
-	if(not defined $r) { die "Ticket $id not found." }
-
 	&emit_header;
 	print qq{<span class="title">Detalhe: Ticket #$id</span>},p ;
 	show_ticket($r);
