@@ -29,18 +29,12 @@ use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
 
-## Configure -------------------------------------------------------
-my $db = 'ticket.db';		# Caminho do banco de dados
-## -----------------------------------------------------------------
-
 my $uri = $ENV{'SCRIPT_NAME'};
 my $css = "$uri?action=get-css";
 my $VERSION = '1.0';
 my $user = $ENV{'REMOTE_USER'} || 'anônimo';
 
-if(not -f $db) { die "$db não encontrado." }
-
-my $dbh = DBI->connect("dbi:SQLite:$db","","") or die $!;
+my $dbh = DBI->connect("dbi:mysql:ticket","ticket","ticket") or die $!;
 
 my $q = $ENV{'PATH_INFO'} || '';
 
@@ -165,7 +159,7 @@ if(defined param('filter')) {
 	my $match = '';
 	if($s =~ /\w/) {
 		my $m = $dbh->quote($s);
-		$match = "AND id IN ( SELECT docid FROM search WHERE search MATCH $m )";
+		$match = "AND id IN ( SELECT docid FROM search WHERE MATCH(title,tag,user,text) AGAINST($m) )";
 	}
 
 	my $count = 0;
@@ -194,6 +188,7 @@ if(defined param('filter')) {
 	foreach(@{sql($sql)}) {
 		$count++;
 		show_ticket_small($_);
+		#populate_search($_->{'id'});
 	}
 
 	print p, "$count ticket(s) filtrado(s)";
@@ -204,17 +199,18 @@ if(defined param('filter')) {
 elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	my $title = param('title') || '';
 	die 'O título deve ser preenchido.' if $title =~ /^[\s\t\r\n]*$/;
-	sql('insert into tickets ( title, user ) values ( ?, ? )', $title, $user);
-	print redirect("$uri/" . $dbh->func('last_insert_rowid'));
-	populate_search($dbh->func('last_insert_rowid'));
+	sql('insert into tickets ( title, user, datecreated, datemodified ) values ( ?, ?, now(), now() )', $title, $user);
+	my $id = $dbh->last_insert_id(undef, undef, undef, undef);
+	print redirect("$uri/$id");;
+	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'create-new-note') {
 	my $text = param('text') || '';
 	die if $text =~ /^[\s\t\r\n]*$/;
 	my $id = param('id');
 	$dbh->begin_work;
-	sql('insert into comments ( ticket_id, user, comment ) values ( ?,?,? )', $id, $user, $text);
-	sql('update tickets set datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
+	sql('insert into comments ( ticket_id, user, comment, datecreated ) values ( ?,?,?,now() )', $id, $user, $text);
+	sql('update tickets set datemodified = now() where id = ?', $id);
 	$dbh->commit;
 	print redirect("$uri/$id");
 	populate_search($id);
@@ -226,17 +222,16 @@ elsif(defined param('action') and param('action') eq 'register-minutes') {
 	$minutes = sprintf("%.2f", $minutes);
 	my $id = param('parent');
 	$dbh->begin_work;
-	sql('insert into timetrack ( ticket_id, user, minutes ) values ( ?,?,? )', $id, $user, $minutes);
-	sql('update tickets set datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
+	sql('insert into timetrack ( ticket_id, user, minutes, datecreated ) values ( ?,?,?,now() )', $id, $user, $minutes);
+	sql('update tickets set datemodified = now() where id = ?', $id);
 	$dbh->commit;
 	print redirect("$uri/$id");
 }
 elsif(defined param('action') and param('action') eq 'close-ticket') {
 	my $id = param('id') or die 'no id';
 	$dbh->begin_work;
-	sql('update tickets set status = 1, dateclosed = datetime(\'now\', \'localtime\'), 
-		datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
-	sql('insert into statustrack ( ticket_id, user, status ) values ( ?,?,\'close\')', $id, $user);
+	sql('update tickets set status = 1, dateclosed = now(), datemodified = now() where id = ?', $id);
+	sql('insert into statustrack ( ticket_id, user, status, datecreated ) values ( ?,?,\'close\',now())', $id, $user);
 	$dbh->commit;
 	print redirect("$uri/$id");
 	populate_search($id);
@@ -244,9 +239,8 @@ elsif(defined param('action') and param('action') eq 'close-ticket') {
 elsif(defined param('action') and param('action') eq 'reopen-ticket') {
 	my $id = param('id') or die 'no id';
 	$dbh->begin_work;
-	sql('update tickets set status = 0, dateclosed = null, 
-		datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
-	sql('insert into statustrack ( ticket_id, user, status ) values ( ?,?,\'reopen\')', $id, $user);
+	sql('update tickets set status = 0, dateclosed = null, datemodified = now() where id = ?', $id);
+	sql('insert into statustrack ( ticket_id, user, status, datecreated ) values ( ?,?,\'reopen\',now())', $id, $user);
 	$dbh->commit;
 	print redirect("$uri/$id");
 	populate_search($id);
@@ -625,11 +619,11 @@ sub show_ticket {
 		  union all
 		  select datecreated
 		    , user
-			, minutes || \' minutos trabalhados\' 
+			, concat(minutes, \' minutos trabalhados\')
 			, 1 as negrito
 		  from timetrack
 		  where ticket_id = ?
-		)
+		) as t
 		order by datecreated
 	', $r->{'id'}, $r->{'id'}, $r->{'id'})}) {
 		my $date = strip_date($_->{'datecreated'});
