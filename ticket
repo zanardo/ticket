@@ -28,10 +28,11 @@ use DBI;
 use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
+use Data::Dumper;
 
 our $uri = $ENV{'SCRIPT_NAME'};
 our $css = "$uri?action=get-css";
-our $VERSION = '1.0';
+our $VERSION = '1.0dev';
 our $user = $ENV{'REMOTE_USER'} || 'anônimo';
 
 our $dbh = DBI->connect("dbi:mysql:host=10.0.2.2;dbname=ticket","ticket","ticket") or die $!;
@@ -333,7 +334,6 @@ elsif($q =~ /^\/(\d+)$/) {
 
 	my $r = sql('select * from tickets where id = ?', $id)->[0];
 	if(not defined $r) { die "Ticket $id não existe" }
-
 	print header(-expires => 'now');
 	print start_html(-style => {'src' => $css}, 
 		-title => "#$id $r->{title}", 
@@ -457,13 +457,12 @@ sub show_form_edit_tags_ticket {
 		small('Palavras-chave podem ser utilizadas para classificar os Tickets. ',
 		'Separar as palavras-chave por espaços.')),
 		end_form;
-	if(scalar %tagsdesc > 0) {
+	if(scalar keys %tagsdesc > 0) {
 		foreach(sort keys %tagsdesc) {
 			my $tag = CGI::escape($_);
-			my $desc = $tagsdesc{$_}->{'description'} || '';
-			my $bgcolor = $tagsdesc{$_}->{'bgcolor'} || 'yellow';
-			my $fgcolor = $tagsdesc{$_}->{'fgcolor'} || 'red';
-			print small("<a href='#' onclick='document.ftag.text.value+=\" $tag\"' title='$desc' class='tag' style='background-color:$bgcolor;color:$fgcolor;'>$_</a>"), " ";
+			my $d = tagsdesc($_);
+			print small("<a href='#' onclick='document.ftag.text.value+=\" $tag\"' title='$d->{description}' 
+				class='tag' style='background-color:$d->{bgcolor};color:$d->{fgcolor};'>$_</a>"), " ";
 		}
 	}
 	print q{</div>};
@@ -561,10 +560,20 @@ sub print_ticket_tags {
 	my @tags = get_tags_from_ticket($id);
 	foreach(@tags) {
 		my $tag = CGI::escape($_);
-		my $desc = $tagsdesc{$_}->{'description'} || '';
-		my $bgcolor = $tagsdesc{$_}->{'bgcolor'} || 'yellow';
-		my $fgcolor = $tagsdesc{$_}->{'fgcolor'} || 'red';
-		print "<a href='$uri?filter=t:$tag o:p' title='$desc' class='tag' style='background-color:$bgcolor;color:$fgcolor;'>$_</a>", " ";
+		my $d = tagsdesc($_);
+		print "<a href='$uri?filter=t:$tag o:p' title='$d->{description}' class='tag' style='background-color:$d->{bgcolor};color:$d->{fgcolor};'>$_</a>", " ";
+	}
+}
+
+sub tagsdesc {
+	my $tag = shift;
+	if(not exists $tagsdesc{$tag}) {
+		return { 'description' => '', 'bgcolor' => 'yellow', 'fgcolor' => 'red' }
+	}
+	else {
+		return { 'description' => $tagsdesc{$tag}->{'description'} || '',
+			'bgcolor' => $tagsdesc{$tag}->{'bgcolor'} || 'yellow',
+			'fgcolor' => $tagsdesc{$tag}->{'fgcolor'} || 'red' };
 	}
 }
 
@@ -586,6 +595,7 @@ sub show_ticket {
 		print qq{Fechado: <span title="$r->{'dateclosed'}">$dated</span><br>}; #"
 	}
 	print qq{Autor: $r->{'user'}<br>};
+
 	print_ticket_tags($r->{'id'});
 
 	if($r->{'status'} == 0) {
