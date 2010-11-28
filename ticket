@@ -200,7 +200,7 @@ elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	my $title = param('title') || '';
 	die 'O título deve ser preenchido.' if $title =~ /^[\s\t\r\n]*$/;
 	sql('insert into tickets ( title, user, datecreated, datemodified ) values ( ?, ?, now(), now() )', $title, $user);
-	my $id = $dbh->last_insert_id(undef, undef, undef, undef);
+	my $id = $dbh->last_insert_id(undef, undef, 'tickets', 'id');
 	print redirect("$uri/$id");;
 	populate_search($id);
 }
