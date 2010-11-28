@@ -634,15 +634,17 @@ sub show_ticket {
 		order by datecreated
 	', $r->{'id'}, $r->{'id'}, $r->{'id'})}) {
 		my $date = strip_date($_->{'datecreated'});
-		print br, qq{<b title="$_->{'datecreated'}">$date - $_->{'user'}: </b>}; #"
-		if($_->{'negrito'} == 1) { print '<b><i>' . sanitize_text($_->{'comment'}) . '</i></b>' }
-		elsif($_->{'minutes'} > 0) {
+		my $negrito1 = ''; my $negrito2 = '';
+		if($_->{'negrito'} == 1) { $negrito1 = '<b><i>'; $negrito2 = '</i></b>'; }
+		print br, $negrito1, qq{<b title="$_->{'datecreated'}">$date - $_->{'user'}: </b>}; #"
+		if($_->{'minutes'} > 0) {
 			my $minutes = $_->{'minutes'};
 			my $hours = sprintf("%d", $minutes / 60);
 			$minutes = sprintf("%02d", $minutes % 60);
-			print "<b><i>${hours}h${minutes}m trabalhados.";
+			print "${hours}h${minutes}m trabalhados.";
 		}  
 		else { print sanitize_text($_->{'comment'}) }
+		print $negrito2;
 	}
 	print q{</td></tr></table><p>};
 }
