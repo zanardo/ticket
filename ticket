@@ -34,7 +34,7 @@ my $css = "$uri?action=get-css";
 my $VERSION = '1.0';
 my $user = $ENV{'REMOTE_USER'} || 'anônimo';
 
-my $dbh = DBI->connect("dbi:mysql:ticket","ticket","ticket") or die $!;
+my $dbh = DBI->connect("dbi:mysql:host=10.0.2.2;dbname=ticket","ticket","ticket") or die $!;
 
 my $q = $ENV{'PATH_INFO'} || '';
 
