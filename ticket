@@ -29,17 +29,17 @@ use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
 
-my $uri = $ENV{'SCRIPT_NAME'};
-my $css = "$uri?action=get-css";
-my $VERSION = '1.0';
-my $user = $ENV{'REMOTE_USER'} || 'anônimo';
+our $uri = $ENV{'SCRIPT_NAME'};
+our $css = "$uri?action=get-css";
+our $VERSION = '1.0';
+our $user = $ENV{'REMOTE_USER'} || 'anônimo';
 
-my $dbh = DBI->connect("dbi:mysql:host=10.0.2.2;dbname=ticket","ticket","ticket") or die $!;
+our $dbh = DBI->connect("dbi:mysql:host=10.0.2.2;dbname=ticket","ticket","ticket") or die $!;
 
-my $q = $ENV{'PATH_INFO'} || '';
+our $q = $ENV{'PATH_INFO'} || '';
 
 # Descrição das Prioridades
-my %priodesc = (
+our %priodesc = (
 	'1' => '1. Ação Urgente',
 	'2' => '2. Atenção',
 	'3' => '3. Prioridade Normal',
@@ -48,7 +48,7 @@ my %priodesc = (
 );
 
 # Descrição / cores das Tags
-my %tagsdesc = ();
+our %tagsdesc = ();
 foreach(@{sql('select * from tagsdesc')}) {
 	$tagsdesc{$_->{'tag'}} = {
 		'description' => $_->{'description'},
