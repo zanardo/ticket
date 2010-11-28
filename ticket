@@ -354,14 +354,15 @@ elsif($q =~ /^\/(\d+)$/) {
 	elsif($r->{'status'} == 1) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a>};
 		print q{</td></tr></table>};
 	}
 	show_form_new_note($id);
 	show_form_change_prio($id, $r->{'priority'});
 	show_form_edit_tags_ticket($id);
 	show_form_title_ticket($id, $r->{'title'});
-	show_form_minutes_ticket($id);
+	show_form_minutes_ticket($id, $r->{'status'});
 
 	emit_footer();
 }
@@ -483,20 +484,23 @@ sub show_form_title_ticket {
 
 sub show_form_minutes_ticket {
 	my $id = shift;
+	my $status = shift;
 	print q{<div class="panel" id="minutes" style="display: none">};
-	print start_form(-name => 'fminutes'),
-		textfield(-name => 'minutes', -size => 10, -value=>'0'),
-		hidden(-name => 'action', -value => 'register-minutes', -override => 1),
-		hidden('parent', $id),
-		submit('submit', 'Contabilizar minutos'),
-		p, button(-name => 'bstartcron', -value => 'Iniciar Cronômetro', -onclick => 'startCron()'),
-		button(-name => 'bstopcron', -value => 'Parar Cronômetro', -onclick => 'stopCron()', -style => 'visibility:hidden;'),
-		end_form;
+	if($status == 0) {
+		print start_form(-name => 'fminutes'),
+			textfield(-name => 'minutes', -size => 10, -value=>'0'),
+			hidden(-name => 'action', -value => 'register-minutes', -override => 1),
+			hidden('parent', $id),
+			submit('submit', 'Contabilizar minutos'),
+			p, button(-name => 'bstartcron', -value => 'Iniciar Cronômetro', -onclick => 'startCron()'),
+			button(-name => 'bstopcron', -value => 'Parar Cronômetro', -onclick => 'stopCron()', -style => 'visibility:hidden;'),
+			end_form;
+	}
 	
 	foreach(@{sql('select user, sum(minutes) as minutes from timetrack where ticket_id = ? and minutes > 0 group by user order by user', $id)}) {
 		my $hours = sprintf('%d', $_->{'minutes'} / 60);
 		my $minutes = sprintf('%02d', $_->{'minutes'} % 60);
-		print small(b($_->{'user'}) . ' contabilizou ' . b($hours.'h'.$minutes.'m') . ' no total') . br;
+		print p, small(b($_->{'user'}) . ' contabilizou ' . b($hours.'h'.$minutes.'m') . ' no total') . br;
 	}
 
 	print q{</div>};
@@ -607,6 +611,7 @@ sub show_ticket {
 		    , user
 			, case status when \'close\' then \'fechado\' when \'reopen\' then \'reaberto\' end as comment
 			, 1 as negrito
+			, 0 as minutes
 		  from statustrack
 		  where ticket_id = ?
 		  union all
@@ -614,6 +619,7 @@ sub show_ticket {
 		    , user
 			, comment
 			, 0 as negrito
+			, 0 as minutes
 		  from comments
 		  where ticket_id = ?
 		  union all
@@ -621,6 +627,7 @@ sub show_ticket {
 		    , user
 			, concat(minutes, \' minutos trabalhados\')
 			, 1 as negrito
+			, minutes
 		  from timetrack
 		  where ticket_id = ?
 		) as t
@@ -629,6 +636,12 @@ sub show_ticket {
 		my $date = strip_date($_->{'datecreated'});
 		print br, qq{<b title="$_->{'datecreated'}">$date - $_->{'user'}: </b>}; #"
 		if($_->{'negrito'} == 1) { print '<b><i>' . sanitize_text($_->{'comment'}) . '</i></b>' }
+		elsif($_->{'minutes'} > 0) {
+			my $minutes = $_->{'minutes'};
+			my $hours = sprintf("%d", $minutes / 60);
+			$minutes = sprintf("%02d", $minutes % 60);
+			print "<b><i>${hours}h${minutes}m trabalhados.";
+		}  
 		else { print sanitize_text($_->{'comment'}) }
 	}
 	print q{</td></tr></table><p>};
