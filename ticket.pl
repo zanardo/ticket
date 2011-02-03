@@ -425,11 +425,15 @@ sub sanitize_text {
 
 sub show_form_new_note {
 	my $id = shift;
+	my $cont = '';
+	my $contacts = join("\r\n", map {s/^/#/;$_} get_contacts_from_ticket($id));
 	print q{<div class="panel" id="note" style="display: none">};
 	print start_form(),
-		textarea(-name => 'text', -rows=>4, -columns=>70), br,
+		textarea(-name => 'text', -rows=>4, -columns=>70), p
+		small("Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):") , p ,
+		textarea(-name => 'contacts', -rows=>5, -columns=>50, -default => $contacts),
 		hidden(-name => 'action', -value => 'create-new-note', -override => 1),
-		hidden('id', $id),
+		hidden('id', $id), p,
 		submit('submit', 'Adicionar nota'),
 		end_form;
 	print q{</div>};
