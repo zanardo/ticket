@@ -289,7 +289,7 @@ elsif($q eq '') {
 elsif($q =~ /^\/(\d+)$/) {
 	my $id = $1;
 	my $head = <<'	END';
-	  var panels = new Array('note', 'prio', 'tags', 'title', 'minutes');
+	  var panels = new Array('note', 'prio', 'tags', 'title', 'minutes', 'contacts');
 	  var selectedTab = null;
 	  function showPanel(tab, name)
 	  {
@@ -348,7 +348,8 @@ elsif($q =~ /^\/(\d+)$/) {
 		print q{<a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de Ação</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'title');">Título</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a>};
+		print q{<a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'contacts');">Contatos</a>};
 		print q{</td></tr></table>}, br;
 	}
 	elsif($r->{'status'} == 1) {
@@ -363,6 +364,7 @@ elsif($q =~ /^\/(\d+)$/) {
 	show_form_edit_tags_ticket($id);
 	show_form_title_ticket($id, $r->{'title'});
 	show_form_minutes_ticket($id, $r->{'status'});
+	show_form_contacts_ticket($id);
 
 	emit_footer();
 }
@@ -417,6 +419,18 @@ sub show_form_new_note {
 		hidden(-name => 'action', -value => 'create-new-note', -override => 1),
 		hidden('id', $id),
 		submit('submit', 'Adicionar nota'),
+		end_form;
+	print q{</div>};
+}
+
+sub show_form_contacts_ticket {
+	my $id = shift;
+	print q{<div class="panel" id="contacts" style="display: none">};
+	print start_form(),
+		textarea(-name => 'contacts', -rows=>5, -columns=>50), br,
+		hidden(-name => 'action', -value => 'save-contacts', -override => 1),
+		hidden('id', $id),
+		submit('submit', 'Salvar contatos'),
 		end_form;
 	print q{</div>};
 }
