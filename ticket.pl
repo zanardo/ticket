@@ -425,9 +425,10 @@ sub show_form_new_note {
 
 sub show_form_contacts_ticket {
 	my $id = shift;
+	my $contacts = join("\r\n", get_contacts_from_ticket($id));
 	print q{<div class="panel" id="contacts" style="display: none">};
 	print start_form(),
-		textarea(-name => 'contacts', -rows=>5, -columns=>50), br,
+		textarea(-name => 'contacts', -rows=>5, -columns=>50, -default => $contacts), br,
 		hidden(-name => 'action', -value => 'save-contacts', -override => 1),
 		hidden('id', $id),
 		submit('submit', 'Salvar contatos'),
@@ -677,8 +678,15 @@ sub show_ticket {
 sub get_tags_from_ticket {
 	my $id = shift;
 	my @tags = map { $_ = $_->{'tag'} }
-      @{ sql( 'select tag from tags where ticket_id = ?', $id ) };
+	@{ sql( 'select tag from tags where ticket_id = ?', $id ) };
 	return sort @tags;
+}
+
+sub get_contacts_from_ticket {
+	my $id = shift;
+	my @contacts = map { $_ = $_->{'email'} }
+	@{ sql( 'select email from contacts where ticket_id = ?', $id ) };
+	return sort @contacts;
 }
 
 # Emite o cabeçalho padrão das páginas, com menu no topo e barra de pesquisa.
