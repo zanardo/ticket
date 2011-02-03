@@ -260,6 +260,18 @@ elsif(defined param('action') and param('action') eq 'save-tags-ticket') {
 	print redirect("$uri/$id");
 	populate_search($id);
 }
+elsif(defined param('action') and param('action') eq 'save-contacts') {
+	my $id = param('id') or die 'no id';
+	my $contacts = param('contacts') || '';
+	my @contacts = split /[\r\n]+/, $contacts;
+	$dbh->begin_work;
+	sql('delete from contacts where ticket_id = ?', $id);
+	foreach(@contacts) {
+		sql('insert into contacts ( ticket_id, email ) values ( ?,? )', $id, $_);
+	}
+	$dbh->commit;
+	print redirect("$uri/$id");
+}
 elsif(defined param('action') and param('action') eq 'change-ticket-prio') {
 	my $id = param('id') or die 'no id';
 	my $prio = param('prio');
