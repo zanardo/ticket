@@ -28,7 +28,8 @@ use DBI;
 use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
-use Data::Dumper;
+
+our $from_mail = 'root@localhost';
 
 our $uri = $ENV{'SCRIPT_NAME'};
 our $css = "$uri?action=get-css";
@@ -213,6 +214,7 @@ elsif(defined param('action') and param('action') eq 'create-new-note') {
 	sql('insert into comments ( ticket_id, user, comment, datecreated ) values ( ?,?,?,now() )', $id, $user, $text);
 	sql('update tickets set datemodified = now() where id = ?', $id);
 	$dbh->commit;
+	send_email($id, get_title_from_ticket($id), $user, param('contacts'), $text);
 	print redirect("$uri/$id");
 	populate_search($id);
 }
@@ -705,6 +707,12 @@ sub get_contacts_from_ticket {
 	return sort @contacts;
 }
 
+sub get_title_from_ticket {
+	my $id = shift;
+	my $title = @{ sql( 'select title from tickets where id = ?', $id ) }->[0]->{'title'};
+	return $title;
+}
+
 # Emite o cabeçalho padrão das páginas, com menu no topo e barra de pesquisa.
 sub emit_header {
 	my $search = '';
@@ -752,6 +760,24 @@ sub sql {
 		push @$result, $r;
 	}
 	return $result;
+}
+
+sub send_email {
+	my $id = shift;
+	my $title = shift;
+	my $user = shift;
+	my $contacts = shift;
+	my $note = shift;
+	my $date = strftime('%Y-%m-%d %H:%M:%S', localtime);
+
+	my $text = "[$date] ($user): $note";
+
+	foreach(grep {!/^#/} split("[\r\n]+", $contacts)) {
+		open(SENDMAIL, "|/usr/lib/sendmail -oi -t -odq")
+			   or die "Erro carregando sendmail: $!\n";
+		print SENDMAIL "From: $from_mail\r\nTo: $_\r\nSubject: #$id - $title\r\n\r\n$text";
+		close(SENDMAIL);
+	} 
 }
 
 sub thecss {
