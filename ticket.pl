@@ -770,7 +770,7 @@ sub send_email {
 	my $note = shift;
 	my $date = strftime('%Y-%m-%d %H:%M:%S', localtime);
 
-	my $text = "[$date] ($user): $note";
+	my $text = "Este e um e-mail automatico enviado pelo sistema ticket.\r\n\r\n[$date] ($user): $note";
 
 	foreach(grep {!/^#/} split("[\r\n]+", $contacts)) {
 		open(SENDMAIL, "|/usr/lib/sendmail -oi -t -odq")
