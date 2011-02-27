@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright (c) 2006-2010, J. A. Zanardo Jr. <zanardo@gmail.com>
+# Copyright (c) 2006-2011, J. A. Zanardo Jr. <zanardo@gmail.com>
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,15 +28,21 @@ use DBI;
 use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
+use MIME::Lite;
+use Encode qw(encode);
 
-our $from_mail = 'root@localhost';
+# Configurações ###################################################
+our $from_mail = 'root@localhost';	# E-mail remetente
+our $smtp_mail = '127.0.0.1';	# Servidor SMTP
+our $database = 'ticket.db'; # Caminho da base SQLite
+###################################################################
 
 our $uri = $ENV{'SCRIPT_NAME'};
 our $css = "$uri?action=get-css";
 our $VERSION = '1.0dev';
 our $user = $ENV{'REMOTE_USER'} || 'anônimo';
 
-our $dbh = DBI->connect("dbi:mysql:dbname=ticket","ticket","ticket") or die $!;
+our $dbh = DBI->connect("dbi:SQLite:dbname=$database","","") or die $!;
 
 our $q = $ENV{'PATH_INFO'} || '';
 
@@ -152,7 +158,7 @@ if(defined param('filter')) {
 		$prio = "AND priority BETWEEN $1 AND $2";
 	}
 
-	# p:X-Y -> prioridade X
+	# p:X -> prioridade X
 	while($s =~ s/p\:(\d) *//) {
 		$prio = "AND priority = $1";
 	}
@@ -161,7 +167,7 @@ if(defined param('filter')) {
 	my $match = '';
 	if($s =~ /\w/) {
 		my $m = $dbh->quote($s);
-		$match = "AND id IN ( SELECT docid FROM search WHERE MATCH(title,tag,user,text) AGAINST($m) )";
+		$match = "AND id IN ( SELECT docid FROM search WHERE search MATCH $m )";
 	}
 
 	my $count = 0;
@@ -190,7 +196,6 @@ if(defined param('filter')) {
 	foreach(@{sql($sql)}) {
 		$count++;
 		show_ticket_small($_);
-		#populate_search($_->{'id'});
 	}
 
 	print p, "$count ticket(s) filtrado(s)";
@@ -201,7 +206,7 @@ if(defined param('filter')) {
 elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	my $title = param('title') || '';
 	die 'O título deve ser preenchido.' if $title =~ /^[\s\t\r\n]*$/;
-	sql('insert into tickets ( title, user, datecreated, datemodified ) values ( ?, ?, now(), now() )', $title, $user);
+	sql('insert into tickets ( title, user, datecreated, datemodified ) values ( ?, ?, datetime(\'now\', \'localtime\'), datetime(\'now\', \'localtime\') )', $title, $user);
 	my $id = $dbh->last_insert_id(undef, undef, 'tickets', 'id');
 	print redirect("$uri/$id");;
 	populate_search($id);
@@ -210,9 +215,19 @@ elsif(defined param('action') and param('action') eq 'create-new-note') {
 	my $text = param('text') || '';
 	die if $text =~ /^[\s\t\r\n]*$/;
 	my $id = param('id');
+	my $contacts = '';
+	if(defined param('contacts')) {
+		foreach(grep {!/^#/} split("[\r\n]+", param('contacts'))) {
+			$contacts .= $_ . ", ";
+		}
+		$contacts =~ s/, $//;
+		if($contacts ne '') {
+			$text .= ' [Notificação enviada para: ' . $contacts . ']';
+		}
+	}
 	$dbh->begin_work;
-	sql('insert into comments ( ticket_id, user, comment, datecreated ) values ( ?,?,?,now() )', $id, $user, $text);
-	sql('update tickets set datemodified = now() where id = ?', $id);
+	sql('insert into comments ( ticket_id, user, comment, datecreated ) values ( ?,?,?,datetime(\'now\', \'localtime\') )', $id, $user, $text);
+	sql('update tickets set datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
 	$dbh->commit;
 	send_email($id, get_title_from_ticket($id), $user, param('contacts'), $text);
 	print redirect("$uri/$id");
@@ -225,16 +240,16 @@ elsif(defined param('action') and param('action') eq 'register-minutes') {
 	$minutes = sprintf("%.2f", $minutes);
 	my $id = param('parent');
 	$dbh->begin_work;
-	sql('insert into timetrack ( ticket_id, user, minutes, datecreated ) values ( ?,?,?,now() )', $id, $user, $minutes);
-	sql('update tickets set datemodified = now() where id = ?', $id);
+	sql('insert into timetrack ( ticket_id, user, minutes, datecreated ) values ( ?,?,?,datetime(\'now\', \'localtime\') )', $id, $user, $minutes);
+	sql('update tickets set datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
 	$dbh->commit;
 	print redirect("$uri/$id");
 }
 elsif(defined param('action') and param('action') eq 'close-ticket') {
 	my $id = param('id') or die 'no id';
 	$dbh->begin_work;
-	sql('update tickets set status = 1, dateclosed = now(), datemodified = now() where id = ?', $id);
-	sql('insert into statustrack ( ticket_id, user, status, datecreated ) values ( ?,?,\'close\',now())', $id, $user);
+	sql('update tickets set status = 1, dateclosed = datetime(\'now\', \'localtime\'), datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
+	sql('insert into statustrack ( ticket_id, user, status, datecreated ) values ( ?,?,\'close\',datetime(\'now\', \'localtime\'))', $id, $user);
 	$dbh->commit;
 	print redirect("$uri/$id");
 	populate_search($id);
@@ -242,8 +257,8 @@ elsif(defined param('action') and param('action') eq 'close-ticket') {
 elsif(defined param('action') and param('action') eq 'reopen-ticket') {
 	my $id = param('id') or die 'no id';
 	$dbh->begin_work;
-	sql('update tickets set status = 0, dateclosed = null, datemodified = now() where id = ?', $id);
-	sql('insert into statustrack ( ticket_id, user, status, datecreated ) values ( ?,?,\'reopen\',now())', $id, $user);
+	sql('update tickets set status = 0, dateclosed = null, datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
+	sql('insert into statustrack ( ticket_id, user, status, datecreated ) values ( ?,?,\'reopen\',datetime(\'now\', \'localtime\'))', $id, $user);
 	$dbh->commit;
 	print redirect("$uri/$id");
 	populate_search($id);
@@ -586,6 +601,7 @@ sub show_ticket_small {
 	print "</td><td valign='top' align='right'>";
 	print_ticket_tags($r->{'id'});
 	print q{</td></tr></table>};
+	#populate_search($r->{'id'});
 }
 
 sub print_ticket_tags {
@@ -668,7 +684,7 @@ sub show_ticket {
 		  union all
 		  select datecreated
 		    , user
-			, concat(minutes, \' minutos trabalhados\')
+			, minutes || \' minutos trabalhados\'
 			, 1 as negrito
 			, minutes
 		  from timetrack
@@ -770,14 +786,17 @@ sub send_email {
 	my $note = shift;
 	my $date = strftime('%Y-%m-%d %H:%M:%S', localtime);
 
-	my $text = "Este e um e-mail automatico enviado pelo sistema ticket.\r\n\r\n[$date] ($user): $note";
+	my $text = "[$date] ($user): $note\r\n\r\n\r\n\r\n-- Este é um e-mail automático enviado pelo sistema ticket.";
 
 	foreach(grep {!/^#/} split("[\r\n]+", $contacts)) {
-		open(SENDMAIL, "|/usr/lib/sendmail -oi -t -odq")
-			   or die "Erro carregando sendmail: $!\n";
-		print SENDMAIL "From: $from_mail\r\nTo: $_\r\nSubject: #$id - $title\r\n\r\n$text";
-		close(SENDMAIL);
-	} 
+		my $mail = MIME::Lite->new(
+			From => $from_mail,
+			To => $_,
+			Subject => encode('MIME-Header', "#$id - $title"),
+			Data => $text
+		);
+		$mail->send('smtp', $smtp_mail) or die $!;
+	}
 }
 
 sub thecss {
@@ -799,3 +818,25 @@ sub thecss {
 	.tktitle { font-family: "Verdana"; font-size: 12px; font-weight: bold; }
 	CSS
 }
+
+# CREATE TABLE comments ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, comment text not null );
+# CREATE TABLE contacts ( ticket_id integer not null, email text not null );
+# CREATE VIRTUAL TABLE search using fts3 ( title, text, tag, user );
+# CREATE TABLE 'search_content'(docid INTEGER PRIMARY KEY, 'c0title', 'c1text', 'c2tag', 'c3user');
+# CREATE TABLE 'search_segdir'(level INTEGER,idx INTEGER,start_block INTEGER,leaves_end_block INTEGER,end_block INTEGER,root BLOB,PRIMARY KEY(level, idx));
+# CREATE TABLE 'search_segments'(blockid INTEGER PRIMARY KEY, block BLOB);
+# CREATE TABLE statustrack ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, status text not null );
+# CREATE TABLE tags ( ticket_id integer not null references ticket ( id ), tag text not null );
+# CREATE TABLE tagsdesc ( tag text not null primary key, description text, fgcolor text, bgcolor text );
+# CREATE TABLE tickets ( id integer primary key not null, title text not null, status integer not null default ( 0 ), priority integer not null default ( 3 ), datecreated datetime not null default ( datetime('now', 'localtime') ), datemodified datetime not null default ( datetime('now', 'localtime') ), dateclosed datetime, user text not null );
+# CREATE TABLE timetrack ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, minutes integer not null );
+# CREATE INDEX idx_comments_ticket_id on comments ( ticket_id );
+# CREATE INDEX idx_contacts_ticket_id on contacts ( ticket_id );
+# CREATE INDEX idx_statustrack_ticket_id on statustrack ( ticket_id );
+# CREATE INDEX idx_tags_tag on tags ( tag );
+# CREATE INDEX idx_tags_ticket_id on tags ( ticket_id );
+# CREATE INDEX idx_tickets_datecreated on tickets ( datecreated desc );
+# CREATE INDEX idx_tickets_datemodified on tickets ( datemodified desc );
+# CREATE INDEX idx_tickets_priority on tickets ( priority desc );
+# CREATE INDEX idx_tickets_status on tickets ( status );
+# CREATE INDEX idx_timetrack_ticket_id on timetrack ( ticket_id );
