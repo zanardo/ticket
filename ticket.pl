@@ -31,31 +31,30 @@ use POSIX qw(strftime);
 use MIME::Lite;
 use Encode qw(encode);
 
-# ConfiguraÁıes ###################################################
+# Configura√ß√µes ###################################################
 our $from_mail = 'root@localhost';	# E-mail remetente
-our $smtp_mail = '127.0.0.1';	# Servidor SMTP
-our $database = 'ticket.db'; # Caminho da base SQLite
+our $smtp_mail = '127.0.0.1';		# Servidor SMTP
 ###################################################################
 
 our $uri = $ENV{'SCRIPT_NAME'};
 our $css = "$uri?action=get-css";
 our $VERSION = '1.0dev';
-our $user = $ENV{'REMOTE_USER'} || 'anÙnimo';
+our $user = $ENV{'REMOTE_USER'} || 'an√¥nimo';
 
-our $dbh = DBI->connect("dbi:SQLite:dbname=$database","","") or die $!;
+our $dbh = DBI->connect("dbi:Pg:dbname=ticket","postgres","") or die $!;
 
 our $q = $ENV{'PATH_INFO'} || '';
 
-# DescriÁ„o das Prioridades
+# Descri√ß√£o das Prioridades
 our %priodesc = (
-	'1' => '1. AÁ„o Urgente',
-	'2' => '2. AtenÁ„o',
+	'1' => '1. A√ß√£o Urgente',
+	'2' => '2. Aten√ß√£o',
 	'3' => '3. Prioridade Normal',
 	'4' => '4. Baixa Prioridade',
-	'5' => '5. BaixÌssima Prioridade'
+	'5' => '5. Baix√≠ssima Prioridade'
 );
 
-# DescriÁ„o / cores das Tags
+# Descri√ß√£o / cores das Tags
 our %tagsdesc = ();
 foreach(@{sql('select * from tagsdesc')}) {
 	$tagsdesc{$_->{'tag'}} = {
@@ -100,7 +99,7 @@ if(defined param('filter')) {
 		$tag .= "AND id IN ( SELECT ticket_id FROM tags WHERE tag = $t ) ";
 	}
 
-	# o:[mcfp] -> ordem de modificaÁ„o, criaÁ„o, fechamento, prioridade
+	# o:[mcfp] -> ordem de modifica√ß√£o, cria√ß√£o, fechamento, prioridade
 	my $order = 'ORDER BY datemodified DESC';
 	while($s =~ s/o:([mcfp]) *//) {
 		if($1 eq 'c') { $order = 'ORDER BY datecreated DESC' }
@@ -109,17 +108,17 @@ if(defined param('filter')) {
 		elsif($1 eq 'p') { $order = 'ORDER BY priority ASC, dateclosed ASC' }
 	}
 
-	# u:usuario -> usu·rio de criaÁ„o, fechamento, coment·rio, etc
+	# u:usuario -> usu√°rio de cria√ß√£o, fechamento, coment√°rio, etc
 	my $user = '';
 	while($s =~ s/u:([^ ]+) *//) {
 		my $u = $dbh->quote($1);
-		$user = "AND ( ( user = $u ) ";
-		$user .= "OR ( id IN ( SELECT ticket_id FROM comments WHERE user = $u ) ) ";
-		$user .= "OR ( id IN ( SELECT ticket_id FROM timetrack WHERE user = $u ) ) ";
-		$user .= "OR ( id IN ( SELECT ticket_id FROM statustrack WHERE user = $u ) ) ) ";
+		$user = "AND ( ( \"user\" = $u ) ";
+		$user .= "OR ( id IN ( SELECT ticket_id FROM comments WHERE \"user\" = $u ) ) ";
+		$user .= "OR ( id IN ( SELECT ticket_id FROM timetrack WHERE \"user\" = $u ) ) ";
+		$user .= "OR ( id IN ( SELECT ticket_id FROM statustrack WHERE \"user\" = $u ) ) ) ";
 	}
 
-	# d[cmf]:YYYYMMDD-YYYYMMDD -> faixa de data de criaÁ„o, modificaÁ„o, fechamento
+	# d[cmf]:YYYYMMDD-YYYYMMDD -> faixa de data de cria√ß√£o, modifica√ß√£o, fechamento
 	my $datecreated = '';
 	while($s =~ s/d([cmf])\:(\d{8})-(\d{8}) *//) {
 		my $dt = $1;
@@ -136,7 +135,7 @@ if(defined param('filter')) {
 		$datecreated = "AND $c BETWEEN $from AND $to";
 	}
 
-	# d[cmf]:YYYYMMDD -> data de criaÁ„o, modificaÁ„o, fechamento
+	# d[cmf]:YYYYMMDD -> data de cria√ß√£o, modifica√ß√£o, fechamento
 	while($s =~ s/d([cmf])\:(\d{8}) *//) {
 		my $dt = $1;
 		my $d = $2;
@@ -167,12 +166,13 @@ if(defined param('filter')) {
 	my $match = '';
 	if($s =~ /\w/) {
 		my $m = $dbh->quote($s);
-		$match = "AND id IN ( SELECT docid FROM search WHERE search MATCH $m )";
+		$match = "AND ( id IN ( SELECT id FROM tickets WHERE to_tsvector('portuguese', title) @@ plainto_tsquery($m))";
+		$match .= " OR id IN ( SELECT ticket_id FROM comments WHERE to_tsvector('portuguese', comment) @@ plainto_tsquery($m) ) )";
 	}
 
 	my $count = 0;
 
-	print header(-expires => 'now'), 
+	print header(-expires => 'now', -charset => 'utf-8'), 
 		start_html(-style => 
 			{'src' => $css}, -title => "Tickets: $filtere" );
 
@@ -205,11 +205,10 @@ if(defined param('filter')) {
 }
 elsif(defined param('action') and param('action') eq 'create-new-ticket') {
 	my $title = param('title') || '';
-	die 'O tÌtulo deve ser preenchido.' if $title =~ /^[\s\t\r\n]*$/;
-	sql('insert into tickets ( title, user, datecreated, datemodified ) values ( ?, ?, datetime(\'now\', \'localtime\'), datetime(\'now\', \'localtime\') )', $title, $user);
+	die 'O t√≠tulo deve ser preenchido.' if $title =~ /^[\s\t\r\n]*$/;
+	sql('insert into tickets ( title, "user" ) values ( ?, ? )', $title, $user);
 	my $id = $dbh->last_insert_id(undef, undef, 'tickets', 'id');
 	print redirect("$uri/$id");;
-	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'create-new-note') {
 	my $text = param('text') || '';
@@ -222,16 +221,15 @@ elsif(defined param('action') and param('action') eq 'create-new-note') {
 		}
 		$contacts =~ s/, $//;
 		if($contacts ne '') {
-			$text .= ' [NotificaÁ„o enviada para: ' . $contacts . ']';
+			$text .= ' [Notifica√ß√£o enviada para: ' . $contacts . ']';
 		}
 	}
 	$dbh->begin_work;
-	sql('insert into comments ( ticket_id, user, comment, datecreated ) values ( ?,?,?,datetime(\'now\', \'localtime\') )', $id, $user, $text);
-	sql('update tickets set datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
+	sql('insert into comments ( ticket_id, "user", comment ) values ( ?,?,? )', $id, $user, $text);
+	sql('update tickets set datemodified = now() where id = ?', $id);
 	$dbh->commit;
 	send_email($id, get_title_from_ticket($id), $user, param('contacts'), $text);
 	print redirect("$uri/$id");
-	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'register-minutes') {
 	my $minutes = param('minutes') || 0;
@@ -240,28 +238,26 @@ elsif(defined param('action') and param('action') eq 'register-minutes') {
 	$minutes = sprintf("%.2f", $minutes);
 	my $id = param('parent');
 	$dbh->begin_work;
-	sql('insert into timetrack ( ticket_id, user, minutes, datecreated ) values ( ?,?,?,datetime(\'now\', \'localtime\') )', $id, $user, $minutes);
-	sql('update tickets set datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
+	sql('insert into timetrack ( ticket_id, "user", minutes ) values ( ?,?,? )', $id, $user, $minutes);
+	sql('update tickets set datemodified = now() where id = ?', $id);
 	$dbh->commit;
 	print redirect("$uri/$id");
 }
 elsif(defined param('action') and param('action') eq 'close-ticket') {
 	my $id = param('id') or die 'no id';
 	$dbh->begin_work;
-	sql('update tickets set status = 1, dateclosed = datetime(\'now\', \'localtime\'), datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
-	sql('insert into statustrack ( ticket_id, user, status, datecreated ) values ( ?,?,\'close\',datetime(\'now\', \'localtime\'))', $id, $user);
+	sql('update tickets set status = 1, dateclosed = now(), datemodified = now() where id = ?', $id);
+	sql('insert into statustrack ( ticket_id, "user", status ) values ( ?,?,\'close\')', $id, $user);
 	$dbh->commit;
 	print redirect("$uri/$id");
-	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'reopen-ticket') {
 	my $id = param('id') or die 'no id';
 	$dbh->begin_work;
-	sql('update tickets set status = 0, dateclosed = null, datemodified = datetime(\'now\', \'localtime\') where id = ?', $id);
-	sql('insert into statustrack ( ticket_id, user, status, datecreated ) values ( ?,?,\'reopen\',datetime(\'now\', \'localtime\'))', $id, $user);
+	sql('update tickets set status = 0, dateclosed = null, datemodified = now() where id = ?', $id);
+	sql('insert into statustrack ( ticket_id, "user", status ) values ( ?,?,\'reopen\')', $id, $user);
 	$dbh->commit;
 	print redirect("$uri/$id");
-	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'save-tags-ticket') {
 	my $id = param('id') or die 'no id';
@@ -275,7 +271,6 @@ elsif(defined param('action') and param('action') eq 'save-tags-ticket') {
 	}
 	$dbh->commit;
 	print redirect("$uri/$id");
-	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'save-contacts') {
 	my $id = param('id') or die 'no id';
@@ -298,13 +293,12 @@ elsif(defined param('action') and param('action') eq 'change-ticket-prio') {
 }
 elsif(defined param('action') and param('action') eq 'save-title-ticket') {
 	my $id = param('id') or die 'no id';
-	my $text = param('text') || '(sem tÌtulo)';
+	my $text = param('text') || '(sem t√≠tulo)';
 	sql('update tickets set title = ? where id = ?', $text, $id);
 	print redirect("$uri/$id");
-	populate_search($id);
 }
 elsif(defined param('action') and param('action') eq 'get-css') {
-	print header(-type => 'text/css', -expires => '+1d');
+	print header(-type => 'text/css', -expires => '+1d', -charset => 'utf-8');
 	print thecss();
 }
 
@@ -313,8 +307,8 @@ elsif($q eq '') {
 	print redirect("$uri?filter=o:p");
 }
 
-# Tela de detalhes de um ticket, onde È possÌvel efetuar-se aÁıes como
-# adiÁ„o de notas, fechamento, etc.
+# Tela de detalhes de um ticket, onde √© poss√≠vel efetuar-se a√ß√µes como
+# adi√ß√£o de notas, fechamento, etc.
 elsif($q =~ /^\/(\d+)$/) {
 	my $id = $1;
 	my $head = <<'	END';
@@ -362,8 +356,8 @@ elsif($q =~ /^\/(\d+)$/) {
 	END
 
 	my $r = sql('select * from tickets where id = ?', $id)->[0];
-	if(not defined $r) { die "Ticket $id n„o existe" }
-	print header(-expires => 'now');
+	if(not defined $r) { die "Ticket $id n√£o existe" }
+	print header(-expires => 'now', -charset => 'utf-8');
 	print start_html(-style => {'src' => $css}, 
 		-title => "#$id $r->{title}", 
 		-script => $head
@@ -374,9 +368,9 @@ elsif($q =~ /^\/(\d+)$/) {
 	if($r->{'status'} == 0) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de AÁ„o</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de A√ß√£o</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'title');">TÌtulo</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'title');">T√≠tulo</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'contacts');">Contatos</a>};
 		print q{</td></tr></table>}, br;
@@ -384,7 +378,7 @@ elsif($q =~ /^\/(\d+)$/) {
 	elsif($r->{'status'} == 1) {
 		print q{<table class="actions" border="0"><tr><td>};
 		print q{<a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | };
-		print q{<a class="tab" onclick="return showPanel(this, 'title');">TÌtulo</a> | };
+		print q{<a class="tab" onclick="return showPanel(this, 'title');">T√≠tulo</a> | };
 		print q{<a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a>};
 		print q{</td></tr></table>};
 	}
@@ -399,8 +393,9 @@ elsif($q =~ /^\/(\d+)$/) {
 }
 
 elsif($q eq '/new-ticket') {
-	print header(-expires => 'now'), start_html(-style => {'src' => $css}, 
-		-title => 'Novo Ticket', -onload => 'document.f.title.focus();' );
+	print header(-expires => 'now', -charset => 'utf-8'), 
+		start_html(-style => {'src' => $css}, 
+			-title => 'Novo Ticket', -onload => 'document.f.title.focus();' );
 	emit_header();
 	print q{<span class="title">Novo Ticket</span>}, p;
     print q{<a name='new'></a>}, start_form(-name => 'f'),
@@ -413,7 +408,7 @@ elsif($q eq '/new-ticket') {
       submit( 'submit', 'Criar' ), end_form;
 
 	  print	p, font({-color => '#A5A5A5'}, 
-		small('Digite uma descriÁ„o sucinta. VocÍ poder· adicionar mais informaÁıes detalhadas depois.'));
+		small('Digite uma descri√ß√£o sucinta. Voc√™ poder√° adicionar mais informa√ß√µes detalhadas depois.'));
 
 	  emit_footer();
 }
@@ -423,7 +418,7 @@ $dbh->disconnect;
 
 #########################################################################################
 #########################################################################################
-## FunÁıes auxiliares
+## Fun√ß√µes auxiliares
 #########################################################################################
 #########################################################################################
 
@@ -447,7 +442,7 @@ sub show_form_new_note {
 	print q{<div class="panel" id="note" style="display: none">};
 	print start_form(),
 		textarea(-name => 'text', -rows=>4, -columns=>70), p
-		small("Alertar os seguintes contatos por email (linhas iniciadas por # ser„o ignoradas):") , p ,
+		small("Alertar os seguintes contatos por email (linhas iniciadas por # ser√£o ignoradas):") , p ,
 		textarea(-name => 'contacts', -rows=>5, -columns=>50, -default => $contacts),
 		hidden(-name => 'action', -value => 'create-new-note', -override => 1),
 		hidden('id', $id), p,
@@ -487,7 +482,7 @@ sub show_form_change_prio {
 		</select> <input type="hidden" name="action" 
 			value="change-ticket-prio"  />
 		<input type="hidden" name="id" value="$id"  />
-		<input type="submit" name="submit" value="Mudar prioridade de aÁ„o" /></form>
+		<input type="submit" name="submit" value="Mudar prioridade de a√ß√£o" /></form>
 	};
 	print q{</div>};
 }
@@ -503,7 +498,7 @@ sub show_form_edit_tags_ticket {
 		submit('submit', 'Salvar palavras-chave'), p,
 		font({-color => '#A5A5A5'}, 
 		small('Palavras-chave podem ser utilizadas para classificar os Tickets. ',
-		'Separar as palavras-chave por espaÁos.')),
+		'Separar as palavras-chave por espa√ßos.')),
 		end_form;
 	if(scalar keys %tagsdesc > 0) {
 		foreach(sort keys %tagsdesc) {
@@ -524,7 +519,7 @@ sub show_form_title_ticket {
 		textfield(-name => 'text', -size=>70, -value=>$title),
 		hidden(-name => 'action', -value => 'save-title-ticket', -override => 1),
 		hidden('id', $id),
-		submit('submit', 'Salvar tÌtulo'),
+		submit('submit', 'Salvar t√≠tulo'),
 		end_form;
 	print q{</div>};
 }
@@ -539,37 +534,18 @@ sub show_form_minutes_ticket {
 			hidden(-name => 'action', -value => 'register-minutes', -override => 1),
 			hidden('parent', $id),
 			submit('submit', 'Contabilizar minutos'),
-			p, button(-name => 'bstartcron', -value => 'Iniciar CronÙmetro', -onclick => 'startCron()'),
-			button(-name => 'bstopcron', -value => 'Parar CronÙmetro', -onclick => 'stopCron()', -style => 'visibility:hidden;'),
+			p, button(-name => 'bstartcron', -value => 'Iniciar Cron√¥metro', -onclick => 'startCron()'),
+			button(-name => 'bstopcron', -value => 'Parar Cron√¥metro', -onclick => 'stopCron()', -style => 'visibility:hidden;'),
 			end_form;
 	}
 	
-	foreach(@{sql('select user, sum(minutes) as minutes from timetrack where ticket_id = ? and minutes > 0 group by user order by user', $id)}) {
+	foreach(@{sql('select "user", sum(minutes) as minutes from timetrack where ticket_id = ? and minutes > 0 group by "user" order by "user"', $id)}) {
 		my $hours = sprintf('%d', $_->{'minutes'} / 60);
 		my $minutes = sprintf('%02d', $_->{'minutes'} % 60);
 		print p, small(b($_->{'user'}) . ' contabilizou ' . b($hours.'h'.$minutes.'m') . ' no total') . br;
 	}
 
 	print q{</div>};
-}
-
-sub populate_search {
-	my $id = shift;
-	my $text = '';
-	my $tag = '';
-	my $user = ''; # todos os usu·rios que alteraram o ticket
-	$dbh->begin_work;
-	sql('delete from search where docid = ?', $id);
-	my $title = sql('select title from tickets where id = ?', $id)->[0]->{'title'};
-	foreach(@{sql('select comment, user from comments where ticket_id = ?', $id)}) {
-		$text .= $_->{'comment'} . ' ';
-		$user .= $_->{'user'} . ' ';
-	}
-	foreach(@{sql('select tag from tags where ticket_id = ?', $id)}) {
-		$tag .= $_->{'tag'} . ' ';
-	}
-	sql('insert into search (docid, title, text, tag, user) values (?,?,?,?,?)', $id, $title, $text, $tag, $user);
-	$dbh->commit;
 }
 
 sub get_prio_color {
@@ -667,7 +643,7 @@ sub show_ticket {
 		select *
 		from (
 		  select datecreated
-		    , user
+		    , "user"
 			, case status when \'close\' then \'fechado\' when \'reopen\' then \'reaberto\' end as comment
 			, 1 as negrito
 			, 0 as minutes
@@ -675,7 +651,7 @@ sub show_ticket {
 		  where ticket_id = ?
 		  union all
 		  select datecreated
-		    , user
+		    , "user"
 			, comment
 			, 0 as negrito
 			, 0 as minutes
@@ -683,7 +659,7 @@ sub show_ticket {
 		  where ticket_id = ?
 		  union all
 		  select datecreated
-		    , user
+		    , "user"
 			, minutes || \' minutos trabalhados\'
 			, 1 as negrito
 			, minutes
@@ -729,7 +705,7 @@ sub get_title_from_ticket {
 	return $title;
 }
 
-# Emite o cabeÁalho padr„o das p·ginas, com menu no topo e barra de pesquisa.
+# Emite o cabe√ßalho padr√£o das p√°ginas, com menu no topo e barra de pesquisa.
 sub emit_header {
 	my $search = '';
 	if(defined param('filter')) { $search = param('filter') }
@@ -738,7 +714,7 @@ sub emit_header {
 		<table border="0" align="right">
 		<tr>
 		<td class="topmenu">
-			ol· <b>$user</b>! 
+			ol√° <b>$user</b>! 
 			<a href='$uri' accesskey='A' title="alt-shift-a">abertos</a>
 			| <a href='$uri?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
 			| <a href='$uri/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
@@ -751,10 +727,10 @@ sub emit_header {
 	};
 }
 
-# Emite rodapÈ com nome do sistema e vers„o.
+# Emite rodap√© com nome do sistema e vers√£o.
 sub emit_footer {
 	print qq{<p><small><font color="gray"><div align="right">sistema
-		<a href="http://zanardo.org/ticket.html">ticket</a> vers„o $VERSION</small></div></font>};
+		<a href="http://zanardo.org/ticket.html">ticket</a> vers√£o $VERSION</small></div></font>};
 }
 
 # Recebe "2005-05-05 05:05:05" e converte para "2005-05-05".
@@ -764,7 +740,7 @@ sub strip_date {
 	return $datetime;
 }
 
-# Executa uma sentenÁa SQL, opcionalmente com par‚metros, e retorna uma arrayref
+# Executa uma senten√ßa SQL, opcionalmente com par√¢metros, e retorna uma arrayref
 # de hashrefs com os resultados.
 sub sql {
 	my $sql = shift;
@@ -786,7 +762,7 @@ sub send_email {
 	my $note = shift;
 	my $date = strftime('%Y-%m-%d %H:%M:%S', localtime);
 
-	my $text = "[$date] ($user): $note\r\n\r\n\r\n\r\n-- Este È um e-mail autom·tico enviado pelo sistema ticket.";
+	my $text = "[$date] ($user): $note\r\n\r\n\r\n\r\n-- Este √© um e-mail autom√°tico enviado pelo sistema ticket.";
 
 	foreach(grep {!/^#/} split("[\r\n]+", $contacts)) {
 		my $mail = MIME::Lite->new(
@@ -818,25 +794,3 @@ sub thecss {
 	.tktitle { font-family: "Verdana"; font-size: 12px; font-weight: bold; }
 	CSS
 }
-
-# CREATE TABLE comments ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, comment text not null );
-# CREATE TABLE contacts ( ticket_id integer not null, email text not null );
-# CREATE VIRTUAL TABLE search using fts3 ( title, text, tag, user );
-# CREATE TABLE 'search_content'(docid INTEGER PRIMARY KEY, 'c0title', 'c1text', 'c2tag', 'c3user');
-# CREATE TABLE 'search_segdir'(level INTEGER,idx INTEGER,start_block INTEGER,leaves_end_block INTEGER,end_block INTEGER,root BLOB,PRIMARY KEY(level, idx));
-# CREATE TABLE 'search_segments'(blockid INTEGER PRIMARY KEY, block BLOB);
-# CREATE TABLE statustrack ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, status text not null );
-# CREATE TABLE tags ( ticket_id integer not null references ticket ( id ), tag text not null );
-# CREATE TABLE tagsdesc ( tag text not null primary key, description text, fgcolor text, bgcolor text );
-# CREATE TABLE tickets ( id integer primary key not null, title text not null, status integer not null default ( 0 ), priority integer not null default ( 3 ), datecreated datetime not null default ( datetime('now', 'localtime') ), datemodified datetime not null default ( datetime('now', 'localtime') ), dateclosed datetime, user text not null );
-# CREATE TABLE timetrack ( id integer primary key not null, ticket_id integer not null references ticket ( id ), datecreated datetime not null default ( datetime('now', 'localtime') ), user text not null, minutes integer not null );
-# CREATE INDEX idx_comments_ticket_id on comments ( ticket_id );
-# CREATE INDEX idx_contacts_ticket_id on contacts ( ticket_id );
-# CREATE INDEX idx_statustrack_ticket_id on statustrack ( ticket_id );
-# CREATE INDEX idx_tags_tag on tags ( tag );
-# CREATE INDEX idx_tags_ticket_id on tags ( ticket_id );
-# CREATE INDEX idx_tickets_datecreated on tickets ( datecreated desc );
-# CREATE INDEX idx_tickets_datemodified on tickets ( datemodified desc );
-# CREATE INDEX idx_tickets_priority on tickets ( priority desc );
-# CREATE INDEX idx_tickets_status on tickets ( status );
-# CREATE INDEX idx_timetrack_ticket_id on timetrack ( ticket_id );
