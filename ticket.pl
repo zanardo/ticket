@@ -38,7 +38,7 @@ our $smtp_mail = '127.0.0.1';		# Servidor SMTP
 
 our $uri = $ENV{'SCRIPT_NAME'};
 our $css = "$uri?action=get-css";
-our $VERSION = '1.0dev';
+our $VERSION = '1.0';
 our $user = $ENV{'REMOTE_USER'} || 'anônimo';
 
 our $dbh = DBI->connect("dbi:Pg:dbname=ticket","postgres","") or die $!;
