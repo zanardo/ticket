@@ -13,7 +13,8 @@ ticket
 
 dependências
 
-  ticket precisa do Perl 5.8.x e das bibliotecas externas DBD::Pg e MIME::Lite.
+  ticket precisa do Perl 5.8 ou mais recente, e das bibliotecas externas
+  DBD::Pg e MIME::Lite.
 
     # cpan install DBD::Pg
     # cpan install MIME::Lite
