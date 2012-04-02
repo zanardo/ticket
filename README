@@ -7,6 +7,10 @@ ticket
   Ele é desenvolvido para rodar em Linux, em um servidor web que suporte a
   interface CGI, e utiliza o servidor de banco de dados PostgreSQL.
 
+  O controle de usuários é feito através de autenticação HTTP. É possível
+  utilizar o sistema sem autenticação, caso seja usado por somente uma pessoa
+  em seu computador, porém o usuário registrado nos chamados será "anônimo".
+
 dependências
 
   ticket precisa do Perl 5.8.x e das bibliotecas externas DBD::Pg e MIME::Lite.
