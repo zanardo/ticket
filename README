@@ -1,49 +1,54 @@
-  ticket é um sistema simples de chamados para pequenos departamentos, para
-  o acompanhamento de casos em abertos sobre qualquer coisa (bugs de
-  software, tarefas e ações, etc). Ele é desenvolvido para rodar em Linux.
+ticket
+
+  ticket é um sistema simples de chamados para pequenos departamentos, para o
+  acompanhamento de casos em aberto sobre qualquer coisa (bugs de software,
+  tarefas e ações, etc).
+
+  Ele é desenvolvido para rodar em Linux, em um servidor web que suporte a
+  interface CGI, e utiliza o servidor de banco de dados PostgreSQL.
 
 dependências
 
-  ticket precisa do Perl 5.8.x e da biblioteca DBD::SQLite para rodar.
+  ticket precisa do Perl 5.8.x e das bibliotecas externas DBD::Pg e MIME::Lite.
+
+    # cpan install DBD::Pg
+	# cpan install MIME::Lite
 
 instalando ticket
 
-  A última versão disponível é a 0.7. Baixe em
-  http://zanardo.org/ticket.tgz.  O guia abaixo foi testado para o servidor
-  web Apache.
+  A última versão do sistema ticket pode ser obtida utilizando o Git:
 
-  Como root:
+    $ git clone git://github.com/zanardo/ticket
 
-    # tar xvzf ticket.tgz
-    # cd ticket
-    # mkdir /var/ticket
-    # cp ticket.db /var/ticket
-
-  Os arquivos devem ser copiados para um diretório do seu servidor web.
+  O script ticket.pl deve ser copiado para um diretório do seu servidor web.
   Neste exemplo, vamos supor que ele esteja lendo documentos de
-  /var/www/htdocs:
+  /var/www/htdocs, e vamos configurar o script para ser executado no URI
+  /ticket do servidor web:
 
-    # cp ticket /var/www/htdocs
-    # cp ticket.css /var/www/htdocs
-    # cp ticket.png /var/www/htdocs
-
-  Você deve dar permissões de escrita ao usuário que o servidor web está
-  rodando. Vamos utilizar nobody:
-
-    # chown nobody /var/ticket /var/ticket/ticket.db
+    # cp ticket.pl /var/www/htdocs/ticket
 
   Basta configurar o servidor web para executar ticket como um CGI. No caso
-  do Apache, configurar em httpd.conf:
+  do Apache, configurar em /var/www/htdocs/.htaccess:
 
     <Files ticket>
       AuthType Basic
       AuthName User
       Require valid-user
-      AuthUserFile /var/ticket/apache.auth
+      AuthUserFile /etc/httpd/ticket.auto
       Satisfy All
       SetHandler cgi-script
     </Files>
 
   Crie os usuários para autenticação com:
 
-    # htpasswd -c /var/ticket/apache.auth usuario
+    # htpasswd -c /etc/httod/ticket.auth usuario
+
+criando o banco de dados
+
+  Criar o banco de dados com nome "ticket" no PostgreSQL:
+
+    $ createdb -E utf8 -l pt_BR.utf8 -T template0 ticket -U postgres
+
+  Importar o esqueleto do banco de dados:
+
+    $ psql -U postgres ticket < schema.sql 
