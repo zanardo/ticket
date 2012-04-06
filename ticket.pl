@@ -14,8 +14,7 @@ use DBI;
 use CGI qw(:standard);
 use CGI::Carp qw(fatalsToBrowser);
 use POSIX qw(strftime);
-use MIME::Lite;
-use Encode qw(encode);
+use Mail::Sender;
 
 # Configurações ###################################################
 our $from_mail = 'root@localhost';	# E-mail remetente
@@ -750,13 +749,19 @@ sub send_email {
 	my $text = "[$date] ($user): $note\r\n\r\n\r\n\r\n-- Este é um e-mail automático enviado pelo sistema ticket.";
 
 	foreach(grep {!/^#/} split("[\r\n]+", $contacts)) {
-		my $mail = MIME::Lite->new(
-			From => $from_mail,
-			To => $_,
-			Subject => encode('MIME-Header', "#$id - $title"),
-			Data => $text
-		);
-		$mail->send('smtp', $smtp_mail) or die $!;
+		my $sender = new Mail::Sender {
+			smtp => $smtp_mail,
+			from => $from_mail,
+			on_errors => undef
+		} or die "Erro criando objeto de email: $Mail::Sender::Error";
+		$sender->Open({
+				to => $_,
+				subject => "#$id - $title",
+				charset => "utf8"
+		}) or die "Erro criando mail: $sender->{'error_msg'}";
+		$sender->SendLineEnc($text);
+		$sender->Close()
+			or die "Erro ao enviar mail: $sender->{'error_msg'}";
 	}
 }
 
