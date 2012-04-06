@@ -685,7 +685,7 @@ sub get_contacts_from_ticket {
 
 sub get_title_from_ticket {
 	my $id = shift;
-	my $title = @{ sql( 'select title from tickets where id = ?', $id ) }->[0]->{'title'};
+	my $title = sql( 'select title from tickets where id = ?', $id )->[0]->{'title'};
 	return $title;
 }
 
