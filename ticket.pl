@@ -563,7 +563,6 @@ sub show_ticket_small {
 	print "</td><td valign='top' align='right'>";
 	print_ticket_tags($r->{'id'});
 	print q{</td></tr></table>};
-	#populate_search($r->{'id'});
 }
 
 sub print_ticket_tags {
