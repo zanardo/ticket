@@ -39,14 +39,14 @@ instalando ticket
       AuthType Basic
       AuthName User
       Require valid-user
-      AuthUserFile /etc/httpd/ticket.auto
+      AuthUserFile /etc/httpd/ticket.auth
       Satisfy All
       SetHandler cgi-script
     </Files>
 
   Crie os usuários para autenticação com:
 
-    # htpasswd -c /etc/httod/ticket.auth usuario
+    # htpasswd -c /etc/httpd/ticket.auth usuario
 
 criando o banco de dados
 
