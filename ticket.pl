@@ -772,7 +772,7 @@ sub send_email {
 sub thecss {
 	return <<'	CSS';
 	body { margin: 1em 2em 2em 2em; font-family: Verdana, Arial, sans-serif; font-size: 9pt; background-color: #F1F3F4; }
-	.tab { color: #0000EE; text-decoration: underline; font-family: Verdana, Arial, sans-serif; font-size: 8pt; }
+	.tab { color: #0000EE; text-decoration: underline; font-family: Verdana, Arial, sans-serif; font-size: 8pt; cursor: pointer; }
 	a:link { color: #0000EE; }
 	a:visited { color: #0000EE; }
 	a:active { color: #0000EE; }
