@@ -14,10 +14,10 @@ ticket
 dependências
 
   ticket precisa do Perl 5.8 ou mais recente, e das bibliotecas externas
-  DBD::Pg e MIME::Lite.
+  DBD::Pg e Mail::Sender.
 
     # cpan install DBD::Pg
-    # cpan install MIME::Lite
+    # cpan install Mail::Sender
 
 instalando ticket
 
