@@ -748,21 +748,25 @@ sub send_email {
 
 	my $text = "[$date] ($user): $note\r\n\r\n\r\n\r\n-- Este é um e-mail automático enviado pelo sistema ticket.";
 
+	my @contacts = ();
+
 	foreach(grep {!/^#/} split("[\r\n]+", $contacts)) {
-		my $sender = new Mail::Sender {
-			smtp => $smtp_mail,
-			from => $from_mail,
-			on_errors => undef
-		} or die "Erro criando objeto de email: $Mail::Sender::Error";
-		$sender->Open({
-				to => $_,
-				subject => "#$id - $title",
-				charset => "utf8"
-		}) or die "Erro criando mail: $sender->{'error_msg'}";
-		$sender->SendLineEnc($text);
-		$sender->Close()
-			or die "Erro ao enviar mail: $sender->{'error_msg'}";
+		push @contacts, $_;
 	}
+
+	my $sender = new Mail::Sender {
+		smtp => $smtp_mail,
+		from => $from_mail,
+		on_errors => undef
+	} or die "Erro criando objeto de email: $Mail::Sender::Error";
+	$sender->Open({
+			to => join(', ', @contacts),
+			subject => "#$id - $title",
+			charset => "utf8"
+	}) or die "Erro criando mail: $sender->{'error_msg'}";
+	$sender->SendLineEnc($text);
+	$sender->Close()
+		or die "Erro ao enviar mail: $sender->{'error_msg'}";
 }
 
 sub thecss {
