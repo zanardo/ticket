@@ -760,19 +760,21 @@ sub send_email {
 		push @contacts, $_;
 	}
 
-	my $sender = new Mail::Sender {
-		smtp => $smtp_mail,
-		from => $from_mail,
-		on_errors => undef
-	} or die "Erro criando objeto de email: $Mail::Sender::Error";
-	$sender->Open({
-			to => join(', ', @contacts),
-			subject => "#$id - $title",
-			charset => "utf8"
-	}) or die "Erro criando mail: $sender->{'error_msg'}";
-	$sender->SendLineEnc($text);
-	$sender->Close()
-		or die "Erro ao enviar mail: $sender->{'error_msg'}";
+	if(scalar @contacts > 0) {
+		my $sender = new Mail::Sender {
+			smtp => $smtp_mail,
+			from => $from_mail,
+			on_errors => undef
+		} or die "Erro criando objeto de email: $Mail::Sender::Error";
+		$sender->Open({
+				to => join(', ', @contacts),
+				subject => "#$id - $title",
+				charset => "utf8"
+		}) or die "Erro criando mail: $sender->{'error_msg'}";
+		$sender->SendLineEnc($text);
+		$sender->Close()
+			or die "Erro ao enviar mail: $sender->{'error_msg'}";
+	}
 }
 
 sub thecss {
