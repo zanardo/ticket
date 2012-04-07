@@ -311,6 +311,12 @@ elsif($q =~ /^\/(\d+)$/) {
 		{
 		  document.getElementById(panels[i]).style.display = (name == panels[i]) ? 'block':'none';
 		}
+
+		// Altera foco para caixa de texto caso tab seja nota
+		if(name == 'note') {
+			document.getElementById('formnote').focus();
+		}
+
 		return false;
 	  }
 
@@ -426,7 +432,7 @@ sub show_form_new_note {
 	my $contacts = join("\r\n", map {s/^/#/;$_} get_contacts_from_ticket($id));
 	print q{<div class="panel" id="note" style="display: none">};
 	print start_form(),
-		textarea(-name => 'text', -rows=>4, -columns=>70), p
+		textarea(-name => 'text', -id => 'formnote', -rows=>4, -columns=>70), p
 		small("Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):") , p ,
 		textarea(-name => 'contacts', -rows=>5, -columns=>50, -default => $contacts),
 		hidden(-name => 'action', -value => 'create-new-note', -override => 1),
