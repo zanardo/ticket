@@ -90,7 +90,7 @@ if(defined param('filter')) {
 		if($1 eq 'c') { $order = 'ORDER BY datecreated DESC' }
 		elsif($1 eq 'm') { $order = 'ORDER BY datemodified DESC' }
 		elsif($1 eq 'f') { $order = 'ORDER BY dateclosed DESC' }
-		elsif($1 eq 'p') { $order = 'ORDER BY priority ASC, dateclosed ASC' }
+		elsif($1 eq 'p') { $order = 'ORDER BY priority ASC, datecreated ASC' }
 	}
 
 	# u:usuario -> usuário de criação, fechamento, comentário, etc
