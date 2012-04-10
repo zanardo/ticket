@@ -316,6 +316,9 @@ elsif($q =~ /^\/(\d+)$/) {
 		if(name == 'note') {
 			document.getElementById('formnote').focus();
 		}
+		else if(name == 'tags') {
+			document.getElementById('formtags').focus();
+		}
 
 		return false;
 	  }
@@ -483,7 +486,7 @@ sub show_form_edit_tags_ticket {
 	print q{<div class="panel" id="tags" style="display: none">};
 	my $tags = join ' ', get_tags_from_ticket($id);
 	print start_form(-name => 'ftag'),
-		textfield(-name => 'text', -size => 70, -value=>$tags),
+		textfield(-name => 'text', -id => 'formtags', -size => 70, -value=>$tags),
 		hidden(-name => 'action', -value => 'save-tags-ticket', -override => 1),
 		hidden('id', $id),
 		submit('submit', 'Salvar palavras-chave'), p,
