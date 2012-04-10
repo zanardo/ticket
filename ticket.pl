@@ -312,12 +312,15 @@ elsif($q =~ /^\/(\d+)$/) {
 		  document.getElementById(panels[i]).style.display = (name == panels[i]) ? 'block':'none';
 		}
 
-		// Altera foco para caixa de texto caso tab seja nota
+		// Altera foco para caixas de texto
 		if(name == 'note') {
 			document.getElementById('formnote').focus();
 		}
 		else if(name == 'tags') {
 			document.getElementById('formtags').focus();
+		}
+		else if(name == 'contacts') {
+			document.getElementById('formcontacts').focus();
 		}
 
 		return false;
@@ -450,7 +453,7 @@ sub show_form_contacts_ticket {
 	my $contacts = join("\r\n", get_contacts_from_ticket($id));
 	print q{<div class="panel" id="contacts" style="display: none">};
 	print start_form(),
-		textarea(-name => 'contacts', -rows=>5, -columns=>50, -default => $contacts), br,
+		textarea(-name => 'contacts', -id => 'formcontacts', -rows=>5, -columns=>50, -default => $contacts), br,
 		hidden(-name => 'action', -value => 'save-contacts', -override => 1),
 		hidden('id', $id),
 		submit('submit', 'Salvar contatos'),
