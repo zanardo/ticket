@@ -775,7 +775,7 @@ sub send_email {
 		$sender->Open({
 				to => join(', ', @contacts),
 				subject => "#$id - $title",
-				charset => "utf8"
+				charset => "utf-8"
 		}) or die "Erro criando mail: $sender->{'error_msg'}";
 		$sender->SendLineEnc($text);
 		$sender->Close()
