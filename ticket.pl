@@ -23,7 +23,7 @@ our $smtp_mail = '127.0.0.1';		# Servidor SMTP
 
 our $uri = $ENV{'SCRIPT_NAME'};
 our $css = "$uri?action=get-css";
-our $VERSION = '1.1';
+our $VERSION = '1.1dev';
 our $user = $ENV{'REMOTE_USER'} || 'anônimo';
 
 our $dbh = DBI->connect("dbi:Pg:dbname=ticket","postgres","") or die $!;
@@ -73,9 +73,9 @@ if(defined param('filter')) {
 	# F -> fechados
 	# T -> todos
 	my $status = 'AND status = 0';
-	if($s =~ s/^F *//) { $status = 'AND status = 1' }
-	elsif($s =~ s/^T *//) { $status = '' }
-	elsif($s =~ s/^A *//) { $status = 'AND status = 0' }
+	if($s =~ s/^F +//) { $status = 'AND status = 1' }
+	elsif($s =~ s/^T +//) { $status = '' }
+	elsif($s =~ s/^A +//) { $status = 'AND status = 0' }
 
 	# t:foo -> tag "foo"
 	my $tag = '';
