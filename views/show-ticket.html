@@ -22,8 +22,38 @@
 			<input type="submit" name="filter" value="filtrar" />
 		</form>
 		</td></tr></table>
-		<span class="title">Detalhe: Ticket #{{ticket['id']}}</span><p /><table class="ticket" width="100%" border="0" bgcolor=""><tr><td width="5px" title="3. Prioridade Normal" bgcolor="">&nbsp;</td><td width="120px" valign="top"><b><a class="ticketlabel" href="/ticket/ticket.pl/48">Ticket #{{ticket['id']}}</a></b><br>Criado: <span title="2012-09-23 09:46:35">2012-09-23</span><br>Autor: <br><p /><form method="post" action="/ticket/ticket.pl/48" enctype="multipart/form-data">
-	<input type="hidden" name="action" value="close-ticket"  /><input type="hidden" name="id" value="48"  /><input type="submit" name="submit" value="fechar" /></form></td><td valign="top"><span class="tktitle">{{ticket['title']}}</span><p />
+		<span class="title">Detalhe: Ticket #{{ticket['id']}}</span>
+		<p>
+		<table class="ticket" width="100%" border="0" bgcolor="">
+			<tr>
+				<td width="5px" title="3. Prioridade Normal" bgcolor="">&nbsp;</td>
+				<td width="120px" valign="top">
+					<b>
+						<a class="ticketlabel" href="/{{ticket['id']}}">
+							Ticket #{{ticket['id']}}</a>
+					</b>
+					<br>
+					Criado: <span title="2012-09-23 09:46:35">2012-09-23</span>
+					<br>
+					Autor: 
+					<br>
+					<p>
+					%if ticket['status'] == 0:
+					<form method="post" action="/close-ticket/{{ticket['id']}}"
+						enctype="multipart/form-data">
+						<input type="submit" name="submit" value="fechar">
+					</form>
+					%elif ticket['status'] == 1:
+					<form method="post" action="/reopen-ticket/{{ticket['id']}}"
+						enctype="multipart/form-data">
+						<input type="submit" name="submit" value="reabrir">
+					</form>
+
+					%end
+				</td>
+				<td valign="top">
+					<span class="tktitle">{{ticket['title']}}</span>
+					<p>
 
 %for comment in comments:
 	%minutes = comment['minutes']

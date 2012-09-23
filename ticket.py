@@ -83,6 +83,46 @@ def showticket(ticket_id):
         comments.append(r)
     return dict(ticket=ticket, comments=comments)
 
+@post('/close-ticket/<ticket_id:int>')
+def closeticket(ticket_id):
+    c = db.cursor()
+    c.execute('''
+        UPDATE tickets
+        SET status = 1,
+            dateclosed = NOW(),
+            datemodified = NOW()
+        WHERE id = %s
+    ''', (ticket_id,))
+    c.execute('''
+        INSERT INTO statustrack (
+            ticket_id, "user", status
+        )
+        VALUES (
+            %s, %s, 'close')
+    ''', (ticket_id, 'anônimo'))
+    db.commit()
+    return redirect('/%s' % ticket_id)
+
+@post('/reopen-ticket/<ticket_id:int>')
+def reopenticket(ticket_id):
+    c = db.cursor()
+    c.execute('''
+        UPDATE tickets
+        SET status = 0,
+            dateclosed = NULL,
+            datemodified = NOW()
+        WHERE id = %s
+    ''', (ticket_id,))
+    c.execute('''
+        INSERT INTO statustrack (
+            ticket_id, "user", status
+        )
+        VALUES (
+            %s, %s, 'reopen')
+    ''', (ticket_id, 'anônimo'))
+    db.commit()
+    return redirect('/%s' % ticket_id)
+
 @route('/static/:filename')
 def static(filename):
     if not re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename):
