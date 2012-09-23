@@ -105,10 +105,18 @@ def showticket(ticket_id):
         GROUP BY "user"
         ORDER BY "user"
     ''', (ticket_id,))
+    tags = []
+    c.execute('''
+        SELECT tag
+        FROM tags
+        WHERE ticket_id = %s
+    ''', (ticket_id,))
+    for r in c:
+        tags.append(r['tag'])
     for r in c:
         timetrack.append(r)
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
-        priodesc=priodesc, timetrack=timetrack)
+        priodesc=priodesc, timetrack=timetrack, tags=tags)
 
 @post('/close-ticket/<ticket_id:int>')
 def closeticket(ticket_id):
@@ -139,6 +147,23 @@ def changetitle(ticket_id):
         SET title = %s
         WHERE id = %s
     ''', (title, ticket_id,))
+    db.commit()
+    return redirect('/%s' % ticket_id)
+
+@post('/change-tags/<ticket_id:int>')
+def changetags(ticket_id):
+    c = db.cursor()
+    tags = request.forms.get('text') or ''
+    tags = tags.strip().split()
+    c.execute('''
+        DELETE FROM tags
+        WHERE ticket_id = %s
+    ''', ( ticket_id, ))
+    for tag in tags:
+        c.execute('''
+            INSERT INTO tags ( ticket_id, tag )
+            VALUES ( %s, %s )
+        ''', (ticket_id, tag) )
     db.commit()
     return redirect('/%s' % ticket_id)
 

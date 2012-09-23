@@ -149,7 +149,7 @@
 		<div class="panel" id="tags" style="display: none">
 			<form method="post" action="/change-tags/{{ticket['id']}}"
 					enctype="multipart/form-data" name="ftag">
-				<input type="text" name="text"  size="70" id="formtags">
+				<input type="text" name="text" value="{{' '.join(list(tags))}}" size="70" id="formtags">
 				<input type="submit" name="submit" value="Salvar palavras-chave">
 				<p>
 				<font color="#A5A5A5"><small>Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.</small></font>
