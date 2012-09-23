@@ -56,6 +56,7 @@ def index():
     search = []
     limit = ''
     status = 'AND status = 0'
+    tags = ''
 
     # Abrangência dos filtros (status)
     # T: todos
@@ -76,6 +77,13 @@ def index():
         if m:
             limit = 'LIMIT %s' % m.group(1)
             continue
+        # Palavra-chave (t:TAG)
+        m = re.match(r'^t:(.+)$', t)
+        if m:
+            tags += c.mogrify(
+                'AND id IN ( SELECT ticket_id FROM tags WHERE tag  = %s ) ',
+                (m.group(1),))
+            continue
         # Texto para busca
         search.append(t)
 
@@ -94,9 +102,11 @@ def index():
             %s
             %s
             %s
+            %s
     ''' % (
         status,
         searchstr,
+        tags,
         limit,
     )
 
