@@ -153,6 +153,13 @@ def index():
             prio = """
                 AND priority BETWEEN %s AND %s
             """ % (p1, p2)
+        # Prioridade
+        m = re.match(r'^p:([1-5])$', t)
+        if m:
+            p1 = m.group(1)
+            prio = """
+                AND priority = %s
+            """ % (p1,)
         # Texto para busca
         search.append(t)
 
