@@ -36,6 +36,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 @route('/')
+@view('list-tickets')
 def index():
     # A página padrão exibe os tickets ordenados por prioridade
     if 'filter' not in request.query.keys():
@@ -48,7 +49,7 @@ def index():
     if m:
         return redirect('/%s' % m.group(1))
 
-    c = db.cursor()
+    c = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     # Dividindo filtro em tokens separados por espaços
     tokens = filter.strip().split()
@@ -100,6 +101,7 @@ def index():
                 order = 'ORDER BY dateclosed DESC'
             elif o == 'p':
                 order = 'ORDER BY priority ASC, datecreated ASC'
+            continue
         # Usuário de criação, fechamento, modificação
         m = re.match(r'^u:(.+)$', t)
         if m:
@@ -110,6 +112,7 @@ def index():
                 OR ( id IN ( SELECT ticket_id FROM timetrack WHERE "user" = %s ) )
                 OR ( id IN ( SELECT ticket_id FROM statustrack WHERE "user" = %s ) ) )
             """, (u, u, u, u))
+            continue
         # Faixa de data de criação, fechamento, modificação
         m = re.match(r'^d([fmc]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$', t)
         if m:
@@ -129,6 +132,7 @@ def index():
             date = """
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y2, m2, d2 )
+            continue
         # Data de criação, fechamento, modificação
         m = re.match(r'^d([fmc]):(\d{4})(\d{2})(\d{2})$', t)
         if m:
@@ -145,6 +149,7 @@ def index():
             date = """
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y1, m1, d1 )
+            continue
         # Faixa de prioridade
         m = re.match(r'^p:([1-5])-([1-5])$', t)
         if m:
@@ -153,6 +158,7 @@ def index():
             prio = """
                 AND priority BETWEEN %s AND %s
             """ % (p1, p2)
+            continue
         # Prioridade
         m = re.match(r'^p:([1-5])$', t)
         if m:
@@ -160,6 +166,7 @@ def index():
             prio = """
                 AND priority = %s
             """ % (p1,)
+            continue
         # Texto para busca
         search.append(t)
 
@@ -194,8 +201,15 @@ def index():
         limit,
     )
 
-    response.content_type = 'text/plain; charset=utf-8'
-    return sql
+    c.execute(sql)
+    tickets = []
+    for ticket in c:
+        ticketdict = dict(ticket)
+        ticketdict['tags'] = tickettags(ticket['id'])
+        tickets.append(ticketdict)
+
+    return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
+        priocolor=priocolor)
 
 
 @get('/new-ticket')
@@ -465,6 +479,18 @@ def tagsdesc():
             'fgcolor': r['fgcolor']
         }
     return tagdesc
+
+def tickettags(ticket_id):
+    tags = []
+    c = db.cursor()
+    c.execute('''
+        SELECT tag
+        FROM tags
+        WHERE ticket_id = %s
+    ''', (ticket_id,))
+    for r in c:
+        tags.append(r[0])
+    return tags
 
 if __name__ == '__main__':
 

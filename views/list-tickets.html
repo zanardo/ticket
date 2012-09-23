@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+	<title>Tickets: {{filter}}</title>
+	<link rel="stylesheet" type="text/css" href="/static/styles.css">
+	<meta charset="utf-8">
+</head>
+<body>
+	<table border="0" align="right">
+		<tr>
+		<td class="topmenu">
+			olá <b>anônimo</b>! 
+			<a href='/' accesskey='A' title="alt-shift-a">abertos</a>
+			| <a href='/?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
+			| <a href='/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
+		</td> 
+		<tr>
+		</tr>
+		<td align=right>
+		<form method="get" action="/" enctype="multipart/form-data">
+			<input type="text" name="filter" size="25" accesskey='S' value="{{filter}}" title="alt-shift-s">
+			<input type="submit" name="submit" value="filtrar" />
+		</form>
+		</td></tr></table>
+		<span class="title">Tickets</span>
+		<p>
+
+		%for tk in tickets:
+			<table class="ticket" width="100%" border="0" bgcolor="">
+			<tr>
+				<td width="5px" title="{{priodesc[tk['priority']]}}"
+					bgcolor="{{priocolor[tk['priority']]}}">&nbsp;</td>
+				<td width="80px" valign="top">
+					<b>
+					<a class="ticketlabel" title="Criado: Modificado: Autor:"
+						href="/{{tk['id']}}">#{{tk['id']}}</a>
+					</b>
+				</td>
+				<td valign="top">
+					<span class="tktitle">{{tk['title']}}</span>
+				</td>
+				<td valign="top" align="right">
+					%for tags in tk['tags']:
+						
+					%end
+				</td>
+			</tr>
+			</table>
+		%end
+
+		<p>
+		<small><font color="gray"><div align="right">sistema <a href="https://github.com/zanardo/ticket">ticket</a> versão 1.1dev</font></small>
+	</table>
+</body>
+</html>
