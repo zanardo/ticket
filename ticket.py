@@ -186,6 +186,25 @@ def registerminutes(ticket_id):
     db.commit()
     return redirect('/%s' % ticket_id)
 
+@post('/new-note/<ticket_id:int>')
+def newnote(ticket_id):
+    c = db.cursor()
+    note = request.forms.get('text')
+    if note.strip() == '':
+        return 'nota inválida'
+    c.execute('''
+        INSERT INTO comments (
+            ticket_id, "user", comment )
+        VALUES ( %s, %s, %s )
+    ''', (ticket_id, 'anônimo', note))
+    c.execute('''
+        UPDATE tickets
+        SET datemodified = NOW()
+        WHERE id = %s
+    ''', (ticket_id,))
+    db.commit()
+    return redirect('/%s' % ticket_id)
+
 @post('/reopen-ticket/<ticket_id:int>')
 def reopenticket(ticket_id):
     c = db.cursor()
@@ -211,6 +230,21 @@ def static(filename):
     if not re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename):
         return 'invalid filename'
     return static_file('static/%s' % filename, root='.')
+
+def tagsdesc():
+    c = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c.execute('''
+        SELECT tag, description, bgcolor, fgcolor
+        FROM tagsdesc
+    ''')
+    tagdesc = {}
+    for r in c:
+        tagdesc[r['tag']] = {
+            'description': r['description'],
+            'bgcolor': r['bgcolor'],
+            'fgcolor': r['fgcolor']
+        }
+    return tagdesc
 
 if __name__ == '__main__':
 
