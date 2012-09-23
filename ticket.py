@@ -9,20 +9,34 @@ import os
 import sys
 import getopt
 import bottle
+import psycopg2
 
 from bottle import route, request, run, view, response, static_file, \
-    redirect, local
+    redirect, local, get, post
 
-def connectdb(dbpath):
-    db = getattr(local, 'db', None)
-    if db is None:
-        local.db = sqlite3.connect(dbpath)
-    return local.db
+db = psycopg2.connect(database='ticket', user='postgres')
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
-@route('/new-ticket')
+@get('/new-ticket')
 @view('new-ticket')
 def newticket():
     return dict()
+
+@post('/new-ticket')
+def newticketpost():
+    title = request.forms.get('title')
+    c = db.cursor()
+    c.execute('''
+        INSERT INTO TICKETS (
+            title, "user"
+        )
+        VALUES ( %s, %s )
+        RETURNING id
+    ''', (title, '') )
+    ticket_id = c.fetchone()[0]
+    db.commit()
+    return redirect('/%s' % ticket_id)
 
 @route('/static/:filename')
 def static(filename):
