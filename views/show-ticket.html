@@ -1,0 +1,58 @@
+<!doctype html>
+<head>
+	<title>#{{ticket['id']}} {{ticket['title']}}</title>
+	<link rel="stylesheet" type="text/css" href="/static/styles.css" />
+	<script type="text/javascript" src="/static/show-ticket.js"></script>
+	<meta charset="utf-8">
+</head>
+<body>
+
+		<table border="0" align="right">
+		<tr>
+		<td class="topmenu">
+			olá <b>anônimo</b>! 
+			<a href='/ticket/ticket.pl' accesskey='A' title="alt-shift-a">abertos</a>
+			| <a href='/ticket/ticket.pl?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
+			| <a href='/ticket/ticket.pl/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
+		</td> <tr></tr> <td align=right>
+		<form method="post" action="/ticket/ticket.pl" enctype="multipart/form-data">
+			<input type="text" name="filter" size="25" accesskey='S' value="#{{ticket['id']}}" title="alt-shift-s">
+			<input type="submit" name="filter" value="filtrar" />
+		</form>
+		</td></tr></table>
+		<span class="title">Detalhe: Ticket #{{ticket['id']}}</span><p /><table class="ticket" width="100%" border="0" bgcolor=""><tr><td width="5px" title="3. Prioridade Normal" bgcolor="">&nbsp;</td><td width="120px" valign="top"><b><a class="ticketlabel" href="/ticket/ticket.pl/48">Ticket #{{ticket['id']}}</a></b><br>Criado: <span title="2012-09-23 09:46:35">2012-09-23</span><br>Autor: <br><p /><form method="post" action="/ticket/ticket.pl/48" enctype="multipart/form-data">
+	<input type="hidden" name="action" value="close-ticket"  /><input type="hidden" name="id" value="48"  /><input type="submit" name="submit" value="fechar" /></form></td><td valign="top"><span class="tktitle">{{ticket['title']}}</span><p />
+
+%for comment in comments:
+	%minutes = comment['minutes']
+	<b>{{ comment['datecreated'].strftime("%Y-%m-%d")}} - {{ comment['user']}}: </b>
+	%if comment['minutes'] > 0:
+		%minutes = comment['minutes']
+		%hours = minutes / 60
+		%minutes = minutes % 60
+		%comment['comment'] = "%dh%2dm trabalhados" % ( hours, minutes )
+	%end
+	%if comment['negrito']:
+		<b><i>{{ comment['comment'] }}</i></b>
+	%else:
+		{{ comment['comment'] }}
+	%end
+	<br>
+%end
+
+</td></tr></table><p>
+
+<table class="actions" border="0"><tr><td><a class="tab" onclick="return showPanel(this, 'note');">Adicionar Nota</a> | <a class="tab" onclick="return showPanel(this, 'prio');">Prioridade de Ação</a> | <a class="tab" onclick="return showPanel(this, 'tags');">Palavras-Chave</a> | <a class="tab" onclick="return showPanel(this, 'title');">Título</a> | <a class="tab" onclick="return showPanel(this, 'minutes');">Tempo</a> | <a class="tab" onclick="return showPanel(this, 'contacts');">Contatos</a></td></tr></table><br /><div class="panel" id="note" style="display: none"><form method="post" action="/ticket/ticket.pl/48" enctype="multipart/form-data">
+<textarea name="text"  rows="4" cols="70" id="formnote"></textarea><p><small>Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):</small> <p /> <textarea name="contacts"  rows="5" cols="50"></textarea> <input type="hidden" name="action" value="create-new-note"  /> <input type="hidden" name="id" value="48"  /> <p /> <input type="submit" name="submit" value="Adicionar nota" /> </form></p></div><div class="panel" id="prio" style="display: none">
+		<form method="post" action="" enctype="multipart/form-data">
+		<select name="prio" ><option value="1">1. Ação Urgente</option><option value="2">2. Atenção</option><option selected="selected" value="3">3. Prioridade Normal</option><option value="4">4. Baixa Prioridade</option><option value="5">5. Baixíssima Prioridade</option>
+		</select> <input type="hidden" name="action" 
+			value="change-ticket-prio"  />
+		<input type="hidden" name="id" value="48"  />
+		<input type="submit" name="submit" value="Mudar prioridade de ação" /></form>
+	</div><div class="panel" id="tags" style="display: none"><form method="post" action="/ticket/ticket.pl/48" enctype="multipart/form-data" name="ftag">
+<input type="text" name="text"  size="70" id="formtags" /><input type="hidden" name="action" value="save-tags-ticket"  /><input type="hidden" name="id" value="48"  /><input type="submit" name="submit" value="Salvar palavras-chave" /><p /><font color="#A5A5A5"><small>Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.</small></font></form></div><div class="panel" id="title" style="display: none"><form method="post" action="/ticket/ticket.pl/48" enctype="multipart/form-data">
+<input type="text" name="text" value="teste 123" size="70" /><input type="hidden" name="action" value="save-title-ticket"  /><input type="hidden" name="id" value="48"  /><input type="submit" name="submit" value="Salvar título" /></form></div><div class="panel" id="minutes" style="display: none"><form method="post" action="/ticket/ticket.pl/48" enctype="multipart/form-data" name="fminutes">
+<input type="text" name="minutes" value="0" size="10" /><input type="hidden" name="action" value="register-minutes"  /><input type="hidden" name="parent" value="48"  /><input type="submit" name="submit" value="Contabilizar minutos" /><p /><input type="button"  name="bstartcron" value="Iniciar Cronômetro" onclick="startCron()" /><input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;" /></form></div><div class="panel" id="contacts" style="display: none"><form method="post" action="/ticket/ticket.pl/48" enctype="multipart/form-data">
+<textarea name="contacts"  rows="5" cols="50" id="formcontacts"></textarea><br /><input type="hidden" name="action" value="save-contacts"  /><input type="hidden" name="id" value="48"  /><input type="submit" name="submit" value="Salvar contatos" /></form></div><p><small><font color="gray"><div align="right">sistema
+		<a href="https://github.com/zanardo/ticket">ticket</a> versão 1.1dev</small></div></font>
