@@ -97,8 +97,18 @@ def showticket(ticket_id):
     comments = []
     for r in c:
         comments.append(r)
+    timetrack = []
+    c.execute('''
+        SELECT "user", SUM(minutes) AS minutes
+        FROM timetrack
+        WHERE ticket_id = %s
+        GROUP BY "user"
+        ORDER BY "user"
+    ''', (ticket_id,))
+    for r in c:
+        timetrack.append(r)
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
-        priodesc=priodesc)
+        priodesc=priodesc, timetrack=timetrack)
 
 @post('/close-ticket/<ticket_id:int>')
 def closeticket(ticket_id):

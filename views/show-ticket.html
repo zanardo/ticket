@@ -171,6 +171,16 @@
 				<input type="button" name="bstartcron" value="Iniciar Cronômetro" onclick="startCron()">
 				<input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;">
 			</form>
+			<p>
+			%for t in timetrack:
+				%minutes = t['minutes']
+				%hours = minutes / 60
+				%minutes = minutes % 60
+				<small>
+					<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%2dm" % (hours,minutes)}}</b> no total
+				</small>
+				<br>
+			%end
 		</div>
 		<div class="panel" id="contacts" style="display: none">
 			<form method="post" action="/change-contacts/{{ticket['id']}}"
