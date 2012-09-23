@@ -225,6 +225,19 @@ def reopenticket(ticket_id):
     db.commit()
     return redirect('/%s' % ticket_id)
 
+@post('/change-priority/<ticket_id:int>')
+def changepriority(ticket_id):
+    c = db.cursor()
+    priority = int(request.forms.get('prio'))
+    assert(priority in (1,2,3,4,5))
+    c.execute('''
+        UPDATE tickets
+        SET priority = %s
+        WHERE id = %s
+    ''', (priority, ticket_id,))
+    db.commit()
+    return redirect('/%s' % ticket_id)
+
 @route('/static/:filename')
 def static(filename):
     if not re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename):
