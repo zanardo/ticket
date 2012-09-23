@@ -128,10 +128,21 @@ def showticket(ticket_id):
     for r in c:
         tags.append(r['tag'])
 
+    # Obtém contatos
+
+    contacts = []
+    c.execute('''
+        SELECT email
+        FROM contacts
+        WHERE ticket_id = %s
+    ''', (ticket_id,))
+    for r in c:
+        contacts.append(r['email'])
+
     # Renderiza template
 
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
-        priodesc=priodesc, timetrack=timetrack, tags=tags)
+        priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts)
 
 @post('/close-ticket/<ticket_id:int>')
 def closeticket(ticket_id):
@@ -185,7 +196,7 @@ def changetags(ticket_id):
 @post('/change-contacts/<ticket_id:int>')
 def changecontacts(ticket_id):
     c = db.cursor()
-    contacts = request.forms.get('text') or ''
+    contacts = request.forms.get('contacts') or ''
     contacts = contacts.strip().split()
     c.execute('''
         DELETE FROM contacts

@@ -187,7 +187,7 @@
 		<div class="panel" id="contacts" style="display: none">
 			<form method="post" action="/change-contacts/{{ticket['id']}}"
 				enctype="multipart/form-data">
-				<textarea name="contacts"  rows="5" cols="50" id="formcontacts"></textarea>
+				<textarea name="contacts"  rows="5" cols="50" id="formcontacts">{{'\r\n'.join(list(contacts))}}</textarea>
 				<br>
 				<input type="submit" name="submit" value="Salvar contatos">
 			</form>
