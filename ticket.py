@@ -295,15 +295,7 @@ def showticket(ticket_id):
         timetrack.append(r)
 
     # Obtém palavras-chave
-
-    tags = []
-    c.execute('''
-        SELECT tag
-        FROM tags
-        WHERE ticket_id = %s
-    ''', (ticket_id,))
-    for r in c:
-        tags.append(r['tag'])
+    tags = tickettags(ticket_id)
 
     # Obtém contatos
 
