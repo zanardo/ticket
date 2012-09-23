@@ -163,6 +163,7 @@
 			</form>
 		</div>
 		<div class="panel" id="minutes" style="display: none">
+			%if ticket['status'] == 0:
 			<form method="post" action="/register-minutes/{{ticket['id']}}"
 					enctype="multipart/form-data" name="fminutes">
 				<input type="text" name="minutes" value="0" size="10">
@@ -172,6 +173,7 @@
 				<input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;">
 			</form>
 			<p>
+			%end
 			%for t in timetrack:
 				%minutes = t['minutes']
 				%hours = minutes / 60
