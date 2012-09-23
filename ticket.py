@@ -58,6 +58,7 @@ def index():
     status = 'AND status = 0'
     tags = ''
     order = 'ORDER BY datemodified DESC'
+    user = ''
 
     # Abrangência dos filtros (status)
     # T: todos
@@ -97,6 +98,16 @@ def index():
                 order = 'ORDER BY dateclosed DESC'
             elif o == 'p':
                 order = 'ORDER BY priority ASC, datecreated ASC'
+        # Usuário de criação, fechamento, modificação
+        m = re.match(r'^u:(.+)$', t)
+        if m:
+            u = m.group(1)
+            user = c.mogrify("""
+               AND ( ( "user" = %s )
+                OR ( id IN ( SELECT ticket_id FROM comments WHERE "user" = %s ) )
+                OR ( id IN ( SELECT ticket_id FROM timetrack WHERE "user" = %s ) )
+                OR ( id IN ( SELECT ticket_id FROM statustrack WHERE "user" = %s ) ) )
+            """, (u, u, u, u))
         # Texto para busca
         search.append(t)
 
@@ -117,10 +128,12 @@ def index():
             %s
             %s
             %s
+            %s
     ''' % (
         status,
         searchstr,
         tags,
+        user,
         order,
         limit,
     )
