@@ -167,6 +167,23 @@ def changetags(ticket_id):
     db.commit()
     return redirect('/%s' % ticket_id)
 
+@post('/change-contacts/<ticket_id:int>')
+def changecontacts(ticket_id):
+    c = db.cursor()
+    contacts = request.forms.get('text') or ''
+    contacts = contacts.strip().split()
+    c.execute('''
+        DELETE FROM contacts
+        WHERE ticket_id = %s
+    ''', ( ticket_id, ))
+    for contact in contacts:
+        c.execute('''
+            INSERT INTO contacts ( ticket_id, email )
+            VALUES ( %s, %s )
+        ''', (ticket_id, contact) )
+    db.commit()
+    return redirect('/%s' % ticket_id)
+
 @post('/register-minutes/<ticket_id:int>')
 def registerminutes(ticket_id):
     c = db.cursor()
