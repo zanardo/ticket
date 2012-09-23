@@ -137,11 +137,13 @@
 			<form method="post" action="/change-priority/{{ticket['id']}}"
 					enctype="multipart/form-data">
 				<select name="prio">
-					<option value="1">1. Ação Urgente</option>
-					<option value="2">2. Atenção</option>
-					<option selected="selected" value="3">3. Prioridade Normal</option>
-					<option value="4">4. Baixa Prioridade</option>
-					<option value="5">5. Baixíssima Prioridade</option>
+					%for prio in priodesc:
+						%if prio == ticket['priority']:
+							<option value="{{prio}}" selected="selected">{{priodesc[prio]}}</option>
+						%else:
+							<option value="{{prio}}">{{priodesc[prio]}}</option>
+						%end
+					%end
 				</select>
 				<input type="submit" name="submit" value="Mudar prioridade de ação">
 			</form>
