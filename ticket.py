@@ -120,6 +120,18 @@ def closeticket(ticket_id):
     db.commit()
     return redirect('/%s' % ticket_id)
 
+@post('/change-title/<ticket_id:int>')
+def changetitle(ticket_id):
+    c = db.cursor()
+    title = request.forms.get('text') or '(sem título)'
+    c.execute('''
+        UPDATE tickets
+        SET title = %s
+        WHERE id = %s
+    ''', (title, ticket_id,))
+    db.commit()
+    return redirect('/%s' % ticket_id)
+
 @post('/reopen-ticket/<ticket_id:int>')
 def reopenticket(ticket_id):
     c = db.cursor()
