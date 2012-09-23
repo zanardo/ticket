@@ -109,7 +109,7 @@ def index():
                 OR ( id IN ( SELECT ticket_id FROM timetrack WHERE "user" = %s ) )
                 OR ( id IN ( SELECT ticket_id FROM statustrack WHERE "user" = %s ) ) )
             """, (u, u, u, u))
-        # Data de criação, fechamento, modificação
+        # Faixa de data de criação, fechamento, modificação
         m = re.match(r'^d([fmc]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$', t)
         if m:
             dt = ''
@@ -128,6 +128,22 @@ def index():
             date = """
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y2, m2, d2 )
+        # Data de criação, fechamento, modificação
+        m = re.match(r'^d([fmc]):(\d{4})(\d{2})(\d{2})$', t)
+        if m:
+            dt = ''
+            y1 = m.group(2)
+            m1 = m.group(3)
+            d1 = m.group(4)
+            if m.group(1) == 'c':
+                dt = 'datecreated'
+            elif m.group(1) == 'm':
+                dt = 'datemodified'
+            elif m.group(1) == 'f':
+                dt = 'dateclosed'
+            date = """
+                AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
+            """ % ( dt, y1, m1, d1, y1, m1, d1 )
         # Texto para busca
         search.append(t)
 
