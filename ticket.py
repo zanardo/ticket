@@ -142,7 +142,8 @@ def showticket(ticket_id):
     # Renderiza template
 
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
-        priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts)
+        priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
+        tagsdesc=tagsdesc())
 
 @post('/close-ticket/<ticket_id:int>')
 def closeticket(ticket_id):

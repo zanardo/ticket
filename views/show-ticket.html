@@ -55,6 +55,23 @@
 					%end
 					Autor: {{ticket['user']}}
 					<br>
+					%for tag in tags:
+						%if tag in tagsdesc:
+							%description = tagsdesc[tag]['description']
+							%bgcolor = tagsdesc[tag]['bgcolor']
+							%fgcolor = tagsdesc[tag]['fgcolor']
+						%else:
+							%description = ''
+							%bgcolor = 'yellow'
+							%fgcolor = 'red'
+						%end
+						<a href="/?filter=t:{{tag}} o:p"
+							class="tag"
+							title="{{description}}"
+							style="background-color:{{bgcolor}};color:{{fgcolor}};"
+						>{{tag}}</a> 
+					%end
+					<br>
 					<p>
 					%if ticket['status'] == 0:
 					<form method="post" action="/close-ticket/{{ticket['id']}}"
@@ -155,6 +172,15 @@
 				<input type="submit" name="submit" value="Salvar palavras-chave">
 				<p>
 				<font color="#A5A5A5"><small>Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.</small></font>
+				<p>
+				%for tag in tagsdesc:
+					<a href="#"
+						onclick="document.ftag.text.value+=' {{tag}}'"
+						class="tag"
+						title="{{tagsdesc[tag]['description']}}"
+						style="background-color:{{tagsdesc[tag]['bgcolor']}};color:{{tagsdesc[tag]['fgcolor']}};"
+					>{{tag}}</a> 
+				%end
 			</form>
 		</div>
 		<div class="panel" id="title" style="display: none">
