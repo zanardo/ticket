@@ -35,6 +35,34 @@ db = psycopg2.connect(database='ticket', user='postgres')
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
+@route('/')
+def index():
+    # A página padrão exibe os tickets ordenados por prioridade
+    if 'filter' not in request.query.keys():
+        return redirect('/?filter=o:p')
+
+    filter = request.query.get('filter') or ''
+
+    # Redireciona ao ticket caso pesquisa seja #NNNNN
+    m = re.match(r'^#(\d+)$', filter)
+    if m:
+        return redirect('/%s' % m.group(1))
+
+    status = 'AND status = 0'
+
+    sql = '''
+        SELECT *
+        FROM tickets
+        WHERE ( 1 = 1 )
+            %s
+    ''' % (
+        status
+    )
+
+    response.content_type = 'text/plain; charset=utf-8'
+    return sql
+
+
 @get('/new-ticket')
 @view('new-ticket')
 def newticket():
