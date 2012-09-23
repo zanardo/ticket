@@ -24,10 +24,18 @@
 		</td></tr></table>
 		<span class="title">Detalhe: Ticket #{{ticket['id']}}</span>
 		<p>
+		%if ticket['status'] == 0:
 		<table class="ticket" width="100%" border="0" bgcolor="">
+		%else:
+		<table class="ticket" width="100%" border="0" bgcolor="#e1e1e1">
+		%end
 			<tr>
 				<td width="5px" title="{{priodesc[ticket['priority']]}}" 
+				%if ticket['status'] == 0:
 					bgcolor="{{priocolor[ticket['priority']]}}">&nbsp;</td>
+				%else:
+					bgcolor="#e1e1e1">&nbsp;</td>
+				%end
 				<td width="120px" valign="top">
 					<b>
 						<a class="ticketlabel" href="/{{ticket['id']}}">
