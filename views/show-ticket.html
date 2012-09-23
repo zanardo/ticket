@@ -173,6 +173,7 @@
 				<p>
 				<font color="#A5A5A5"><small>Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.</small></font>
 				<p>
+				<small>
 				%for tag in sorted(tagsdesc):
 					<a href="#"
 						onclick="document.ftag.text.value+=' {{tag}}'"
@@ -181,6 +182,7 @@
 						style="background-color:{{tagsdesc[tag]['bgcolor']}};color:{{tagsdesc[tag]['fgcolor']}};"
 					>{{tag}}</a> 
 				%end
+				</small>
 			</form>
 		</div>
 		<div class="panel" id="title" style="display: none">
