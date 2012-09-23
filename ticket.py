@@ -48,15 +48,56 @@ def index():
     if m:
         return redirect('/%s' % m.group(1))
 
+    c = db.cursor()
+
+    # Dividindo filtro em tokens separados por espaços
+    tokens = filter.strip().split()
+
+    search = []
+    limit = ''
     status = 'AND status = 0'
+
+    # Abrangência dos filtros (status)
+    # T: todos
+    # F: fechados
+    # A: abertos
+    if re.match(r'^[TFA] ', filter):
+        if tokens[0] == 'T':
+            status = ''
+        elif tokens[0] == 'A':
+            status = 'AND status = 0'
+        elif tokens[0] == 'F':
+            status = 'AND status = 1'
+        tokens.pop(0)   # Removendo primeiro item
+
+    for t in tokens:
+        # Limite de resultados (l:NNN)
+        m = re.match(r'^l:(\d+)$', t)
+        if m:
+            limit = 'LIMIT %s' % m.group(1)
+            continue
+        # Texto para busca
+        search.append(t)
+
+    searchstr = ''
+    if len(search) > 0:
+        s = ' '.join(search)
+        searchstr = c.mogrify("""
+            AND ( id IN ( SELECT id FROM tickets WHERE to_tsvector('portuguese', title) @@ plainto_tsquery(%s))
+                OR id IN ( SELECT ticket_id FROM comments WHERE to_tsvector('portuguese', comment) @@ plainto_tsquery(%s) ) )
+        """, (s, s))
 
     sql = '''
         SELECT *
         FROM tickets
         WHERE ( 1 = 1 )
             %s
+            %s
+            %s
     ''' % (
-        status
+        status,
+        searchstr,
+        limit,
     )
 
     response.content_type = 'text/plain; charset=utf-8'
