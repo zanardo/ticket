@@ -57,6 +57,7 @@ def index():
     limit = ''
     status = 'AND status = 0'
     tags = ''
+    order = 'ORDER BY datemodified DESC'
 
     # Abrangência dos filtros (status)
     # T: todos
@@ -84,6 +85,18 @@ def index():
                 'AND id IN ( SELECT ticket_id FROM tags WHERE tag  = %s ) ',
                 (m.group(1),))
             continue
+        # Ordenação
+        m = re.match(r'^o:([mcfp])$', t)
+        if m:
+            o = m.group(1)
+            if o == 'c':
+                order = 'ORDER BY datecreated DESC'
+            elif o == 'm':
+                order = 'ORDER BY datemodified DESC'
+            elif o == 'f':
+                order = 'ORDER BY dateclosed DESC'
+            elif o == 'p':
+                order = 'ORDER BY priority ASC, datecreated ASC'
         # Texto para busca
         search.append(t)
 
@@ -103,10 +116,12 @@ def index():
             %s
             %s
             %s
+            %s
     ''' % (
         status,
         searchstr,
         tags,
+        order,
         limit,
     )
 
