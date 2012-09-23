@@ -42,9 +42,17 @@
 							Ticket #{{ticket['id']}}</a>
 					</b>
 					<br>
-					Criado: <span title="2012-09-23 09:46:35">2012-09-23</span>
+					Criado: <span title="{{ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
+						{{ticket['datecreated'].strftime("%Y-%m-%d")}}
+					</span>
 					<br>
-					Autor: 
+					%if ticket['status'] == 1:
+					Fechado: <span title="{{ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
+						{{ticket['dateclosed'].strftime("%Y-%m-%d")}}
+					</span>
+					<br>
+					%end
+					Autor: {{ticket['user']}}
 					<br>
 					<p>
 					%if ticket['status'] == 0:
