@@ -60,6 +60,7 @@ def index():
     order = 'ORDER BY datemodified DESC'
     user = ''
     date = ''
+    prio = ''
 
     # Abrangência dos filtros (status)
     # T: todos
@@ -144,6 +145,14 @@ def index():
             date = """
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y1, m1, d1 )
+        # Faixa de prioridade
+        m = re.match(r'^p:([1-5])-([1-5])$', t)
+        if m:
+            p1 = m.group(1)
+            p2 = m.group(2)
+            prio = """
+                AND priority BETWEEN %s AND %s
+            """ % (p1, p2)
         # Texto para busca
         search.append(t)
 
@@ -166,12 +175,14 @@ def index():
             %s
             %s
             %s
+            %s
     ''' % (
         status,
         searchstr,
         tags,
         user,
         date,
+        prio,
         order,
         limit,
     )
