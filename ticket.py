@@ -15,6 +15,22 @@ import psycopg2.extras
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
+priocolor = {
+    1: '#FF8D8F',
+    2: '#EDFF9F',
+    3: '',
+    4: '#6DF2B2',
+    5: '#9FEFF2',
+}
+
+priodesc = {
+    1: '1. Ação Urgente',
+    2: '2. Atenção',
+    3: '3. Prioridade Normal',
+    4: '4. Baixa Prioridade',
+    5: '5. Baixíssima Prioridade',
+}
+
 db = psycopg2.connect(database='ticket', user='postgres')
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -81,7 +97,8 @@ def showticket(ticket_id):
     comments = []
     for r in c:
         comments.append(r)
-    return dict(ticket=ticket, comments=comments)
+    return dict(ticket=ticket, comments=comments, priocolor=priocolor,
+        priodesc=priodesc)
 
 @post('/close-ticket/<ticket_id:int>')
 def closeticket(ticket_id):

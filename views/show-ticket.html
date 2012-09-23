@@ -26,7 +26,8 @@
 		<p>
 		<table class="ticket" width="100%" border="0" bgcolor="">
 			<tr>
-				<td width="5px" title="3. Prioridade Normal" bgcolor="">&nbsp;</td>
+				<td width="5px" title="{{priodesc[ticket['priority']]}}" 
+					bgcolor="{{priocolor[ticket['priority']]}}">&nbsp;</td>
 				<td width="120px" valign="top">
 					<b>
 						<a class="ticketlabel" href="/{{ticket['id']}}">
