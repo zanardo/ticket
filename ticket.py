@@ -132,6 +132,25 @@ def changetitle(ticket_id):
     db.commit()
     return redirect('/%s' % ticket_id)
 
+@post('/register-minutes/<ticket_id:int>')
+def registerminutes(ticket_id):
+    c = db.cursor()
+    minutes = float(request.forms.get('minutes'))
+    if minutes <= 0:
+        return 'tempo inválido'
+    c.execute('''
+        INSERT INTO timetrack (
+            ticket_id, "user", minutes )
+        VALUES ( %s, %s, %s )
+    ''', (ticket_id, 'anônimo', minutes))
+    c.execute('''
+        UPDATE tickets
+        SET datemodified = NOW()
+        WHERE id = %s
+    ''', (ticket_id,))
+    db.commit()
+    return redirect('/%s' % ticket_id)
+
 @post('/reopen-ticket/<ticket_id:int>')
 def reopenticket(ticket_id):
     c = db.cursor()
