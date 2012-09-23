@@ -90,6 +90,7 @@
 					<span class="tktitle">{{ticket['title']}}</span>
 					<p>
 					%for comment in comments:
+						<br>
 						%minutes = comment['minutes']
 						%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
 						%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
@@ -105,7 +106,6 @@
 						%else:
 							{{ comment['comment'] }}
 						%end
-						<br>
 					%end
 				</td>
 			</tr>
