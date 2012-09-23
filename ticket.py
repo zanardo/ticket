@@ -48,13 +48,11 @@ def index():
     # A página padrão exibe os tickets ordenados por prioridade
     if 'filter' not in request.query.keys():
         return redirect('/?filter=o:p')
-
-    filter = request.query.get('filter') or ''
+    filter = request.query.get('filter')
 
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
-    if m:
-        return redirect('/%s' % m.group(1))
+    if m: return redirect('/%s' % m.group(1))
 
     c = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -71,12 +69,9 @@ def index():
     # F: fechados
     # A: abertos
     if re.match(r'^[TFA] ', filter):
-        if tokens[0] == 'T':
-            status = ''
-        elif tokens[0] == 'A':
-            status = 'AND status = 0'
-        elif tokens[0] == 'F':
-            status = 'AND status = 1'
+        if tokens[0] == 'T': status = ''
+        elif tokens[0] == 'A': status = 'AND status = 0'
+        elif tokens[0] == 'F': status = 'AND status = 1'
         tokens.pop(0)   # Removendo primeiro item
 
     for t in tokens:
@@ -99,14 +94,10 @@ def index():
         m = re.match(r'^o:([mcfp])$', t)
         if m:
             o = m.group(1)
-            if o == 'c':
-                order = 'ORDER BY datecreated DESC'
-            elif o == 'm':
-                order = 'ORDER BY datemodified DESC'
-            elif o == 'f':
-                order = 'ORDER BY dateclosed DESC'
-            elif o == 'p':
-                order = 'ORDER BY priority ASC, datecreated ASC'
+            if o == 'c': order = 'ORDER BY datecreated DESC'
+            elif o == 'm': order = 'ORDER BY datemodified DESC'
+            elif o == 'f': order = 'ORDER BY dateclosed DESC'
+            elif o == 'p': order = 'ORDER BY priority ASC, datecreated ASC'
             continue
 
         # Usuário de criação, fechamento, modificação (u:USER)
@@ -126,12 +117,9 @@ def index():
         if m:
             dt = ''
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
-            if m.group(1) == 'c':
-                dt = 'datecreated'
-            elif m.group(1) == 'm':
-                dt = 'datemodified'
-            elif m.group(1) == 'f':
-                dt = 'dateclosed'
+            if m.group(1) == 'c': dt = 'datecreated'
+            elif m.group(1) == 'm': dt = 'datemodified'
+            elif m.group(1) == 'f': dt = 'dateclosed'
             date = """
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y2, m2, d2 )
@@ -142,12 +130,9 @@ def index():
         if m:
             dt = ''
             y1, m1, d1 = m.groups()[1:]
-            if m.group(1) == 'c':
-                dt = 'datecreated'
-            elif m.group(1) == 'm':
-                dt = 'datemodified'
-            elif m.group(1) == 'f':
-                dt = 'dateclosed'
+            if m.group(1) == 'c': dt = 'datecreated'
+            elif m.group(1) == 'm': dt = 'datemodified'
+            elif m.group(1) == 'f': dt = 'dateclosed'
             date = """
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y1, m1, d1 )
@@ -216,7 +201,9 @@ def newticket():
 # Salva novo ticket
 @post('/new-ticket')
 def newticketpost():
-    title = request.forms.get('title')
+    assert 'title' in request.forms
+    title = request.forms.get('title').strip()
+    if title == '': return 'erro: título inválido'
     c = db.cursor()
     c.execute('''
         INSERT INTO TICKETS (
@@ -380,10 +367,11 @@ def changecontacts(ticket_id):
 
 @post('/register-minutes/<ticket_id:int>')
 def registerminutes(ticket_id):
-    c = db.cursor()
+    assert 'minutes' in request.forms
+    assert re.match(r'^[\-0-9\.]+$', request.forms.get('minutes'))
     minutes = float(request.forms.get('minutes'))
-    if minutes <= 0:
-        return 'tempo inválido'
+    if minutes <= 0.0: return 'tempo inválido'
+    c = db.cursor()
     c.execute('''
         INSERT INTO timetrack (
             ticket_id, "user", minutes )
