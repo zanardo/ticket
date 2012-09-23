@@ -97,6 +97,7 @@
 		<table class="actions" border="0">
 			<tr>
 				<td>
+					%if ticket['status'] == 0:
 					<a class="tab"
 						onclick="return showPanel(this, 'note');">
 						Adicionar Nota</a>
@@ -104,6 +105,7 @@
 					<a class="tab" onclick="return showPanel(this, 'prio');">
 						Prioridade de Ação</a>
 						 | 
+					%end
 					<a class="tab" onclick="return showPanel(this, 'tags');">
 						Palavras-Chave</a>
 						 | 
@@ -112,9 +114,11 @@
 						 | 
 					<a class="tab" onclick="return showPanel(this, 'minutes');">
 						Tempo</a> 
+					%if ticket['status'] == 0:
 						| 
 					<a class="tab" onclick="return showPanel(this, 'contacts');">
 						Contatos</a>
+					%end
 				</td>
 			</tr>
 		</table>
