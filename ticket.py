@@ -59,12 +59,18 @@ def newticketpost():
 @view('show-ticket')
 def showticket(ticket_id):
     c = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # Obtém dados do ticket
+
     c.execute('''
         SELECT *
         FROM tickets
         WHERE id = %s
     ''', ( ticket_id, ) )
     ticket = c.fetchone()
+
+    # Obtém notas, mudanças de status e registro de tempo
+
     c.execute('''
         SELECT *
         FROM (
@@ -97,6 +103,9 @@ def showticket(ticket_id):
     comments = []
     for r in c:
         comments.append(r)
+
+    # Obtém resumo de tempo trabalhado
+
     timetrack = []
     c.execute('''
         SELECT "user", SUM(minutes) AS minutes
@@ -105,6 +114,11 @@ def showticket(ticket_id):
         GROUP BY "user"
         ORDER BY "user"
     ''', (ticket_id,))
+    for r in c:
+        timetrack.append(r)
+
+    # Obtém palavras-chave
+
     tags = []
     c.execute('''
         SELECT tag
@@ -113,8 +127,9 @@ def showticket(ticket_id):
     ''', (ticket_id,))
     for r in c:
         tags.append(r['tag'])
-    for r in c:
-        timetrack.append(r)
+
+    # Renderiza template
+
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags)
 
