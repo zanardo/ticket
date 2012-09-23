@@ -3,6 +3,10 @@
 #
 # Copyright (c) J. A. Zanardo Jr. <zanardo@gmail.com>
 #
+# https://github.com/zanardo/ticket
+#
+# Para detalhes do licenciamento, ver COPYING na distribuição
+#
 
 import re
 import os
