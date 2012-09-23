@@ -1,0 +1,26 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+<title>Novo Ticket</title>
+<link rel="stylesheet" type="text/css" href="/static/styles.css" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body onload="document.f.title.focus();">
+		<table border="0" align="right">
+		<tr>
+		<td class="topmenu">
+			olá <b>anônimo</b>! 
+			<a href='/ticket/ticket.pl' accesskey='A' title="alt-shift-a">abertos</a>
+			| <a href='/ticket/ticket.pl?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
+			| <a href='/ticket/ticket.pl/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
+		</td> <tr></tr> <td align=right>
+		<form method="post" action="/ticket/ticket.pl" enctype="multipart/form-data">
+			<input type="text" name="filter" size="25" accesskey='S' value="" title="alt-shift-s">
+			<input type="submit" name="filter" value="filtrar" />
+		</form>
+		</td></tr></table>
+		<span class="title">Novo Ticket</span><p /><a name='new'></a><form method="post" action="/ticket/ticket.pl/new-ticket" enctype="multipart/form-data" name="f">
+<input type="text" name="title"  size="90" /><input type="hidden" name="action" value="create-new-ticket"  /><input type="submit" name="submit" value="Criar" /></form><p /><font color="#A5A5A5"><small>Digite uma descrição sucinta. Você poderá adicionar mais informações detalhadas depois.</small></font><p><small><font color="gray"><div align="right">sistema
+		<a href="https://github.com/zanardo/ticket">ticket</a> versão 1.1dev</small></div></font>

@@ -1,17 +1,17 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) J. A. Zanardo Jr. <zanardo@gmail.com>
 #
 
+import re
 import os
 import sys
 import getopt
-import sqlite3
 import bottle
 
 from bottle import route, request, run, view, response, static_file, \
     redirect, local
-
 
 def connectdb(dbpath):
     db = getattr(local, 'db', None)
@@ -19,29 +19,22 @@ def connectdb(dbpath):
         local.db = sqlite3.connect(dbpath)
     return local.db
 
+@route('/new-ticket')
+@view('new-ticket')
+def newticket():
+    return dict()
+
+@route('/static/:filename')
+def static(filename):
+    if not re.match(r'^[\w\d]+\.[\w\d]+$', filename):
+        return 'invalid filename'
+    return static_file('static/%s' % filename, root='.')
 
 if __name__ == '__main__':
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'a:p:d:')
-    except getopt.GetoptError, err:
-        usage()
 
     address = '0.0.0.0'
     port = 8080
     dbpath = 'ticket.db'
 
-    for o, a in opts:
-        if o == '-a': address = a
-        elif o == '-p': port = a
-        elif o == '-d': dbpath = a
-        else: usage()
-
-    debug = True
-
-    bottle.debug(debug)
-    os.chdir(os.path.dirname(__file__))
-    try:
-        run(host=address, port=port, server='auto', reloader=debug)
-    except KeyboardInterrupt:
-        exit(0)
+    bottle.debug(True)
+    run(host=address, port=port, server='auto', reloader=True)
