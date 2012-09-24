@@ -46,8 +46,21 @@
 					<span class="tktitle">{{tk['title']}}</span>
 				</td>
 				<td valign="top" align="right">
-					%for tags in tk['tags']:
-						
+					%for tag in sorted(tk['tags']):
+						%if tag in tagsdesc:
+							%description = tagsdesc[tag]['description']
+							%bgcolor = tagsdesc[tag]['bgcolor']
+							%fgcolor = tagsdesc[tag]['fgcolor']
+						%else:
+							%description = ''
+							%bgcolor = 'yellow'
+							%fgcolor = 'red'
+						%end
+						<a href="/?filter=t:{{tag}} o:p"
+							class="tag"
+							title="{{description}}"
+							style="background-color:{{bgcolor}};color:{{fgcolor}};"
+						>{{tag}}</a>
 					%end
 				</td>
 			</tr>

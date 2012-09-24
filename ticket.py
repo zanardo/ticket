@@ -195,7 +195,7 @@ def index():
     getdb().commit()
 
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
-        priocolor=priocolor)
+        priocolor=priocolor, tagsdesc=tagsdesc())
 
 
 # Tela de novo ticket
