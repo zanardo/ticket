@@ -49,8 +49,7 @@ def index():
     if 'filter' not in request.query.keys():
         return redirect('/?filter=o:p')
     filter = request.query.get('filter')
-    if filter.strip() == '':
-        filter = 'o:p'
+    if filter.strip() == '': filter = 'o:p'
 
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
@@ -323,8 +322,10 @@ def closeticket(ticket_id):
 
 @post('/change-title/<ticket_id:int>')
 def changetitle(ticket_id):
+    assert 'text' in request.forms
+    title = request.forms.get('text').strip()
+    if title == '': return 'erro: título inválido'
     c = db.cursor()
-    title = request.forms.get('text') or '(sem título)'
     c.execute('''
         UPDATE tickets
         SET title = %s
@@ -335,9 +336,10 @@ def changetitle(ticket_id):
 
 @post('/change-tags/<ticket_id:int>')
 def changetags(ticket_id):
-    c = db.cursor()
-    tags = request.forms.get('text') or ''
+    assert 'text' in request.forms
+    tags = request.forms.get('text')
     tags = tags.strip().split()
+    c = db.cursor()
     c.execute('''
         DELETE FROM tags
         WHERE ticket_id = %s
@@ -352,9 +354,10 @@ def changetags(ticket_id):
 
 @post('/change-contacts/<ticket_id:int>')
 def changecontacts(ticket_id):
-    c = db.cursor()
-    contacts = request.forms.get('contacts') or ''
+    assert 'contacts' in request.forms
+    contacts = request.forms.get('contacts')
     contacts = contacts.strip().split()
+    c = db.cursor()
     c.execute('''
         DELETE FROM contacts
         WHERE ticket_id = %s
@@ -370,7 +373,8 @@ def changecontacts(ticket_id):
 @post('/register-minutes/<ticket_id:int>')
 def registerminutes(ticket_id):
     assert 'minutes' in request.forms
-    assert re.match(r'^[\-0-9\.]+$', request.forms.get('minutes'))
+    if not re.match(r'^[\-0-9\.]+$', request.forms.get('minutes')):
+        return 'tempo inválido'
     minutes = float(request.forms.get('minutes'))
     if minutes <= 0.0: return 'tempo inválido'
     c = db.cursor()
@@ -389,10 +393,10 @@ def registerminutes(ticket_id):
 
 @post('/new-note/<ticket_id:int>')
 def newnote(ticket_id):
-    c = db.cursor()
+    assert 'text' in request.forms
     note = request.forms.get('text')
-    if note.strip() == '':
-        return 'nota inválida'
+    if note.strip() == '': return 'nota inválida'
+    c = db.cursor()
     c.execute('''
         INSERT INTO comments (
             ticket_id, "user", comment )
@@ -428,9 +432,10 @@ def reopenticket(ticket_id):
 
 @post('/change-priority/<ticket_id:int>')
 def changepriority(ticket_id):
-    c = db.cursor()
+    assert 'prio' in request.forms
+    assert re.match(r'^[1-5]$', request.forms.get('prio'))
     priority = int(request.forms.get('prio'))
-    assert(priority in (1,2,3,4,5))
+    c = db.cursor()
     c.execute('''
         UPDATE tickets
         SET priority = %s
@@ -441,8 +446,7 @@ def changepriority(ticket_id):
 
 @route('/static/:filename')
 def static(filename):
-    if not re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename):
-        return 'invalid filename'
+    assert re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename)
     return static_file('static/%s' % filename, root='.')
 
 def tagsdesc():
