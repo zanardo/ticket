@@ -13,11 +13,13 @@ import os
 import sys
 import getopt
 import bottle
+import smtplib
 import psycopg2
 import psycopg2.extras
 
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
+from email.mime.text import MIMEText
 
 VERSION = '1.2dev'
 
@@ -437,7 +439,9 @@ def registerminutes(ticket_id):
 @post('/new-note/<ticket_id:int>')
 def newnote(ticket_id):
     assert 'text' in request.forms
+    assert 'contacts' in request.forms
     note = request.forms.get('text')
+    contacts = request.forms.get('contacts')
     if note.strip() == '': return 'nota inválida'
     c = getdb().cursor()
     try:
@@ -536,6 +540,20 @@ def tickettags(ticket_id):
     for r in c:
         tags.append(r[0])
     return tags
+
+def sendmail(fromemail, toemail, smtpserver, subject, body):
+    try:
+        msg = MIMEText(body.encode('utf-8'))
+        msg.set_charset('utf-8')
+        msg['Subject'] = subject
+        msg['From'] = fromemail
+        msg['To'] = toemail
+        s = smtplib.SMTP(smtpserver, timeout=10)
+        s.sendmail(fromemail, [toemail], msg.as_string())
+        s.quit()
+    except Exception, e:
+        return e[0]
+
 
 if __name__ == '__main__':
 
