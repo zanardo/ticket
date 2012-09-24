@@ -19,6 +19,8 @@ import psycopg2.extras
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
+VERSION = '1.2dev'
+
 # Cores de fundo das prioridades
 priocolor = {
     1: '#FF8D8F',
@@ -195,14 +197,14 @@ def index():
     getdb().commit()
 
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
-        priocolor=priocolor, tagsdesc=tagsdesc())
+        priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION)
 
 
 # Tela de novo ticket
 @get('/new-ticket')
 @view('new-ticket')
 def newticket():
-    return dict()
+    return dict(version=VERSION)
 
 # Salva novo ticket
 @post('/new-ticket')
@@ -311,7 +313,7 @@ def showticket(ticket_id):
 
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
-        tagsdesc=tagsdesc())
+        tagsdesc=tagsdesc(), version=VERSION)
 
 @post('/close-ticket/<ticket_id:int>')
 def closeticket(ticket_id):
