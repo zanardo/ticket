@@ -192,6 +192,8 @@ def index():
         ticketdict['tags'] = tickettags(ticket['id'])
         tickets.append(ticketdict)
 
+    getdb().commit()
+
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
         priocolor=priocolor)
 
@@ -209,15 +211,21 @@ def newticketpost():
     title = request.forms.get('title').strip()
     if title == '': return 'erro: título inválido'
     c = getdb().cursor()
-    c.execute('''
-        INSERT INTO TICKETS (
-            title, "user"
-        )
-        VALUES ( %s, %s )
-        RETURNING id
-    ''', (title, '') )
-    ticket_id = c.fetchone()[0]
-    getdb().commit()
+    try:
+        c.execute('''
+            INSERT INTO TICKETS (
+                title, "user"
+            )
+            VALUES ( %s, %s )
+            RETURNING id
+        ''', (title, '') )
+        ticket_id = c.fetchone()[0]
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 # Exibe os detalhes de um ticket
@@ -297,6 +305,8 @@ def showticket(ticket_id):
     for r in c:
         contacts.append(r['email'])
 
+    getdb().commit()
+
     # Renderiza template
 
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
@@ -306,21 +316,27 @@ def showticket(ticket_id):
 @post('/close-ticket/<ticket_id:int>')
 def closeticket(ticket_id):
     c = getdb().cursor()
-    c.execute('''
-        UPDATE tickets
-        SET status = 1,
-            dateclosed = NOW(),
-            datemodified = NOW()
-        WHERE id = %s
-    ''', (ticket_id,))
-    c.execute('''
-        INSERT INTO statustrack (
-            ticket_id, "user", status
-        )
-        VALUES (
-            %s, %s, 'close')
-    ''', (ticket_id, 'anônimo'))
-    getdb().commit()
+    try:
+        c.execute('''
+            UPDATE tickets
+            SET status = 1,
+                dateclosed = NOW(),
+                datemodified = NOW()
+            WHERE id = %s
+        ''', (ticket_id,))
+        c.execute('''
+            INSERT INTO statustrack (
+                ticket_id, "user", status
+            )
+            VALUES (
+                %s, %s, 'close')
+        ''', (ticket_id, 'anônimo'))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 @post('/change-title/<ticket_id:int>')
@@ -329,12 +345,17 @@ def changetitle(ticket_id):
     title = request.forms.get('text').strip()
     if title == '': return 'erro: título inválido'
     c = getdb().cursor()
-    c.execute('''
-        UPDATE tickets
-        SET title = %s
-        WHERE id = %s
-    ''', (title, ticket_id,))
-    getdb().commit()
+    try:
+        c.execute('''
+            UPDATE tickets
+            SET title = %s
+            WHERE id = %s
+        ''', (title, ticket_id,))
+    except:
+        getdb().rollback()
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 @post('/change-tags/<ticket_id:int>')
@@ -343,16 +364,21 @@ def changetags(ticket_id):
     tags = request.forms.get('text')
     tags = tags.strip().split()
     c = getdb().cursor()
-    c.execute('''
-        DELETE FROM tags
-        WHERE ticket_id = %s
-    ''', ( ticket_id, ))
-    for tag in tags:
+    try:
         c.execute('''
-            INSERT INTO tags ( ticket_id, tag )
-            VALUES ( %s, %s )
-        ''', (ticket_id, tag) )
-    getdb().commit()
+            DELETE FROM tags
+            WHERE ticket_id = %s
+        ''', ( ticket_id, ))
+        for tag in tags:
+            c.execute('''
+                INSERT INTO tags ( ticket_id, tag )
+                VALUES ( %s, %s )
+            ''', (ticket_id, tag) )
+    except:
+        getdb().rollback()
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 @post('/change-contacts/<ticket_id:int>')
@@ -361,16 +387,22 @@ def changecontacts(ticket_id):
     contacts = request.forms.get('contacts')
     contacts = contacts.strip().split()
     c = getdb().cursor()
-    c.execute('''
-        DELETE FROM contacts
-        WHERE ticket_id = %s
-    ''', ( ticket_id, ))
-    for contact in contacts:
+    try:
         c.execute('''
-            INSERT INTO contacts ( ticket_id, email )
-            VALUES ( %s, %s )
-        ''', (ticket_id, contact) )
-    getdb().commit()
+            DELETE FROM contacts
+            WHERE ticket_id = %s
+        ''', ( ticket_id, ))
+        for contact in contacts:
+            c.execute('''
+                INSERT INTO contacts ( ticket_id, email )
+                VALUES ( %s, %s )
+            ''', (ticket_id, contact) )
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 @post('/register-minutes/<ticket_id:int>')
@@ -381,17 +413,23 @@ def registerminutes(ticket_id):
     minutes = float(request.forms.get('minutes'))
     if minutes <= 0.0: return 'tempo inválido'
     c = getdb().cursor()
-    c.execute('''
-        INSERT INTO timetrack (
-            ticket_id, "user", minutes )
-        VALUES ( %s, %s, %s )
-    ''', (ticket_id, 'anônimo', minutes))
-    c.execute('''
-        UPDATE tickets
-        SET datemodified = NOW()
-        WHERE id = %s
-    ''', (ticket_id,))
-    getdb().commit()
+    try:
+        c.execute('''
+            INSERT INTO timetrack (
+                ticket_id, "user", minutes )
+            VALUES ( %s, %s, %s )
+        ''', (ticket_id, 'anônimo', minutes))
+        c.execute('''
+            UPDATE tickets
+            SET datemodified = NOW()
+            WHERE id = %s
+        ''', (ticket_id,))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 @post('/new-note/<ticket_id:int>')
@@ -400,37 +438,49 @@ def newnote(ticket_id):
     note = request.forms.get('text')
     if note.strip() == '': return 'nota inválida'
     c = getdb().cursor()
-    c.execute('''
-        INSERT INTO comments (
-            ticket_id, "user", comment )
-        VALUES ( %s, %s, %s )
-    ''', (ticket_id, 'anônimo', note))
-    c.execute('''
-        UPDATE tickets
-        SET datemodified = NOW()
-        WHERE id = %s
-    ''', (ticket_id,))
-    getdb().commit()
+    try:
+        c.execute('''
+            INSERT INTO comments (
+                ticket_id, "user", comment )
+            VALUES ( %s, %s, %s )
+        ''', (ticket_id, 'anônimo', note))
+        c.execute('''
+            UPDATE tickets
+            SET datemodified = NOW()
+            WHERE id = %s
+        ''', (ticket_id,))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 @post('/reopen-ticket/<ticket_id:int>')
 def reopenticket(ticket_id):
     c = getdb().cursor()
-    c.execute('''
-        UPDATE tickets
-        SET status = 0,
-            dateclosed = NULL,
-            datemodified = NOW()
-        WHERE id = %s
-    ''', (ticket_id,))
-    c.execute('''
-        INSERT INTO statustrack (
-            ticket_id, "user", status
-        )
-        VALUES (
-            %s, %s, 'reopen')
-    ''', (ticket_id, 'anônimo'))
-    getdb().commit()
+    try:
+        c.execute('''
+            UPDATE tickets
+            SET status = 0,
+                dateclosed = NULL,
+                datemodified = NOW()
+            WHERE id = %s
+        ''', (ticket_id,))
+        c.execute('''
+            INSERT INTO statustrack (
+                ticket_id, "user", status
+            )
+            VALUES (
+                %s, %s, 'reopen')
+        ''', (ticket_id, 'anônimo'))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 @post('/change-priority/<ticket_id:int>')
@@ -439,12 +489,18 @@ def changepriority(ticket_id):
     assert re.match(r'^[1-5]$', request.forms.get('prio'))
     priority = int(request.forms.get('prio'))
     c = getdb().cursor()
-    c.execute('''
-        UPDATE tickets
-        SET priority = %s
-        WHERE id = %s
-    ''', (priority, ticket_id,))
-    getdb().commit()
+    try:
+        c.execute('''
+            UPDATE tickets
+            SET priority = %s
+            WHERE id = %s
+        ''', (priority, ticket_id,))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
     return redirect('/%s' % ticket_id)
 
 @route('/static/:filename')
