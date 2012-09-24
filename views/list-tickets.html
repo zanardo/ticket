@@ -26,10 +26,16 @@
 		<p>
 
 		%for tk in tickets:
-			<table class="ticket" width="100%" border="0" bgcolor="">
+			%priobgcolor = priocolor[tk['priority']]
+			%if tk['status'] == 0: bgcolor = ''
+			%if tk['status'] == 1:
+				%bgcolor = '#e1e1e1'
+				%priobgcolor = ''
+			%end
+			<table class="ticket" width="100%" border="0" bgcolor="{{bgcolor}}">
 			<tr>
 				<td width="5px" title="{{priodesc[tk['priority']]}}"
-					bgcolor="{{priocolor[tk['priority']]}}">&nbsp;</td>
+					bgcolor="{{priobgcolor}}">&nbsp;</td>
 				<td width="80px" valign="top">
 					<b>
 					<a class="ticketlabel" title="Criado: Modificado: Autor:"
