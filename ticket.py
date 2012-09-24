@@ -37,9 +37,12 @@ priodesc = {
     5: '5. Baixíssima Prioridade',
 }
 
-db = psycopg2.connect(database='ticket', user='postgres')
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+def getdb():
+    if not hasattr(local, 'db'):
+        local.db = psycopg2.connect(database='ticket', user='postgres')
+        psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+        psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+    return local.db
 
 # Listagem de tickets
 @route('/')
@@ -55,7 +58,7 @@ def index():
     m = re.match(r'^#(\d+)$', filter)
     if m: return redirect('/%s' % m.group(1))
 
-    c = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = getdb().cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     # Dividindo filtro em tokens separados por espaços
     tokens = filter.strip().split()
@@ -205,7 +208,7 @@ def newticketpost():
     assert 'title' in request.forms
     title = request.forms.get('title').strip()
     if title == '': return 'erro: título inválido'
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         INSERT INTO TICKETS (
             title, "user"
@@ -214,14 +217,14 @@ def newticketpost():
         RETURNING id
     ''', (title, '') )
     ticket_id = c.fetchone()[0]
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 # Exibe os detalhes de um ticket
 @get('/<ticket_id:int>')
 @view('show-ticket')
 def showticket(ticket_id):
-    c = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = getdb().cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     # Obtém dados do ticket
 
@@ -302,7 +305,7 @@ def showticket(ticket_id):
 
 @post('/close-ticket/<ticket_id:int>')
 def closeticket(ticket_id):
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         UPDATE tickets
         SET status = 1,
@@ -317,7 +320,7 @@ def closeticket(ticket_id):
         VALUES (
             %s, %s, 'close')
     ''', (ticket_id, 'anônimo'))
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 @post('/change-title/<ticket_id:int>')
@@ -325,13 +328,13 @@ def changetitle(ticket_id):
     assert 'text' in request.forms
     title = request.forms.get('text').strip()
     if title == '': return 'erro: título inválido'
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         UPDATE tickets
         SET title = %s
         WHERE id = %s
     ''', (title, ticket_id,))
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 @post('/change-tags/<ticket_id:int>')
@@ -339,7 +342,7 @@ def changetags(ticket_id):
     assert 'text' in request.forms
     tags = request.forms.get('text')
     tags = tags.strip().split()
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         DELETE FROM tags
         WHERE ticket_id = %s
@@ -349,7 +352,7 @@ def changetags(ticket_id):
             INSERT INTO tags ( ticket_id, tag )
             VALUES ( %s, %s )
         ''', (ticket_id, tag) )
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 @post('/change-contacts/<ticket_id:int>')
@@ -357,7 +360,7 @@ def changecontacts(ticket_id):
     assert 'contacts' in request.forms
     contacts = request.forms.get('contacts')
     contacts = contacts.strip().split()
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         DELETE FROM contacts
         WHERE ticket_id = %s
@@ -367,7 +370,7 @@ def changecontacts(ticket_id):
             INSERT INTO contacts ( ticket_id, email )
             VALUES ( %s, %s )
         ''', (ticket_id, contact) )
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 @post('/register-minutes/<ticket_id:int>')
@@ -377,7 +380,7 @@ def registerminutes(ticket_id):
         return 'tempo inválido'
     minutes = float(request.forms.get('minutes'))
     if minutes <= 0.0: return 'tempo inválido'
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         INSERT INTO timetrack (
             ticket_id, "user", minutes )
@@ -388,7 +391,7 @@ def registerminutes(ticket_id):
         SET datemodified = NOW()
         WHERE id = %s
     ''', (ticket_id,))
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 @post('/new-note/<ticket_id:int>')
@@ -396,7 +399,7 @@ def newnote(ticket_id):
     assert 'text' in request.forms
     note = request.forms.get('text')
     if note.strip() == '': return 'nota inválida'
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         INSERT INTO comments (
             ticket_id, "user", comment )
@@ -407,12 +410,12 @@ def newnote(ticket_id):
         SET datemodified = NOW()
         WHERE id = %s
     ''', (ticket_id,))
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 @post('/reopen-ticket/<ticket_id:int>')
 def reopenticket(ticket_id):
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         UPDATE tickets
         SET status = 0,
@@ -427,7 +430,7 @@ def reopenticket(ticket_id):
         VALUES (
             %s, %s, 'reopen')
     ''', (ticket_id, 'anônimo'))
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 @post('/change-priority/<ticket_id:int>')
@@ -435,13 +438,13 @@ def changepriority(ticket_id):
     assert 'prio' in request.forms
     assert re.match(r'^[1-5]$', request.forms.get('prio'))
     priority = int(request.forms.get('prio'))
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         UPDATE tickets
         SET priority = %s
         WHERE id = %s
     ''', (priority, ticket_id,))
-    db.commit()
+    getdb().commit()
     return redirect('/%s' % ticket_id)
 
 @route('/static/:filename')
@@ -450,7 +453,7 @@ def static(filename):
     return static_file('static/%s' % filename, root='.')
 
 def tagsdesc():
-    c = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    c = getdb().cursor(cursor_factory=psycopg2.extras.DictCursor)
     c.execute('''
         SELECT tag, description, bgcolor, fgcolor
         FROM tagsdesc
@@ -466,7 +469,7 @@ def tagsdesc():
 
 def tickettags(ticket_id):
     tags = []
-    c = db.cursor()
+    c = getdb().cursor()
     c.execute('''
         SELECT tag
         FROM tags
