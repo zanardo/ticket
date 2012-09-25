@@ -299,15 +299,7 @@ def showticket(ticket_id):
     tags = tickettags(ticket_id)
 
     # Obtém contatos
-
-    contacts = []
-    c.execute('''
-        SELECT email
-        FROM contacts
-        WHERE ticket_id = %s
-    ''', (ticket_id,))
-    for r in c:
-        contacts.append(r['email'])
+    contacts = ticketcontacts(ticket_id)
 
     getdb().commit()
 
@@ -540,6 +532,18 @@ def tickettags(ticket_id):
     for r in c:
         tags.append(r[0])
     return tags
+
+def ticketcontacts(ticket_id):
+    contacts = []
+    c = getdb().cursor()
+    c.execute('''
+        SELECT email
+        FROM contacts
+        WHERE ticket_id = %s
+    ''', (ticket_id,))
+    for r in c:
+        contacts.append(r[0])
+    return contacts
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):
     try:
