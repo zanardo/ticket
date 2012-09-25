@@ -144,7 +144,11 @@
 				<textarea name="text" rows="4" cols="70" id="formnote"></textarea>
 				<p><small>Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):</small>
 				<p>
-				<textarea name="contacts" rows="5" cols="50"></textarea>
+				%contactsstr = ''
+				%for contact in contacts:
+					%contactsstr += "#%s\r\n" % contact
+				%end
+				<textarea name="contacts" rows="5" cols="50">{{contactsstr}}</textarea>
 				<p>
 				<input type="submit" name="submit" value="Adicionar nota">
 			</form>
