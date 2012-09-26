@@ -1,0 +1,2 @@
+email_from = 'me@domain.com'
+email_smtp = 'smtp.domain.com'
