@@ -11,11 +11,14 @@
 import re
 import os
 import sys
+import time
 import getopt
 import bottle
 import smtplib
 import psycopg2
 import psycopg2.extras
+
+import config
 
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
@@ -432,8 +435,8 @@ def registerminutes(ticket_id):
 def newnote(ticket_id):
     assert 'text' in request.forms
     assert 'contacts' in request.forms
-    note = request.forms.get('text')
-    contacts = request.forms.get('contacts')
+    note = request.forms.text
+    contacts = request.forms.contacts.strip().split()
     if note.strip() == '': return 'nota inválida'
     c = getdb().cursor()
     try:
@@ -452,6 +455,26 @@ def newnote(ticket_id):
         raise
     else:
         getdb().commit()
+
+    toemail = []
+    for contact in contacts:
+        if contact.startswith('#'): continue
+        toemail.append(contact)
+
+    if len(toemail) > 0:
+        title = tickettitle(ticket_id)
+        subject = u'#%s - %s' % (ticket_id, title)
+        body = u'''
+[%s] (anônimo):
+
+%s
+
+
+-- Este é um e-mail automático enviado pelo sistema ticket.
+        ''' % ( time.strftime('%Y-%m-%d %H:%M'), note )
+
+        sendmail(config.email_from, toemail, config.email_smtp,
+            subject, body)
 
     return redirect('/%s' % ticket_id)
 
@@ -545,19 +568,26 @@ def ticketcontacts(ticket_id):
         contacts.append(r[0])
     return contacts
 
+def tickettitle(ticket_id):
+    c = getdb().cursor()
+    c.execute('''
+        SELECT title
+        FROM tickets
+        WHERE id = %s
+    ''', (ticket_id,))
+    title = c.fetchone()[0]
+    return title
+
 def sendmail(fromemail, toemail, smtpserver, subject, body):
-    try:
+    for contact in toemail:
         msg = MIMEText(body.encode('utf-8'))
         msg.set_charset('utf-8')
         msg['Subject'] = subject
         msg['From'] = fromemail
-        msg['To'] = toemail
+        msg['To'] = contact
         s = smtplib.SMTP(smtpserver, timeout=10)
-        s.sendmail(fromemail, [toemail], msg.as_string())
+        s.sendmail(fromemail, contact, msg.as_string())
         s.quit()
-    except Exception, e:
-        return e[0]
-
 
 if __name__ == '__main__':
 
