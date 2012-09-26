@@ -205,6 +205,11 @@ def index():
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
         priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION)
 
+# Tela de login
+@get('/login')
+@view('login')
+def login():
+    return dict(version=VERSION)
 
 # Tela de novo ticket
 @get('/new-ticket')
