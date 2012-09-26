@@ -438,6 +438,16 @@ def newnote(ticket_id):
     note = request.forms.text
     contacts = request.forms.contacts.strip().split()
     if note.strip() == '': return 'nota inválida'
+
+    toemail = []
+    for contact in contacts:
+        if contact.startswith('#'): continue
+        toemail.append(contact)
+    if len(toemail) > 0:
+        note += u' [Notificação enviada para: %s]' % (
+            ', '.join(toemail)
+        )
+
     c = getdb().cursor()
     try:
         c.execute('''
@@ -455,11 +465,6 @@ def newnote(ticket_id):
         raise
     else:
         getdb().commit()
-
-    toemail = []
-    for contact in contacts:
-        if contact.startswith('#'): continue
-        toemail.append(contact)
 
     if len(toemail) > 0:
         title = tickettitle(ticket_id)
