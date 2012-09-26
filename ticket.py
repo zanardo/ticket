@@ -215,7 +215,7 @@ def newticket():
 @post('/new-ticket')
 def newticketpost():
     assert 'title' in request.forms
-    title = request.forms.get('title').strip()
+    title = request.forms.title.strip()
     if title == '': return 'erro: título inválido'
     c = getdb().cursor()
     try:
@@ -341,7 +341,7 @@ def closeticket(ticket_id):
 @post('/change-title/<ticket_id:int>')
 def changetitle(ticket_id):
     assert 'text' in request.forms
-    title = request.forms.get('text').strip()
+    title = request.forms.text.strip()
     if title == '': return 'erro: título inválido'
     c = getdb().cursor()
     try:
@@ -360,7 +360,7 @@ def changetitle(ticket_id):
 @post('/change-tags/<ticket_id:int>')
 def changetags(ticket_id):
     assert 'text' in request.forms
-    tags = request.forms.get('text')
+    tags = request.forms.text
     tags = tags.strip().split()
     c = getdb().cursor()
     try:
@@ -383,7 +383,7 @@ def changetags(ticket_id):
 @post('/change-contacts/<ticket_id:int>')
 def changecontacts(ticket_id):
     assert 'contacts' in request.forms
-    contacts = request.forms.get('contacts')
+    contacts = request.forms.contacts
     contacts = contacts.strip().split()
     c = getdb().cursor()
     try:
@@ -407,9 +407,9 @@ def changecontacts(ticket_id):
 @post('/register-minutes/<ticket_id:int>')
 def registerminutes(ticket_id):
     assert 'minutes' in request.forms
-    if not re.match(r'^[\-0-9\.]+$', request.forms.get('minutes')):
+    if not re.match(r'^[\-0-9\.]+$', request.forms.minutes):
         return 'tempo inválido'
-    minutes = float(request.forms.get('minutes'))
+    minutes = float(request.forms.minutes)
     if minutes <= 0.0: return 'tempo inválido'
     c = getdb().cursor()
     try:
@@ -507,8 +507,8 @@ def reopenticket(ticket_id):
 @post('/change-priority/<ticket_id:int>')
 def changepriority(ticket_id):
     assert 'prio' in request.forms
-    assert re.match(r'^[1-5]$', request.forms.get('prio'))
-    priority = int(request.forms.get('prio'))
+    assert re.match(r'^[1-5]$', request.forms.prio)
+    priority = int(request.forms.prio)
     c = getdb().cursor()
     try:
         c.execute('''
