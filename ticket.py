@@ -599,4 +599,4 @@ if __name__ == '__main__':
 
     bottle.debug(config.devel_mode)
     run(host=config.bind_address, port=config.bind_port,
-        server='auto', reloader=config.devel_mode)
+        server='paste', reloader=config.devel_mode)
