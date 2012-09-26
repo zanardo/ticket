@@ -46,7 +46,8 @@ priodesc = {
 
 def getdb():
     if not hasattr(local, 'db'):
-        local.db = psycopg2.connect(database='ticket', user='postgres')
+        local.db = psycopg2.connect(database=config.db_name,
+            user=config.db_user, password=config.db_passwd)
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
     return local.db
@@ -596,9 +597,6 @@ def sendmail(fromemail, toemail, smtpserver, subject, body):
 
 if __name__ == '__main__':
 
-    address = '0.0.0.0'
-    port = 8080
-    dbpath = 'ticket.db'
-
-    bottle.debug(True)
-    run(host=address, port=port, server='auto', reloader=True)
+    bottle.debug(config.devel_mode)
+    run(host=config.bind_address, port=config.bind_port,
+        server='auto', reloader=config.devel_mode)
