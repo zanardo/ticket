@@ -335,7 +335,7 @@ def newticketpost():
             )
             VALUES ( %s, %s )
             RETURNING id
-        ''', (title, '') )
+        ''', (title, currentuser()) )
         ticket_id = c.fetchone()[0]
     except:
         getdb().rollback()
