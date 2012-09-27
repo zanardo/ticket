@@ -441,7 +441,7 @@ def closeticket(ticket_id):
             )
             VALUES (
                 %s, %s, 'close')
-        ''', (ticket_id, 'anônimo'))
+        ''', (ticket_id, currentuser()))
     except:
         getdb().rollback()
         raise
@@ -533,7 +533,7 @@ def registerminutes(ticket_id):
             INSERT INTO timetrack (
                 ticket_id, "user", minutes )
             VALUES ( %s, %s, %s )
-        ''', (ticket_id, 'anônimo', minutes))
+        ''', (ticket_id, currentuser(), minutes))
         c.execute('''
             UPDATE tickets
             SET datemodified = NOW()
@@ -571,7 +571,7 @@ def newnote(ticket_id):
             INSERT INTO comments (
                 ticket_id, "user", comment )
             VALUES ( %s, %s, %s )
-        ''', (ticket_id, 'anônimo', note))
+        ''', (ticket_id, currentuser(), note))
         c.execute('''
             UPDATE tickets
             SET datemodified = NOW()
@@ -587,13 +587,13 @@ def newnote(ticket_id):
         title = tickettitle(ticket_id)
         subject = u'#%s - %s' % (ticket_id, title)
         body = u'''
-[%s] (anônimo):
+[%s] (%s):
 
 %s
 
 
 -- Este é um e-mail automático enviado pelo sistema ticket.
-        ''' % ( time.strftime('%Y-%m-%d %H:%M'), note )
+        ''' % ( time.strftime('%Y-%m-%d %H:%M'), currentuser(), note )
 
         sendmail(config.email_from, toemail, config.email_smtp,
             subject, body)
@@ -618,7 +618,7 @@ def reopenticket(ticket_id):
             )
             VALUES (
                 %s, %s, 'reopen')
-        ''', (ticket_id, 'anônimo'))
+        ''', (ticket_id, currentuser()))
     except:
         getdb().rollback()
         raise
