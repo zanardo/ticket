@@ -63,6 +63,12 @@ def requires_auth(f):
         return f(*args, **kwargs)
     return decorated
 
+
+########################################################################################
+# Roteamento de URIs
+########################################################################################
+
+
 # Listagem de tickets
 @route('/')
 @view('list-tickets')
@@ -218,11 +224,13 @@ def index():
         priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION,
         username=currentuser())
 
+
 # Tela de login
 @get('/login')
 @view('login')
 def login():
     return dict(version=VERSION)
+
 
 # Valida login
 @post('/login')
@@ -238,6 +246,7 @@ def validatelogin():
         response.set_cookie("ticket_session", session_id)
         return redirect('/')
 
+
 @get('/logout')
 def logout():
     session_id = request.get_cookie('ticket_session')
@@ -246,68 +255,6 @@ def logout():
         response.delete_cookie('ticket_session')
     return redirect('/login')
 
-def validateuserdb(user, passwd):
-    passwdsha1 = sha1(passwd).hexdigest()
-    c = getdb().cursor()
-    c.execute('''
-        SELECT username
-        FROM users
-        WHERE username = %s
-            AND password = %s
-    ''', (user, passwdsha1))
-    r = c.fetchone()
-    if not r: return False
-    else: return True
-
-def validatesession(session_id):
-    c = getdb().cursor()
-    c.execute('''
-        SELECT session_id
-        FROM sessions
-        WHERE session_id = %s
-    ''', (session_id,))
-    r = c.fetchone()
-    if r: return True
-    else: return False
-
-def currentuser():
-    session_id = request.get_cookie('ticket_session')
-    c = getdb().cursor()
-    c.execute('''
-        SELECT username
-        FROM sessions
-        WHERE session_id = %s
-    ''', (session_id,))
-    r = c.fetchone()
-    return r[0] 
-
-def removesession(session_id):
-    c = getdb().cursor()
-    try:
-        c.execute('''
-            DELETE FROM sessions
-            WHERE session_id = %s
-        ''', (session_id,))
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-
-def makesession(user):
-    c = getdb().cursor()
-    try:
-        session_id = str(uuid4())
-        c.execute('''
-            INSERT INTO sessions (session_id, username)
-            VALUES (%s,%s)
-        ''', (session_id, user))
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return session_id
 
 # Tela de novo ticket
 @get('/new-ticket')
@@ -315,6 +262,7 @@ def makesession(user):
 @requires_auth
 def newticket():
     return dict(version=VERSION, username=currentuser())
+
 
 # Salva novo ticket
 @post('/new-ticket')
@@ -340,6 +288,7 @@ def newticketpost():
         getdb().commit()
 
     return redirect('/%s' % ticket_id)
+
 
 # Exibe os detalhes de um ticket
 @get('/<ticket_id:int>')
@@ -419,6 +368,7 @@ def showticket(ticket_id):
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=currentuser())
 
+
 @post('/close-ticket/<ticket_id:int>')
 @requires_auth
 def closeticket(ticket_id):
@@ -446,6 +396,7 @@ def closeticket(ticket_id):
 
     return redirect('/%s' % ticket_id)
 
+
 @post('/change-title/<ticket_id:int>')
 @requires_auth
 def changetitle(ticket_id):
@@ -465,6 +416,7 @@ def changetitle(ticket_id):
         getdb().commit()
 
     return redirect('/%s' % ticket_id)
+
 
 @post('/change-tags/<ticket_id:int>')
 @requires_auth
@@ -490,6 +442,7 @@ def changetags(ticket_id):
 
     return redirect('/%s' % ticket_id)
 
+
 @post('/change-contacts/<ticket_id:int>')
 @requires_auth
 def changecontacts(ticket_id):
@@ -514,6 +467,7 @@ def changecontacts(ticket_id):
         getdb().commit()
 
     return redirect('/%s' % ticket_id)
+
 
 @post('/register-minutes/<ticket_id:int>')
 @requires_auth
@@ -542,6 +496,7 @@ def registerminutes(ticket_id):
         getdb().commit()
 
     return redirect('/%s' % ticket_id)
+
 
 @post('/new-note/<ticket_id:int>')
 @requires_auth
@@ -596,6 +551,7 @@ def newnote(ticket_id):
 
     return redirect('/%s' % ticket_id)
 
+
 @post('/reopen-ticket/<ticket_id:int>')
 @requires_auth
 def reopenticket(ticket_id):
@@ -623,6 +579,7 @@ def reopenticket(ticket_id):
 
     return redirect('/%s' % ticket_id)
 
+
 @post('/change-priority/<ticket_id:int>')
 @requires_auth
 def changepriority(ticket_id):
@@ -644,10 +601,85 @@ def changepriority(ticket_id):
 
     return redirect('/%s' % ticket_id)
 
+
 @route('/static/:filename')
 def static(filename):
     assert re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename)
     return static_file('static/%s' % filename, root='.')
+
+
+########################################################################################
+# Funções auxiliares
+########################################################################################
+
+
+def validateuserdb(user, passwd):
+    passwdsha1 = sha1(passwd).hexdigest()
+    c = getdb().cursor()
+    c.execute('''
+        SELECT username
+        FROM users
+        WHERE username = %s
+            AND password = %s
+    ''', (user, passwdsha1))
+    r = c.fetchone()
+    if not r: return False
+    else: return True
+
+
+def validatesession(session_id):
+    c = getdb().cursor()
+    c.execute('''
+        SELECT session_id
+        FROM sessions
+        WHERE session_id = %s
+    ''', (session_id,))
+    r = c.fetchone()
+    if r: return True
+    else: return False
+
+
+def currentuser():
+    session_id = request.get_cookie('ticket_session')
+    c = getdb().cursor()
+    c.execute('''
+        SELECT username
+        FROM sessions
+        WHERE session_id = %s
+    ''', (session_id,))
+    r = c.fetchone()
+    return r[0] 
+
+
+def removesession(session_id):
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            DELETE FROM sessions
+            WHERE session_id = %s
+        ''', (session_id,))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
+
+def makesession(user):
+    c = getdb().cursor()
+    try:
+        session_id = str(uuid4())
+        c.execute('''
+            INSERT INTO sessions (session_id, username)
+            VALUES (%s,%s)
+        ''', (session_id, user))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return session_id
+
 
 def tagsdesc():
     c = getdb().cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -664,6 +696,7 @@ def tagsdesc():
         }
     return tagdesc
 
+
 def tickettags(ticket_id):
     tags = []
     c = getdb().cursor()
@@ -675,6 +708,7 @@ def tickettags(ticket_id):
     for r in c:
         tags.append(r[0])
     return tags
+
 
 def ticketcontacts(ticket_id):
     contacts = []
@@ -688,6 +722,7 @@ def ticketcontacts(ticket_id):
         contacts.append(r[0])
     return contacts
 
+
 def tickettitle(ticket_id):
     c = getdb().cursor()
     c.execute('''
@@ -697,6 +732,7 @@ def tickettitle(ticket_id):
     ''', (ticket_id,))
     title = c.fetchone()[0]
     return title
+
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):
     for contact in toemail:
@@ -708,6 +744,7 @@ def sendmail(fromemail, toemail, smtpserver, subject, body):
         s = smtplib.SMTP(smtpserver, timeout=10)
         s.sendmail(fromemail, contact, msg.as_string())
         s.quit()
+
 
 if __name__ == '__main__':
 
