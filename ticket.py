@@ -297,10 +297,6 @@ def removesession(session_id):
 def makesession(user):
     c = getdb().cursor()
     try:
-        c.execute('''
-            DELETE FROM sessions
-            WHERE username = %s
-        ''', (user,))
         session_id = str(uuid4())
         c.execute('''
             INSERT INTO sessions (session_id, username)
