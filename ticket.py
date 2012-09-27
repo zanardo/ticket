@@ -18,12 +18,14 @@ import smtplib
 import psycopg2
 import psycopg2.extras
 
-import config
-
+from uuid import uuid4
+from hashlib import sha1
+from functools import wraps
+from email.mime.text import MIMEText
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
-from email.mime.text import MIMEText
 
+import config
 VERSION = '1.2dev'
 
 # Cores de fundo das prioridades
@@ -52,9 +54,19 @@ def getdb():
         psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
     return local.db
 
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        session_id = request.get_cookie('ticket_session')
+        if not session_id or not validatesession(session_id):
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated
+
 # Listagem de tickets
 @route('/')
 @view('list-tickets')
+@requires_auth
 def index():
     # A página padrão exibe os tickets ordenados por prioridade
     if 'filter' not in request.query.keys():
@@ -203,7 +215,8 @@ def index():
     getdb().commit()
 
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
-        priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION)
+        priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION,
+        username=currentuser())
 
 # Tela de login
 @get('/login')
@@ -211,14 +224,105 @@ def index():
 def login():
     return dict(version=VERSION)
 
+# Valida login
+@post('/login')
+def validatelogin():
+    assert 'user' in request.forms
+    assert 'passwd' in request.forms
+    user = request.forms.user
+    passwd = request.forms.passwd
+    v = validateuserdb(user, passwd)
+    if not v: return 'usuário ou senha inválidos'
+    else:
+        session_id = makesession(user)
+        response.set_cookie("ticket_session", session_id)
+        return redirect('/')
+
+@get('/logout')
+def logout():
+    session_id = request.get_cookie('ticket_session')
+    if session_id:
+        removesession(session_id)
+        response.delete_cookie('ticket_session')
+    return redirect('/login')
+
+def validateuserdb(user, passwd):
+    passwdsha1 = sha1(passwd).hexdigest()
+    c = getdb().cursor()
+    c.execute('''
+        SELECT username
+        FROM users
+        WHERE username = %s
+            AND password = %s
+    ''', (user, passwdsha1))
+    r = c.fetchone()
+    if not r: return False
+    else: return True
+
+def validatesession(session_id):
+    c = getdb().cursor()
+    c.execute('''
+        SELECT session_id
+        FROM sessions
+        WHERE session_id = %s
+    ''', (session_id,))
+    r = c.fetchone()
+    if r: return True
+    else: return False
+
+def currentuser():
+    session_id = request.get_cookie('ticket_session')
+    c = getdb().cursor()
+    c.execute('''
+        SELECT username
+        FROM sessions
+        WHERE session_id = %s
+    ''', (session_id,))
+    r = c.fetchone()
+    return r[0] 
+
+def removesession(session_id):
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            DELETE FROM sessions
+            WHERE session_id = %s
+        ''', (session_id,))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
+def makesession(user):
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            DELETE FROM sessions
+            WHERE username = %s
+        ''', (user,))
+        session_id = str(uuid4())
+        c.execute('''
+            INSERT INTO sessions (session_id, username)
+            VALUES (%s,%s)
+        ''', (session_id, user))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return session_id
+
 # Tela de novo ticket
 @get('/new-ticket')
 @view('new-ticket')
+@requires_auth
 def newticket():
-    return dict(version=VERSION)
+    return dict(version=VERSION, username=currentuser())
 
 # Salva novo ticket
 @post('/new-ticket')
+@requires_auth
 def newticketpost():
     assert 'title' in request.forms
     title = request.forms.title.strip()
@@ -244,6 +348,7 @@ def newticketpost():
 # Exibe os detalhes de um ticket
 @get('/<ticket_id:int>')
 @view('show-ticket')
+@requires_auth
 def showticket(ticket_id):
     c = getdb().cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -316,9 +421,10 @@ def showticket(ticket_id):
 
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
-        tagsdesc=tagsdesc(), version=VERSION)
+        tagsdesc=tagsdesc(), version=VERSION, username=currentuser())
 
 @post('/close-ticket/<ticket_id:int>')
+@requires_auth
 def closeticket(ticket_id):
     c = getdb().cursor()
     try:
@@ -345,6 +451,7 @@ def closeticket(ticket_id):
     return redirect('/%s' % ticket_id)
 
 @post('/change-title/<ticket_id:int>')
+@requires_auth
 def changetitle(ticket_id):
     assert 'text' in request.forms
     title = request.forms.text.strip()
@@ -364,6 +471,7 @@ def changetitle(ticket_id):
     return redirect('/%s' % ticket_id)
 
 @post('/change-tags/<ticket_id:int>')
+@requires_auth
 def changetags(ticket_id):
     assert 'text' in request.forms
     tags = request.forms.text
@@ -387,6 +495,7 @@ def changetags(ticket_id):
     return redirect('/%s' % ticket_id)
 
 @post('/change-contacts/<ticket_id:int>')
+@requires_auth
 def changecontacts(ticket_id):
     assert 'contacts' in request.forms
     contacts = request.forms.contacts
@@ -411,6 +520,7 @@ def changecontacts(ticket_id):
     return redirect('/%s' % ticket_id)
 
 @post('/register-minutes/<ticket_id:int>')
+@requires_auth
 def registerminutes(ticket_id):
     assert 'minutes' in request.forms
     if not re.match(r'^[\-0-9\.]+$', request.forms.minutes):
@@ -438,6 +548,7 @@ def registerminutes(ticket_id):
     return redirect('/%s' % ticket_id)
 
 @post('/new-note/<ticket_id:int>')
+@requires_auth
 def newnote(ticket_id):
     assert 'text' in request.forms
     assert 'contacts' in request.forms
@@ -490,6 +601,7 @@ def newnote(ticket_id):
     return redirect('/%s' % ticket_id)
 
 @post('/reopen-ticket/<ticket_id:int>')
+@requires_auth
 def reopenticket(ticket_id):
     c = getdb().cursor()
     try:
@@ -516,6 +628,7 @@ def reopenticket(ticket_id):
     return redirect('/%s' % ticket_id)
 
 @post('/change-priority/<ticket_id:int>')
+@requires_auth
 def changepriority(ticket_id):
     assert 'prio' in request.forms
     assert re.match(r'^[1-5]$', request.forms.prio)
