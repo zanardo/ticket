@@ -1,15 +1,78 @@
-body { margin: 1em 2em 2em 2em; font-family: Verdana, Arial, sans-serif; font-size: 9pt; background-color: #F1F3F4; }
-.tab { color: #0000EE; text-decoration: underline; font-family: Verdana, Arial, sans-serif; font-size: 8pt; cursor: pointer; }
-a:link { color: #0000EE; }
-a:visited { color: #0000EE; }
-a:active { color: #0000EE; }
-a:hover { color: #FF0000; }
-input, textarea, select, submit { font-family: Verdana, Arial, sans-serif; font-size: 8pt; background-color: #F1F3F4; border: 1px solid #336699; }
-.topmenu { font-family: Arial, sans-serif; font-size: 9pt; }
-.title { font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif; font-size: 24pt; font-weight: normal; }
-.tags { border: 1px dotted #336699; font-family: Verdana, Arial, sans-serif; font-size: 8pt; }
-.actions { } 
-.ticket { font-family: Verdana, Arial, sans-serif; font-size: 10px; border: 1px solid #ffffff; }
-.ticketlabel { font-size: 12px; }
-.tag { text-decoration: none; font-weight: bold; }
-.tktitle { font-family: "Verdana"; font-size: 12px; font-weight: bold; }
+body {
+	background-color: #F1F3F4;
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 9pt;
+	margin: 1em 2em 2em 2em;
+}
+
+.tab {
+	color: #0000EE;
+	cursor: pointer;
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 8pt;
+	text-decoration: underline;
+}
+
+a:link {
+	color: #0000EE;
+}
+
+a:visited {
+	color: #0000EE;
+}
+
+a:active {
+	color: #0000EE;
+}
+
+a:hover {
+	color: #FF0000;
+}
+
+input, textarea, select, submit {
+	background-color: #F1F3F4;
+	border: 1px solid #336699;
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 8pt;
+}
+
+.topmenu {
+	font-family: Arial, sans-serif;
+	font-size: 9pt;
+}
+
+.title {
+	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
+	font-size: 24pt;
+	font-weight: normal;
+}
+
+.tags {
+	border: 1px dotted #336699;
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 8pt;
+}
+
+.actions {
+}
+
+.ticket {
+	border: 1px solid #ffffff;
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 10px;
+}
+
+.ticketlabel {
+	font-size: 12px;
+}
+
+.tag {
+	font-weight: bold;
+	text-decoration: none;
+}
+
+.tktitle {
+	font-family: "Verdana";
+	font-size: 12px;
+	font-weight: bold;
+}
