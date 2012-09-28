@@ -76,3 +76,10 @@ input, textarea, select, submit {
 	font-size: 12px;
 	font-weight: bold;
 }
+
+.copyright {
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 10px;
+	color: gray;
+	text-align: right;
+}
