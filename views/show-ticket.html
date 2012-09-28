@@ -142,7 +142,10 @@
 		<div class="panel" id="note" style="display: none">
 			<form method="post" action="/new-note/{{ticket['id']}}" enctype="multipart/form-data">
 				<textarea name="text" rows="4" cols="70" id="formnote"></textarea>
-				<p><small>Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):</small>
+				<p>
+					<div class="deschelp">
+						Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):
+					</div>
 				<p>
 				%contactsstr = ''
 				%for contact in contacts:
@@ -174,7 +177,9 @@
 				<input type="text" name="text" value="{{' '.join(list(sorted(tags)))}}" size="70" id="formtags">
 				<input type="submit" name="submit" value="Salvar palavras-chave">
 				<p>
-				<font color="#A5A5A5"><small>Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.</small></font>
+				<div class="deschelp">
+					Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.
+				</div>
 				<p>
 				<small>
 				%for tag in sorted(tagsdesc):

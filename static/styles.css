@@ -83,3 +83,9 @@ input, textarea, select, submit {
 	color: gray;
 	text-align: right;
 }
+
+.deschelp {
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 10px;
+	color: #a5a5a5;
+}
