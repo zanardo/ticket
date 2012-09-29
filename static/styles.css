@@ -5,6 +5,10 @@ body {
 	margin: 0;
 }
 
+#content {
+	margin: 10px;
+}
+
 .tab {
 	color: #0000EE;
 	cursor: pointer;
