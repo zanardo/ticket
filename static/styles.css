@@ -2,7 +2,7 @@ body {
 	background-color: #F1F3F4;
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 9pt;
-	margin: 1em 2em 2em 2em;
+	margin: 0;
 }
 
 .tab {
@@ -39,6 +39,15 @@ input, textarea, select, submit {
 .topmenu {
 	font-family: Arial, sans-serif;
 	font-size: 9pt;
+}
+
+#topusermenu {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	text-align: right;
+	padding: 4px;
+	background-color: #E6E6E6;
+	margin-bottom: 5px;
 }
 
 .title {
