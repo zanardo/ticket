@@ -10,6 +10,9 @@
 	<div id="topusermenu">
 		<b>{{username}}</b> | 
 		<a href="/change-password">trocar senha</a> | 
+		%if userisadmin:
+			<a href="/admin">admin</a> | 
+		%end
 		<a href="/logout">sair</a>
 	</div>
 	<table border="0" align="right">

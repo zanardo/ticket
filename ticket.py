@@ -14,6 +14,7 @@ import sys
 import time
 import getopt
 import bottle
+import random
 import smtplib
 import psycopg2
 import psycopg2.extras
@@ -63,6 +64,15 @@ def requires_auth(f):
         return f(*args, **kwargs)
     return decorated
 
+def requires_admin(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        session_id = request.get_cookie('ticket_session')
+        if not session_id or not validatesession(session_id) or \
+                not userisadmin(currentuser()):
+            return 'não autorizado'
+        return f(*args, **kwargs)
+    return decorated
 
 ########################################################################################
 # Roteamento de URIs
@@ -220,9 +230,10 @@ def index():
 
     getdb().commit()
 
+    username = currentuser()
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
         priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION,
-        username=currentuser())
+        username=username, userisadmin=userisadmin(username))
 
 
 # Tela de login
@@ -261,7 +272,9 @@ def logout():
 @view('new-ticket')
 @requires_auth
 def newticket():
-    return dict(version=VERSION, username=currentuser())
+    username = currentuser()
+    return dict(version=VERSION, username=username,
+        userisadmin=userisadmin(username))
 
 
 # Salva novo ticket
@@ -364,9 +377,11 @@ def showticket(ticket_id):
 
     # Renderiza template
 
+    username = currentuser()
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
-        tagsdesc=tagsdesc(), version=VERSION, username=currentuser())
+        tagsdesc=tagsdesc(), version=VERSION, username=username,
+        userisadmin=userisadmin(username))
 
 
 @post('/close-ticket/<ticket_id:int>')
@@ -609,12 +624,16 @@ def static(filename):
 
 
 @get('/change-password')
+@requires_auth
 @view('change-password')
 def changepassword():
-    return dict(username=currentuser(), version=VERSION)
+    username = currentuser()
+    return dict(username=username, version=VERSION,
+        userisadmin=userisadmin(username))
 
 
 @post('/change-password')
+@requires_auth
 def changepasswordsave():
     assert 'oldpasswd' in request.forms
     assert 'newpasswd' in request.forms
@@ -643,6 +662,93 @@ def changepasswordsave():
     else:
         getdb().commit()
         return redirect('/')
+
+
+@get('/admin')
+@view('admin')
+@requires_auth
+@requires_admin
+def admin():
+    username = currentuser()
+    users = []
+    c = getdb().cursor()
+    c.execute('''
+        SELECT username, is_admin
+        FROM users
+        ORDER BY username
+    ''')
+    for user in c:
+        users.append({'username': user[0], 'is_admin': user[1]})
+    return dict(version=VERSION, username=username, users=users,
+        userisadmin=userisadmin(username))
+
+
+@get('/admin/remove-user/:username')
+@requires_auth
+@requires_admin
+def removeuser(username):
+    if username == currentuser():
+        return 'não é possível remover usuário corrente'
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            DELETE FROM users
+            WHERE username = %s
+        ''', (username,))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return redirect('/admin')
+
+@post('/admin/save-new-user')
+@requires_auth
+@requires_admin
+def newuser():
+    assert 'username' in request.forms
+    username = request.forms.username
+    if username.strip() == '':
+        return 'usuário inválido'
+    password = str(int(random.random() * 999999))
+    sha1password = sha1(password).hexdigest()
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            INSERT INTO users (
+                username, password, is_admin
+            )
+            VALUES (%s, %s, %s)
+        ''', (username, sha1password, False))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return u'usuário %s criado com senha %s' % ( username, password )
+
+
+@get('/admin/force-new-password/:username')
+@requires_auth
+@requires_admin
+def forceuserpassword(username):
+    password = str(int(random.random() * 999999))
+    sha1password = sha1(password).hexdigest()
+    if username == currentuser():
+        return 'não é possível forçar nova senha de usuário corrente'
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            UPDATE users
+            SET password = %s
+            WHERE username = %s
+        ''', (sha1password, username))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return u'usuário %s teve nova senha forçada: %s' % ( username, password )
 
 
 ########################################################################################
@@ -685,7 +791,18 @@ def currentuser():
         WHERE session_id = %s
     ''', (session_id,))
     r = c.fetchone()
-    return r[0] 
+    return r[0]
+
+
+def userisadmin(username):
+    "Checa se usuário tem poderes administrativos"
+    c = getdb().cursor()
+    c.execute('''
+        SELECT is_admin
+        FROM users
+        WHERE username = %s
+    ''', (username,))
+    return c.fetchone()[0]
 
 
 def removesession(session_id):
