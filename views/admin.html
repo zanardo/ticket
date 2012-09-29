@@ -1,64 +1,27 @@
-<!doctype html>
-<html>
-<head>
-	<title>Administrar</title>
-	<link rel="stylesheet" type="text/css" href="/static/styles.css">
-	<meta charset="utf-8">
-</head>
-<body>
-	<div id="topusermenu">
-		<b>{{username}}</b> | 
-		<a href="/change-password">trocar senha</a> | 
-		%if userisadmin:
-			<a href="/admin">admin</a> | 
-		%end
-		<a href="/logout">sair</a>
-	</div>
-	<table border="0" align="right">
+%rebase base title="Administrar", filter="", username=username, userisadmin=userisadmin, version=version
+
+<h2>Usuários</h2>
+<form method="post" action="/admin/save-new-user" enctype="multipart/form-data">
+	<input type="text" name="username" size="30">
+	<input type="submit" name="submit" value="novo usuário">
+</form>
+<p>
+<table>
+	<th>usuário</th><th>administrador</th><th>ações</th>
+	%for user in users:
 		<tr>
-		<td class="topmenu" align="right">
-			<a href='/' accesskey='A' title="alt-shift-a">abertos</a>
-			| <a href='/?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
-			| <a href='/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
-		</td> <tr></tr> <td align=right>
-		<form method="get" action="/" enctype="multipart/form-data">
-			<input type="text" name="filter" size="25" accesskey='S' value="" title="alt-shift-s">
-			<input type="submit" name="submit" value="filtrar" />
-		</form>
-		</td>
+			<td> {{user['username']}} </td>
+			<td>
+				%if user['is_admin']:
+					sim
+					%end
+			</td>
+			<td>
+				%if username != user['username']:
+					<a href="/admin/remove-user/{{user['username']}}">excluir</a>
+					<a href="/admin/force-new-password/{{user['username']}}">forçar nova senha</a>
+				%end
+			</td>
 		</tr>
-	</table>
-	<span class="title">Administrar</span>
-	<p>
-		<h2>Usuários</h2>
-		<form method="post" action="/admin/save-new-user" enctype="multipart/form-data">
-			<input type="text" name="username" size="30">
-			<input type="submit" name="submit" value="novo usuário">
-		</form>
-		<p>
-		<table>
-			<th>usuário</th><th>administrador</th><th>ações</th>
-			%for user in users:
-				<tr>
-					<td> {{user['username']}} </td>
-					<td>
-						%if user['is_admin']:
-							sim
-							%end
-					</td>
-					<td>
-						%if username != user['username']:
-							<a href="/admin/remove-user/{{user['username']}}">excluir</a>
-							<a href="/admin/force-new-password/{{user['username']}}">forçar nova senha</a>
-						%end
-					</td>
-				</tr>
-			%end
-		</table>
-	<p>
-	<div class="copyright">
-		sistema <a href="https://github.com/zanardo/ticket">ticket</a> versão {{version}}
-	</div>
-	</table>
-</body>
-</html>
+	%end
+</table>

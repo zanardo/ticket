@@ -1,246 +1,207 @@
-<!doctype html>
-<html>
-<head>
-	<title>#{{ticket['id']}} {{ticket['title']}}</title>
-	<link rel="stylesheet" type="text/css" href="/static/styles.css">
-	<script type="text/javascript" src="/static/show-ticket.js"></script>
-	<meta charset="utf-8">
-</head>
-<body>
-	<div id="topusermenu">
-		<b>{{username}}</b> | 
-		<a href="/change-password">trocar senha</a> | 
-		%if userisadmin:
-			<a href="/admin">admin</a> | 
-		%end
-		<a href="/logout">sair</a>
-	</div>
-	<table border="0" align="right">
-		<tr>
-		<td class="topmenu" align="right">
-			<a href='/' accesskey='A' title="alt-shift-a">abertos</a>
-			| <a href='/?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
-			| <a href='/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
-		</td> 
-		<tr>
-		</tr>
-		<td align=right>
-		<form method="get" action="/" enctype="multipart/form-data">
-			<input type="text" name="filter" size="25" accesskey='S' value="#{{ticket['id']}}" title="alt-shift-s">
-			<input type="submit" name="submit" value="filtrar" />
-		</form>
-		</td></tr></table>
-		<span class="title">Detalhe: Ticket #{{ticket['id']}}</span>
-		<p>
-		%if ticket['status'] == 0:
-		<table class="ticket" width="100%" border="0" bgcolor="">
-		%else:
-		<table class="ticket" width="100%" border="0" bgcolor="#e1e1e1">
-		%end
-			<tr>
-				<td width="5px" title="{{priodesc[ticket['priority']]}}" 
-				%if ticket['status'] == 0:
-					bgcolor="{{priocolor[ticket['priority']]}}">&nbsp;</td>
-				%else:
-					bgcolor="#e1e1e1">&nbsp;</td>
-				%end
-				<td width="120px" valign="top">
-					<b>
-						<a class="ticketlabel" href="/{{ticket['id']}}">
-							Ticket #{{ticket['id']}}</a>
-					</b>
-					<br>
-					Criado: <span title="{{ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
-						{{ticket['datecreated'].strftime("%Y-%m-%d")}}
-					</span>
-					<br>
-					%if ticket['status'] == 1:
-					Fechado: <span title="{{ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
-						{{ticket['dateclosed'].strftime("%Y-%m-%d")}}
-					</span>
-					<br>
-					%end
-					Autor: {{ticket['user']}}
-					<br>
-					%for tag in sorted(tags):
-						%if tag in tagsdesc:
-							%description = tagsdesc[tag]['description']
-							%bgcolor = tagsdesc[tag]['bgcolor']
-							%fgcolor = tagsdesc[tag]['fgcolor']
-						%else:
-							%description = ''
-							%bgcolor = 'yellow'
-							%fgcolor = 'red'
-						%end
-						<a href="/?filter=t:{{tag}} o:p"
-							class="tag"
-							title="{{description}}"
-							style="background-color:{{bgcolor}};color:{{fgcolor}};"
-						>{{tag}}</a> 
-					%end
-					<p>
-					%if ticket['status'] == 0:
-					<form method="post" action="/close-ticket/{{ticket['id']}}"
-						enctype="multipart/form-data">
-						<input type="submit" name="submit" value="fechar">
-					</form>
-					%elif ticket['status'] == 1:
-					<form method="post" action="/reopen-ticket/{{ticket['id']}}"
-						enctype="multipart/form-data">
-						<input type="submit" name="submit" value="reabrir">
-					</form>
+%rebase base title="Detalhe: Tickets #%s" % ticket['id'], filter="#%s" % ticket['id'], username=username, userisadmin=userisadmin, version=version
 
-					%end
-				</td>
-				<td valign="top">
-					<span class="tktitle">{{ticket['title']}}</span>
-					<p>
-					%for comment in comments:
-						<br>
-						%minutes = comment['minutes']
-						%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
-						%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
-						<b title="{{datelong}}">{{ dateshort }}</b> - <b>{{ comment['user']}}: </b>
-						%if comment['minutes'] > 0:
-							%minutes = comment['minutes']
-							%hours = minutes / 60
-							%minutes = minutes % 60
-							%comment['comment'] = "%dh%2dm trabalhados" % ( hours, minutes )
-						%end
-						%if comment['negrito']:
-							<b><i>{{ comment['comment'] }}</i></b>
-						%else:
-							{{ comment['comment'] }}
-						%end
-					%end
-				</td>
-			</tr>
-		</table>
-		<p>
-		<table class="actions" border="0">
-			<tr>
-				<td>
-					%if ticket['status'] == 0:
-					<a class="tab"
-						onclick="return showPanel(this, 'note');">
-						Adicionar Nota</a>
-						 | 
-					<a class="tab" onclick="return showPanel(this, 'prio');">
-						Prioridade de Ação</a>
-						 | 
-					%end
-					<a class="tab" onclick="return showPanel(this, 'tags');">
-						Palavras-Chave</a>
-						 | 
-					<a class="tab" onclick="return showPanel(this, 'title');">
-						Título</a>
-						 | 
-					<a class="tab" onclick="return showPanel(this, 'minutes');">
-						Tempo</a> 
-					%if ticket['status'] == 0:
-						| 
-					<a class="tab" onclick="return showPanel(this, 'contacts');">
-						Contatos</a>
-					%end
-				</td>
-			</tr>
-		</table>
-		<br>
-		<div class="panel" id="note" style="display: none">
-			<form method="post" action="/new-note/{{ticket['id']}}" enctype="multipart/form-data">
-				<textarea name="text" rows="4" cols="70" id="formnote"></textarea>
-				<p>
-					<div class="deschelp">
-						Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):
-					</div>
-				<p>
-				%contactsstr = ''
-				%for contact in contacts:
-					%contactsstr += "#%s\r\n" % contact
+%if ticket['status'] == 0:
+<table class="ticket" width="100%" border="0" bgcolor="">
+%else:
+<table class="ticket" width="100%" border="0" bgcolor="#e1e1e1">
+%end
+	<tr>
+		<td width="5px" title="{{priodesc[ticket['priority']]}}" 
+		%if ticket['status'] == 0:
+			bgcolor="{{priocolor[ticket['priority']]}}">&nbsp;</td>
+		%else:
+			bgcolor="#e1e1e1">&nbsp;</td>
+		%end
+		<td width="120px" valign="top">
+			<b>
+				<a class="ticketlabel" href="/{{ticket['id']}}">
+					Ticket #{{ticket['id']}}</a>
+			</b>
+			<br>
+			Criado: <span title="{{ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
+				{{ticket['datecreated'].strftime("%Y-%m-%d")}}
+			</span>
+			<br>
+			%if ticket['status'] == 1:
+			Fechado: <span title="{{ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
+				{{ticket['dateclosed'].strftime("%Y-%m-%d")}}
+			</span>
+			<br>
+			%end
+			Autor: {{ticket['user']}}
+			<br>
+			%for tag in sorted(tags):
+				%if tag in tagsdesc:
+					%description = tagsdesc[tag]['description']
+					%bgcolor = tagsdesc[tag]['bgcolor']
+					%fgcolor = tagsdesc[tag]['fgcolor']
+				%else:
+					%description = ''
+					%bgcolor = 'yellow'
+					%fgcolor = 'red'
 				%end
-				<textarea name="contacts" rows="5" cols="50">{{contactsstr}}</textarea>
-				<p>
-				<input type="submit" name="submit" value="Adicionar nota">
-			</form>
-		</div>
-		<div class="panel" id="prio" style="display: none">
-			<form method="post" action="/change-priority/{{ticket['id']}}"
-					enctype="multipart/form-data">
-				<select name="prio">
-					%for prio in priodesc:
-						%if prio == ticket['priority']:
-							<option value="{{prio}}" selected="selected">{{priodesc[prio]}}</option>
-						%else:
-							<option value="{{prio}}">{{priodesc[prio]}}</option>
-						%end
-					%end
-				</select>
-				<input type="submit" name="submit" value="Mudar prioridade de ação">
-			</form>
-		</div>
-		<div class="panel" id="tags" style="display: none">
-			<form method="post" action="/change-tags/{{ticket['id']}}"
-					enctype="multipart/form-data" name="ftag">
-				<input type="text" name="text" value="{{' '.join(list(sorted(tags)))}}" size="70" id="formtags">
-				<input type="submit" name="submit" value="Salvar palavras-chave">
-				<p>
-				<div class="deschelp">
-					Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.
-				</div>
-				<p>
-				<small>
-				%for tag in sorted(tagsdesc):
-					<a href="#"
-						onclick="document.ftag.text.value+=' {{tag}}'"
-						class="tag"
-						title="{{tagsdesc[tag]['description']}}"
-						style="background-color:{{tagsdesc[tag]['bgcolor']}};color:{{tagsdesc[tag]['fgcolor']}};"
-					>{{tag}}</a> 
-				%end
-				</small>
-			</form>
-		</div>
-		<div class="panel" id="title" style="display: none">
-			<form method="post" action="/change-title/{{ticket['id']}}"
-					enctype="multipart/form-data">
-				<input type="text" name="text" value="{{ticket['title']}}" size="70">
-				<input type="submit" name="submit" value="Salvar título">
-			</form>
-		</div>
-		<div class="panel" id="minutes" style="display: none">
-			%if ticket['status'] == 0:
-			<form method="post" action="/register-minutes/{{ticket['id']}}"
-					enctype="multipart/form-data" name="fminutes">
-				<input type="text" name="minutes" value="0" size="10">
-				<input type="submit" name="submit" value="Contabilizar minutos">
-				<p>
-				<input type="button" name="bstartcron" value="Iniciar Cronômetro" onclick="startCron()">
-				<input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;">
-			</form>
+				<a href="/?filter=t:{{tag}} o:p"
+					class="tag"
+					title="{{description}}"
+					style="background-color:{{bgcolor}};color:{{fgcolor}};"
+				>{{tag}}</a> 
+			%end
 			<p>
-			%end
-			%for t in timetrack:
-				%minutes = t['minutes']
-				%hours = minutes / 60
-				%minutes = minutes % 60
-				<small>
-					<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%2dm" % (hours,minutes)}}</b> no total
-				</small>
-				<br>
-			%end
-		</div>
-		<div class="panel" id="contacts" style="display: none">
-			<form method="post" action="/change-contacts/{{ticket['id']}}"
+			%if ticket['status'] == 0:
+			<form method="post" action="/close-ticket/{{ticket['id']}}"
 				enctype="multipart/form-data">
-				<textarea name="contacts"  rows="5" cols="50" id="formcontacts">{{'\r\n'.join(list(contacts))}}</textarea>
-				<br>
-				<input type="submit" name="submit" value="Salvar contatos">
+				<input type="submit" name="submit" value="fechar">
 			</form>
+			%elif ticket['status'] == 1:
+			<form method="post" action="/reopen-ticket/{{ticket['id']}}"
+				enctype="multipart/form-data">
+				<input type="submit" name="submit" value="reabrir">
+			</form>
+
+			%end
+		</td>
+		<td valign="top">
+			<span class="tktitle">{{ticket['title']}}</span>
+			<p>
+			%for comment in comments:
+				<br>
+				%minutes = comment['minutes']
+				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
+				%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
+				<b title="{{datelong}}">{{ dateshort }}</b> - <b>{{ comment['user']}}: </b>
+				%if comment['minutes'] > 0:
+					%minutes = comment['minutes']
+					%hours = minutes / 60
+					%minutes = minutes % 60
+					%comment['comment'] = "%dh%2dm trabalhados" % ( hours, minutes )
+				%end
+				%if comment['negrito']:
+					<b><i>{{ comment['comment'] }}</i></b>
+				%else:
+					{{ comment['comment'] }}
+				%end
+			%end
+		</td>
+	</tr>
+</table>
+<p>
+<table class="actions" border="0">
+	<tr>
+		<td>
+			%if ticket['status'] == 0:
+			<a class="tab"
+				onclick="return showPanel(this, 'note');">
+				Adicionar Nota</a>
+				 | 
+			<a class="tab" onclick="return showPanel(this, 'prio');">
+				Prioridade de Ação</a>
+				 | 
+			%end
+			<a class="tab" onclick="return showPanel(this, 'tags');">
+				Palavras-Chave</a>
+				 | 
+			<a class="tab" onclick="return showPanel(this, 'title');">
+				Título</a>
+				 | 
+			<a class="tab" onclick="return showPanel(this, 'minutes');">
+				Tempo</a> 
+			%if ticket['status'] == 0:
+				| 
+			<a class="tab" onclick="return showPanel(this, 'contacts');">
+				Contatos</a>
+			%end
+		</td>
+	</tr>
+</table>
+<br>
+<div class="panel" id="note" style="display: none">
+	<form method="post" action="/new-note/{{ticket['id']}}" enctype="multipart/form-data">
+		<textarea name="text" rows="4" cols="70" id="formnote"></textarea>
+		<p>
+			<div class="deschelp">
+				Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):
+			</div>
+		<p>
+		%contactsstr = ''
+		%for contact in contacts:
+			%contactsstr += "#%s\r\n" % contact
+		%end
+		<textarea name="contacts" rows="5" cols="50">{{contactsstr}}</textarea>
+		<p>
+		<input type="submit" name="submit" value="Adicionar nota">
+	</form>
+</div>
+<div class="panel" id="prio" style="display: none">
+	<form method="post" action="/change-priority/{{ticket['id']}}"
+			enctype="multipart/form-data">
+		<select name="prio">
+			%for prio in priodesc:
+				%if prio == ticket['priority']:
+					<option value="{{prio}}" selected="selected">{{priodesc[prio]}}</option>
+				%else:
+					<option value="{{prio}}">{{priodesc[prio]}}</option>
+				%end
+			%end
+		</select>
+		<input type="submit" name="submit" value="Mudar prioridade de ação">
+	</form>
+</div>
+<div class="panel" id="tags" style="display: none">
+	<form method="post" action="/change-tags/{{ticket['id']}}"
+			enctype="multipart/form-data" name="ftag">
+		<input type="text" name="text" value="{{' '.join(list(sorted(tags)))}}" size="70" id="formtags">
+		<input type="submit" name="submit" value="Salvar palavras-chave">
+		<p>
+		<div class="deschelp">
+			Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.
 		</div>
 		<p>
-		<div class="copyright">
-			sistema <a href="https://github.com/zanardo/ticket">ticket</a> versão {{version}}
-		</div>
-	</table>
-</body>
-</html>
+		<small>
+		%for tag in sorted(tagsdesc):
+			<a href="#"
+				onclick="document.ftag.text.value+=' {{tag}}'"
+				class="tag"
+				title="{{tagsdesc[tag]['description']}}"
+				style="background-color:{{tagsdesc[tag]['bgcolor']}};color:{{tagsdesc[tag]['fgcolor']}};"
+			>{{tag}}</a> 
+		%end
+		</small>
+	</form>
+</div>
+<div class="panel" id="title" style="display: none">
+	<form method="post" action="/change-title/{{ticket['id']}}"
+			enctype="multipart/form-data">
+		<input type="text" name="text" value="{{ticket['title']}}" size="70">
+		<input type="submit" name="submit" value="Salvar título">
+	</form>
+</div>
+<div class="panel" id="minutes" style="display: none">
+	%if ticket['status'] == 0:
+	<form method="post" action="/register-minutes/{{ticket['id']}}"
+			enctype="multipart/form-data" name="fminutes">
+		<input type="text" name="minutes" value="0" size="10">
+		<input type="submit" name="submit" value="Contabilizar minutos">
+		<p>
+		<input type="button" name="bstartcron" value="Iniciar Cronômetro" onclick="startCron()">
+		<input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;">
+	</form>
+	<p>
+	%end
+	%for t in timetrack:
+		%minutes = t['minutes']
+		%hours = minutes / 60
+		%minutes = minutes % 60
+		<small>
+			<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%2dm" % (hours,minutes)}}</b> no total
+		</small>
+		<br>
+	%end
+</div>
+<div class="panel" id="contacts" style="display: none">
+	<form method="post" action="/change-contacts/{{ticket['id']}}"
+		enctype="multipart/form-data">
+		<textarea name="contacts"  rows="5" cols="50" id="formcontacts">{{'\r\n'.join(list(contacts))}}</textarea>
+		<br>
+		<input type="submit" name="submit" value="Salvar contatos">
+	</form>
+</div>

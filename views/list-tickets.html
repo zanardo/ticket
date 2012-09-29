@@ -1,86 +1,45 @@
-<!doctype html>
-<html>
-<head>
-	<title>Tickets: {{filter}}</title>
-	<link rel="stylesheet" type="text/css" href="/static/styles.css">
-	<meta charset="utf-8">
-</head>
-<body>
-	<div id="topusermenu">
-		<b>{{username}}</b> | 
-		<a href="/change-password">trocar senha</a> | 
-		%if userisadmin:
-			<a href="/admin">admin</a> | 
-		%end
-		<a href="/logout">sair</a>
-	</div>
-	<table border="0" align="right">
-		<tr>
-		<td class="topmenu" align="right">
-			<a href='/' accesskey='A' title="alt-shift-a">abertos</a>
-			| <a href='/?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
-			| <a href='/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
-		</td> 
-		<tr>
-		</tr>
-		<td align=right>
-		<form method="get" action="/" enctype="multipart/form-data">
-			<input type="text" name="filter" size="25" accesskey='S' value="{{filter}}" title="alt-shift-s">
-			<input type="submit" name="submit" value="filtrar" />
-		</form>
-		</td></tr></table>
-		<span class="title">Tickets</span>
-		<p>
+%rebase base title="Tickets: %s" % filter, filter=filter, username=username, userisadmin=userisadmin, version=version
 
-		%for tk in tickets:
-			%priobgcolor = priocolor[tk['priority']]
-			%if tk['status'] == 0: bgcolor = ''
-			%if tk['status'] == 1:
-				%bgcolor = '#e1e1e1'
-				%priobgcolor = ''
+%for tk in tickets:
+	%priobgcolor = priocolor[tk['priority']]
+	%if tk['status'] == 0: bgcolor = ''
+	%if tk['status'] == 1:
+		%bgcolor = '#e1e1e1'
+		%priobgcolor = ''
+	%end
+	<table class="ticket" width="100%" border="0" bgcolor="{{bgcolor}}">
+	<tr>
+		<td width="5px" title="{{priodesc[tk['priority']]}}"
+			bgcolor="{{priobgcolor}}">&nbsp;</td>
+		<td width="80px" valign="top">
+			<b>
+			<a class="ticketlabel" title="Criado: Modificado: Autor:"
+				href="/{{tk['id']}}">#{{tk['id']}}</a>
+			</b>
+		</td>
+		<td valign="top">
+			<span class="tktitle">{{tk['title']}}</span>
+		</td>
+		<td valign="top" align="right">
+			%for tag in sorted(tk['tags']):
+				%if tag in tagsdesc:
+					%description = tagsdesc[tag]['description']
+					%bgcolor = tagsdesc[tag]['bgcolor']
+					%fgcolor = tagsdesc[tag]['fgcolor']
+				%else:
+					%description = ''
+					%bgcolor = 'yellow'
+					%fgcolor = 'red'
+				%end
+				<a href="/?filter=t:{{tag}} o:p"
+					class="tag"
+					title="{{description}}"
+					style="background-color:{{bgcolor}};color:{{fgcolor}};"
+				>{{tag}}</a>
 			%end
-			<table class="ticket" width="100%" border="0" bgcolor="{{bgcolor}}">
-			<tr>
-				<td width="5px" title="{{priodesc[tk['priority']]}}"
-					bgcolor="{{priobgcolor}}">&nbsp;</td>
-				<td width="80px" valign="top">
-					<b>
-					<a class="ticketlabel" title="Criado: Modificado: Autor:"
-						href="/{{tk['id']}}">#{{tk['id']}}</a>
-					</b>
-				</td>
-				<td valign="top">
-					<span class="tktitle">{{tk['title']}}</span>
-				</td>
-				<td valign="top" align="right">
-					%for tag in sorted(tk['tags']):
-						%if tag in tagsdesc:
-							%description = tagsdesc[tag]['description']
-							%bgcolor = tagsdesc[tag]['bgcolor']
-							%fgcolor = tagsdesc[tag]['fgcolor']
-						%else:
-							%description = ''
-							%bgcolor = 'yellow'
-							%fgcolor = 'red'
-						%end
-						<a href="/?filter=t:{{tag}} o:p"
-							class="tag"
-							title="{{description}}"
-							style="background-color:{{bgcolor}};color:{{fgcolor}};"
-						>{{tag}}</a>
-					%end
-				</td>
-			</tr>
-			</table>
-		%end
-		<p>
-
-		{{ len(tickets) }} ticket(s) filtrado(s)
-
-		<p>
-		<div class="copyright">
-			sistema <a href="https://github.com/zanardo/ticket">ticket</a> versão {{version}}
-		</div>
+		</td>
+	</tr>
 	</table>
-</body>
-</html>
+%end
+<p>
+{{ len(tickets) }} ticket(s) filtrado(s)

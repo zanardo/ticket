@@ -1,48 +1,11 @@
-<!doctype html>
-<html>
-<head>
-	<title>Novo Ticket</title>
-	<link rel="stylesheet" type="text/css" href="/static/styles.css">
-	<meta charset="utf-8">
-</head>
-<body onload="document.f.title.focus();">
-	<div id="topusermenu">
-		<b>{{username}}</b> | 
-		<a href="/change-password">trocar senha</a> | 
-		%if userisadmin:
-			<a href="/admin">admin</a> | 
-		%end
-		<a href="/logout">sair</a>
-	</div>
-	<table border="0" align="right">
-		<tr>
-		<td class="topmenu" align="right">
-			<a href='/' accesskey='A' title="alt-shift-a">abertos</a>
-			| <a href='/?filter=T o:m l:100' title="alt-shift-m" accesskey='M'>modificados</a>
-			| <a href='/new-ticket' accesskey='N' title='alt-shift-n'>novo</a>
-		</td> <tr></tr> <td align=right>
-		<form method="get" action="/" enctype="multipart/form-data">
-			<input type="text" name="filter" size="25" accesskey='S' value="" title="alt-shift-s">
-			<input type="submit" name="submit" value="filtrar" />
-		</form>
-		</td>
-		</tr>
-	</table>
-	<span class="title">Novo Ticket</span>
-	<p>
-	<a name='new'></a>
-	<form method="post" action="/new-ticket" enctype="multipart/form-data" name="f">
-		<input type="text" name="title" size="90">
-		<input type="submit" name="submit" value="Criar">
-	</form>
-	<p>
-	<div class="deschelp">
-		Digite uma descrição sucinta. Você poderá adicionar mais informações detalhadas depois.
-	</div>
-	<p>
-	<div class="copyright">
-		sistema <a href="https://github.com/zanardo/ticket">ticket</a> versão {{version}}
-	</div>
-	</table>
-</body>
-</html>
+%rebase base title="Novo Ticket", filter="", username=username, userisadmin=userisadmin, version=version
+
+<a name='new'></a>
+<form method="post" action="/new-ticket" enctype="multipart/form-data" name="f">
+	<input type="text" name="title" size="90">
+	<input type="submit" name="submit" value="Criar">
+</form>
+<p>
+<div class="deschelp">
+	Digite uma descrição sucinta. Você poderá adicionar mais informações detalhadas depois.
+</div>
