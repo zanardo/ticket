@@ -1,5 +1,7 @@
 %rebase base title="Detalhe: Tickets #%s" % ticket['id'], filter="#%s" % ticket['id'], username=username, userisadmin=userisadmin, version=version
 
+<script type="text/javascript" src="/static/show-ticket.js"></script>
+
 %if ticket['status'] == 0:
 <table class="ticket" width="100%" border="0" bgcolor="">
 %else:
