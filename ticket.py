@@ -608,6 +608,43 @@ def static(filename):
     return static_file('static/%s' % filename, root='.')
 
 
+@get('/change-password')
+@view('change-password')
+def changepassword():
+    return dict(username=currentuser(), version=VERSION)
+
+
+@post('/change-password')
+def changepasswordsave():
+    assert 'oldpasswd' in request.forms
+    assert 'newpasswd' in request.forms
+    assert 'newpasswd2' in request.forms
+    oldpasswd = request.forms.oldpasswd
+    newpasswd = request.forms.newpasswd
+    newpasswd2 = request.forms.newpasswd2
+    username = currentuser()
+    if not validateuserdb(username, oldpasswd):
+        return 'senha atual inválida!'
+    if newpasswd.strip() == '' or newpasswd2.strip() == '':
+        return 'nova senha inválida!'
+    if newpasswd != newpasswd2:
+        return 'confirmação de nova senha diferente de nova senha!'
+    passwdsha1 = sha1(newpasswd).hexdigest()
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            UPDATE users
+            SET password = %s
+            WHERE username = %s
+        ''', (passwdsha1, username))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return redirect('/')
+
+
 ########################################################################################
 # Funções auxiliares
 ########################################################################################
