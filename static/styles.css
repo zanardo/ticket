@@ -50,9 +50,16 @@ input, textarea, select, submit {
 	font-size: 12px;
 	text-align: right;
 	padding: 4px;
-	background-color: #E6E6E6;
+	color: #808080;
+	border-bottom: 1px solid #CCCCCC;
 	margin-bottom: 5px;
 }
+
+#topusermenu a {
+	color: #808080;
+	text-decoration: none;
+}
+
 
 .title {
 	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
@@ -93,6 +100,8 @@ input, textarea, select, submit {
 .copyright {
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 10px;
+	padding-top: 5px;
+	border-top: 1px solid #CCCCCC;
 	color: gray;
 	text-align: right;
 }
