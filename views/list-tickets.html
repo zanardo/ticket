@@ -1,14 +1,21 @@
 %rebase base title="Tickets: %s" % filter, filter=filter, username=username, userisadmin=userisadmin, version=version
 
 %data1 = ''
+%prio1 = ''
 %for tk in tickets:
-	%if orderdate != '':
+	%if group == 'date':
 		%weekday = weekdays[int(tk[orderdate].strftime("%w"))]
 		%data = tk[orderdate].strftime("%Y-%m-%d") + ' - ' + weekday
 		%if data1 != data:
 			<div class="orderdate">{{data}}</div>
 		%end
 		%data1 = data
+	%elif group == 'priority':
+		%prio = priodesc[tk['priority']]
+		%if prio1 != prio:
+			<div class="orderdate">{{prio}}</div>
+		%end
+		%prio1 = prio
 	%end
 	%priobgcolor = priocolor[tk['priority']]
 	%if tk['status'] == 0: bgcolor = ''

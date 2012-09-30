@@ -114,6 +114,7 @@ def index():
     search = []
     status = 'AND status = 0'
     order = 'ORDER BY datemodified DESC'
+    group = ''
 
     # Abrangência dos filtros (status)
     # T: todos
@@ -159,6 +160,16 @@ def index():
             elif o == 'p':
                 order = 'ORDER BY priority ASC, datecreated ASC'
                 orderdate = ''
+            continue
+
+        # Agrupamento (g:[dp])
+        m = re.match(r'^g:([dp])$', t)
+        if m:
+            g = m.group(1)
+            if g == 'p':
+                group = 'priority'
+            elif g == 'd':
+                group = 'date'
             continue
 
         # Usuário de criação, fechamento, modificação (u:USER)
@@ -255,7 +266,7 @@ def index():
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
         priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION,
         username=username, userisadmin=userisadmin(username), 
-        orderdate=orderdate, weekdays=weekdays)
+        orderdate=orderdate, weekdays=weekdays, group=group)
 
 
 # Tela de login
