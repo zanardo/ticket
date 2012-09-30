@@ -108,8 +108,11 @@ input, textarea, select, submit {
 	font-size: 11px;
 	padding-top: 5px;
 	border-top: 1px solid #CCCCCC;
-	color: gray;
+	color: #808080;
 	text-align: right;
+	background-color: #E2E7E9;
+	padding: 20px;
+	margin-top: 70px;
 }
 
 .deschelp {
