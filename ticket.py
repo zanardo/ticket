@@ -131,13 +131,23 @@ def index():
             continue
 
         # Ordenação (o:m)
+        orderdate = 'datemodified'
         m = re.match(r'^o:([mcfp])$', t)
         if m:
             o = m.group(1)
-            if o == 'c': order = 'ORDER BY datecreated DESC'
-            elif o == 'm': order = 'ORDER BY datemodified DESC'
-            elif o == 'f': order = 'ORDER BY dateclosed DESC'
-            elif o == 'p': order = 'ORDER BY priority ASC, datecreated ASC'
+            if o == 'c':
+                order = 'ORDER BY datecreated DESC'
+                orderdate = 'datecreated'
+            elif o == 'm':
+                order = 'ORDER BY datemodified DESC'
+                orderdate = 'datemodified'
+            elif o == 'f':
+                order = 'ORDER BY dateclosed DESC'
+                status = 'AND status = 1'
+                orderdate = 'dateclosed'
+            elif o == 'p':
+                order = 'ORDER BY priority ASC, datecreated ASC'
+                orderdate = ''
             continue
 
         # Usuário de criação, fechamento, modificação (u:USER)
@@ -233,7 +243,8 @@ def index():
     username = currentuser()
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
         priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION,
-        username=username, userisadmin=userisadmin(username))
+        username=username, userisadmin=userisadmin(username), 
+        orderdate=orderdate)
 
 
 # Tela de login

@@ -1,6 +1,14 @@
 %rebase base title="Tickets: %s" % filter, filter=filter, username=username, userisadmin=userisadmin, version=version
 
+%data1 = ''
 %for tk in tickets:
+	%if orderdate != '':
+		%data = tk[orderdate].strftime("%Y-%m-%d")
+		%if data1 != data:
+			<div class="orderdate">{{data}}</div>
+		%end
+		%data1 = data
+	%end
 	%priobgcolor = priocolor[tk['priority']]
 	%if tk['status'] == 0: bgcolor = ''
 	%if tk['status'] == 1:
