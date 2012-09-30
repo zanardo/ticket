@@ -46,8 +46,8 @@ input, textarea, select, submit {
 }
 
 #topusermenu {
-	font-family: Arial, sans-serif;
-	font-size: 12px;
+	font-family: Verdana, sans-serif;
+	font-size: 11px;
 	text-align: right;
 	padding: 4px;
 	color: #808080;
@@ -55,11 +55,16 @@ input, textarea, select, submit {
 	margin-bottom: 5px;
 }
 
-#topusermenu a {
+#topusermenu a:link, 
+#topusermenu a:visited,
+#topusermenu a:active {
 	color: #808080;
 	text-decoration: none;
 }
 
+#topusermenu a:hover {
+	text-decoration: underline;
+}
 
 .title {
 	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
@@ -98,8 +103,8 @@ input, textarea, select, submit {
 }
 
 .copyright {
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 10px;
+	font-family: Verdana, sans-serif;
+	font-size: 11px;
 	padding-top: 5px;
 	border-top: 1px solid #CCCCCC;
 	color: gray;
