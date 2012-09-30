@@ -97,7 +97,7 @@ def requires_admin(f):
 def index():
     # A página padrão exibe os tickets ordenados por prioridade
     if 'filter' not in request.query.keys():
-        return redirect('/?filter=o:p')
+        return redirect('/?filter=o:p g:p')
     filter = request.query.get('filter')
     if filter.strip() == '': filter = 'o:p'
 
