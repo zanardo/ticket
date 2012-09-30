@@ -7,34 +7,31 @@
 		%weekday = weekdays[int(tk[orderdate].strftime("%w"))]
 		%data = tk[orderdate].strftime("%Y-%m-%d") + ' - ' + weekday
 		%if data1 != data:
-			<div class="orderdate">{{data}}</div>
+			<div class="orderdate">▐ {{data}}</div>
 		%end
 		%data1 = data
 	%elif group == 'priority':
 		%prio = priodesc[tk['priority']]
 		%if prio1 != prio:
-			<div class="orderdate">{{prio}}</div>
+			<div class="orderdate">▐ {{prio}}</div>
 		%end
 		%prio1 = prio
 	%end
 	%priobgcolor = priocolor[tk['priority']]
-	%if tk['status'] == 0: bgcolor = ''
-	%if tk['status'] == 1:
-		%bgcolor = '#e1e1e1'
-		%priobgcolor = ''
-	%end
-	<table class="ticket" width="100%" border="0" bgcolor="{{bgcolor}}">
+	<table class="ticket" width="100%" border="0">
 	<tr>
-		<td width="5px" title="{{priodesc[tk['priority']]}}"
-			bgcolor="{{priobgcolor}}">&nbsp;</td>
-		<td width="80px" valign="top">
-			<b>
-			<a class="ticketlabel" title="Criado: Modificado: Autor:"
-				href="/{{tk['id']}}">#{{tk['id']}}</a>
-			</b>
+		<td width="80px" valign="top" align="right" class="ticketlabel">
+			#{{tk['id']}}
 		</td>
-		<td valign="top">
-			<span class="tktitle">{{tk['title']}}</span>
+		<td width="5px" title="{{priodesc[tk['priority']]}}"
+			bgcolor="{{priobgcolor}}">&nbsp;
+		</td>
+		<td valign="top" align="left">
+			%if tk['status'] == 0:
+				<span class="tktitle"><a href="/{{tk['id']}}">{{tk['title']}}</span>
+			%elif tk['status'] == 1:
+				<span class="tktitleclosed"><a href="/{{tk['id']}}">{{tk['title']}}</span>
+			%end
 		</td>
 		<td valign="top" align="right">
 			%for tag in sorted(tk['tags']):

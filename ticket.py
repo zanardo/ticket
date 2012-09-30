@@ -32,19 +32,19 @@ VERSION = '1.2dev'
 # Cores de fundo das prioridades
 priocolor = {
     1: '#FF8D8F',
-    2: '#EDFF9F',
-    3: '',
+    2: '#99CC00',
+    3: '#FF9966',
     4: '#6DF2B2',
     5: '#9FEFF2',
 }
 
 # Descrição das prioridades
 priodesc = {
-    1: '1. Ação Urgente',
-    2: '2. Atenção',
-    3: '3. Prioridade Normal',
-    4: '4. Baixa Prioridade',
-    5: '5. Baixíssima Prioridade',
+    1: 'Ação Urgente',
+    2: 'Atenção',
+    3: 'Prioridade Normal',
+    4: 'Baixa Prioridade',
+    5: 'Baixíssima Prioridade',
 }
 
 # Nome do dia da semana

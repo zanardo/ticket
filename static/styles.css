@@ -17,20 +17,15 @@ body {
 	text-decoration: underline;
 }
 
-a:link {
-	color: #0000EE;
-}
-
-a:visited {
-	color: #0000EE;
-}
-
+a:link,
+a:visited,
 a:active {
-	color: #0000EE;
+	color: #404040;
+	text-decoration: none;
 }
 
 a:hover {
-	color: #FF0000;
+	text-decoration: underline;
 }
 
 input, textarea, select, submit {
@@ -89,18 +84,31 @@ input, textarea, select, submit {
 }
 
 .ticketlabel {
+	font-family: Verdana, sans-serif;
 	font-size: 12px;
+	color: #808080;
+	padding-right: 10px;
 }
 
 .tag {
 	font-weight: bold;
 	text-decoration: none;
+	opacity: 0.3;
 }
 
 .tktitle {
 	font-family: Verdana, sans-serif;
 	font-size: 12px;
 	font-weight: bold;
+	padding-left: 10px;
+}
+
+.tktitleclosed {
+	font-family: Verdana, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+	padding-left: 10px;
+	text-decoration: line-through;
 }
 
 .copyright {
