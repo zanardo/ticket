@@ -97,7 +97,7 @@ input, textarea, select, submit {
 }
 
 .tktitle {
-	font-family: "Verdana";
+	font-family: Verdana, sans-serif;
 	font-size: 12px;
 	font-weight: bold;
 }
