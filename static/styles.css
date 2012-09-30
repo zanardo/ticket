@@ -52,6 +52,7 @@ input, textarea, select, submit {
 	padding: 4px;
 	color: #808080;
 	border-bottom: 1px solid #CCCCCC;
+	background-color: #E2E7E9;
 	margin-bottom: 5px;
 }
 
