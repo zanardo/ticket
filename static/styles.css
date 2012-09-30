@@ -120,7 +120,8 @@ input, textarea, select, submit {
 .orderdate {
 	font-family: Verdana, sans-serif;
 	font-size: 12px;
-	font-weight: bold;
+	font-weight: normal;
 	padding: 10px;
 	margin: 10px;
+	color: #a5a5a5;
 }

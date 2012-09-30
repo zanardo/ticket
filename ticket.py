@@ -47,6 +47,17 @@ priodesc = {
     5: '5. Baixíssima Prioridade',
 }
 
+# Nome do dia da semana
+weekdays = {
+    0: 'domingo',
+    1: 'segunda-feira',
+    2: 'terça-feira',
+    3: 'quarta-feira',
+    4: 'quinta-feira',
+    5: 'sexta-feira',
+    6: 'sábado'
+}
+
 def getdb():
     if not hasattr(local, 'db'):
         local.db = psycopg2.connect(database=config.db_name,
@@ -244,7 +255,7 @@ def index():
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
         priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION,
         username=username, userisadmin=userisadmin(username), 
-        orderdate=orderdate)
+        orderdate=orderdate, weekdays=weekdays)
 
 
 # Tela de login

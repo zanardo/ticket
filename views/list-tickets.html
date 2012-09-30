@@ -3,7 +3,8 @@
 %data1 = ''
 %for tk in tickets:
 	%if orderdate != '':
-		%data = tk[orderdate].strftime("%Y-%m-%d")
+		%weekday = weekdays[int(tk[orderdate].strftime("%w"))]
+		%data = tk[orderdate].strftime("%Y-%m-%d") + ' - ' + weekday
 		%if data1 != data:
 			<div class="orderdate">{{data}}</div>
 		%end
