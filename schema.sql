@@ -13,14 +13,14 @@ CREATE TABLE tickets (
 
 CREATE TABLE comments (
 	id integer NOT NULL PRIMARY KEY,
-	ticket_id integer NOT NULL REFERENCES tickets ( id ),
+	ticket_id integer NOT NULL,
 	datecreated text NOT NULL,
 	user text NOT NULL,
 	comment text NOT NULL
 );
 
 CREATE TABLE tags (
-	ticket_id integer NOT NULL REFERENCES tickets ( id ),
+	ticket_id integer NOT NULL,
 	tag text NOT NULL
 );
 
@@ -33,7 +33,7 @@ CREATE TABLE tagsdesc (
 
 CREATE TABLE timetrack (
 	id integer NOT NULL PRIMARY KEY,
-	ticket_id integer NOT NULL REFERENCES tickets ( id ),
+	ticket_id integer NOT NULL,
 	datecreated text NOT NULL,
 	user text NOT NULL,
 	minutes float NOT NULL
@@ -41,15 +41,27 @@ CREATE TABLE timetrack (
 
 CREATE TABLE statustrack (
 	id integer NOT NULL PRIMARY KEY,
-	ticket_id integer NOT NULL REFERENCES tickets ( id ),
+	ticket_id integer NOT NULL,
 	datecreated text NOT NULL,
 	user text NOT NULL,
 	status text NOT NULL
 );
 
 CREATE TABLE contacts (
-	ticket_id integer NOT NULL REFERENCES tickets ( id ),
+	ticket_id integer NOT NULL,
 	email text NOT NULL
+);
+
+CREATE TABLE users (
+	username text NOT NULL PRIMARY KEY,
+	password text NOT NULL,
+	is_admin int
+);
+
+CREATE TABLE sessions (
+	session_id text NOT NULL PRIMARY KEY,
+	date_login text NOT NULL DEFAULT ( datetime('now', 'localtime') ),
+	username text NOT NULL
 );
 
 COMMIT;
