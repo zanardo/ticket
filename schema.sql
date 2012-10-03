@@ -5,16 +5,16 @@ CREATE TABLE tickets (
 	title text NOT NULL,
 	status integer NOT NULL DEFAULT ( 0 ),
 	priority integer NOT NULL DEFAULT ( 3 ),
-	datecreated text NOT NULL,
-	datemodified text NOT NULL,
-	dateclosed text,
+	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
+	datemodified timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
+	dateclosed timestamp,
 	user text NOT NULL
 );
 
 CREATE TABLE comments (
 	id integer NOT NULL PRIMARY KEY,
 	ticket_id integer NOT NULL,
-	datecreated text NOT NULL,
+	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
 	user text NOT NULL,
 	comment text NOT NULL
 );
@@ -34,7 +34,7 @@ CREATE TABLE tagsdesc (
 CREATE TABLE timetrack (
 	id integer NOT NULL PRIMARY KEY,
 	ticket_id integer NOT NULL,
-	datecreated text NOT NULL,
+	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
 	user text NOT NULL,
 	minutes float NOT NULL
 );
@@ -42,7 +42,7 @@ CREATE TABLE timetrack (
 CREATE TABLE statustrack (
 	id integer NOT NULL PRIMARY KEY,
 	ticket_id integer NOT NULL,
-	datecreated text NOT NULL,
+	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
 	user text NOT NULL,
 	status text NOT NULL
 );
@@ -60,8 +60,11 @@ CREATE TABLE users (
 
 CREATE TABLE sessions (
 	session_id text NOT NULL PRIMARY KEY,
-	date_login text NOT NULL DEFAULT ( datetime('now', 'localtime') ),
+	date_login timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
 	username text NOT NULL
 );
+
+INSERT INTO users ( username, password, is_admin )
+VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );
 
 COMMIT;
