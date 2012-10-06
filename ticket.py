@@ -165,7 +165,6 @@ def index():
                 orderdate = 'datemodified'
             elif o == 'f':
                 order = u'ORDER BY dateclosed DESC'
-                status = u'AND status = 1'
                 orderdate = 'dateclosed'
             elif o == 'p':
                 order = u'ORDER BY priority ASC, datecreated ASC'
