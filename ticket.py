@@ -116,6 +116,7 @@ def index():
     search = []
     status = u'AND status = 0'
     order = u'ORDER BY datemodified DESC'
+    orderdate = 'datemodified'
     group = ''
 
     # Abrangência dos filtros (status)
@@ -153,7 +154,6 @@ def index():
             continue
 
         # Ordenação (o:m)
-        orderdate = 'datemodified'
         m = re.match(r'^o:([mcfp])$', t)
         if m:
             o = m.group(1)
