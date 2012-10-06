@@ -241,6 +241,11 @@ def index():
         # Texto para busca
         search.append(t)
 
+    # Validando agrupamentos
+    if ( orderdate == '' and group == 'date' ) \
+                or ( orderdate != '' and group == 'priority' ):
+        return 'agrupamento inválido!'
+
     searchstr = ''
     if len(search) > 0:
         s = ' '.join(search)
