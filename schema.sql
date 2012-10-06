@@ -64,6 +64,8 @@ CREATE TABLE sessions (
 	username text NOT NULL
 );
 
+CREATE VIRTUAL TABLE search USING fts3 ( text );
+
 INSERT INTO users ( username, password, is_admin )
 VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );
 

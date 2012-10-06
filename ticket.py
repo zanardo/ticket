@@ -96,8 +96,8 @@ def index():
     # A página padrão exibe os tickets ordenados por prioridade
     if 'filter' not in request.query.keys():
         return redirect('/?filter=o:p g:p')
-    filter = request.query.get('filter')
-    if filter.strip() == '': filter = 'o:p'
+    filter = request.query.filter
+    if filter.strip() == '': filter = u'o:p'
 
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
@@ -110,8 +110,8 @@ def index():
 
     limit = tags = user = date = prio = ''
     search = []
-    status = 'AND status = 0'
-    order = 'ORDER BY datemodified DESC'
+    status = u'AND status = 0'
+    order = u'ORDER BY datemodified DESC'
     group = ''
 
     # Abrangência dos filtros (status)
@@ -120,11 +120,11 @@ def index():
     # A: abertos
     if re.match(r'^[TFA] ', filter):
         if tokens[0] == 'T': status = ''
-        elif tokens[0] == 'A': status = 'AND status = 0'
-        elif tokens[0] == 'F': status = 'AND status = 1'
+        elif tokens[0] == 'A': status = u'AND status = 0'
+        elif tokens[0] == 'F': status = u'AND status = 1'
         tokens.pop(0)   # Removendo primeiro item
 
-    sql = '''
+    sql = u'''
         SELECT *
         FROM tickets
         WHERE ( 1 = 1 )
@@ -142,7 +142,7 @@ def index():
         # Palavra-chave (t:TAG)
         m = re.match(r'^t:(.+)$', t)
         if m:
-            sql += '''
+            sql += u'''
                 AND id IN ( SELECT ticket_id FROM tags WHERE tag  = ? )
             '''
             sqlparams.append(m.group(1))
@@ -154,17 +154,17 @@ def index():
         if m:
             o = m.group(1)
             if o == 'c':
-                order = 'ORDER BY datecreated DESC'
+                order = u'ORDER BY datecreated DESC'
                 orderdate = 'datecreated'
             elif o == 'm':
-                order = 'ORDER BY datemodified DESC'
+                order = u'ORDER BY datemodified DESC'
                 orderdate = 'datemodified'
             elif o == 'f':
-                order = 'ORDER BY dateclosed DESC'
-                status = 'AND status = 1'
+                order = u'ORDER BY dateclosed DESC'
+                status = u'AND status = 1'
                 orderdate = 'dateclosed'
             elif o == 'p':
-                order = 'ORDER BY priority ASC, datecreated ASC'
+                order = u'ORDER BY priority ASC, datecreated ASC'
                 orderdate = ''
             continue
 
@@ -182,7 +182,7 @@ def index():
         m = re.match(r'^u:(.+)$', t)
         if m:
             u = m.group(1)
-            sql += """
+            sql += u"""
                AND ( ( user = ? )
                 OR ( id IN ( SELECT ticket_id FROM comments WHERE user = ? ) )
                 OR ( id IN ( SELECT ticket_id FROM timetrack WHERE user = ? ) )
@@ -199,7 +199,7 @@ def index():
             if m.group(1) == 'c': dt = 'datecreated'
             elif m.group(1) == 'm': dt = 'datemodified'
             elif m.group(1) == 'f': dt = 'dateclosed'
-            sql += """
+            sql += u"""
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y2, m2, d2 )
             continue
@@ -212,7 +212,7 @@ def index():
             if m.group(1) == 'c': dt = 'datecreated'
             elif m.group(1) == 'm': dt = 'datemodified'
             elif m.group(1) == 'f': dt = 'dateclosed'
-            sql += """
+            sql += u"""
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y1, m1, d1 )
             continue
@@ -221,7 +221,7 @@ def index():
         m = re.match(r'^p:([1-5])-([1-5])$', t)
         if m:
             p1, p2 = m.groups()
-            sql += """
+            sql += u"""
                 AND priority BETWEEN %s AND %s
             """ % (p1, p2)
             continue
@@ -230,7 +230,7 @@ def index():
         m = re.match(r'^p:([1-5])$', t)
         if m:
             p1 = m.group(1)
-            sql += """
+            sql += u"""
                 AND priority = %s
             """ % (p1,)
             continue
@@ -241,11 +241,10 @@ def index():
     searchstr = ''
     if len(search) > 0:
         s = ' '.join(search)
-        sql += """
-            AND ( id IN ( SELECT id FROM tickets WHERE title like '%' || ? || '%')
-                OR id IN ( SELECT ticket_id FROM comments WHERE comment like '%' || ? || '%' ) )
+        sql += u"""
+            AND id IN ( SELECT docid FROM search WHERE search MATCH ? )
         """
-        sqlparams += [s,s]
+        sqlparams.append(s)
 
     if status != '':
         sql += '''
@@ -336,6 +335,7 @@ def newticketpost():
             VALUES ( :title, :username )
         ''', locals())
         ticket_id = c.lastrowid
+        populatesearch(ticket_id)
     except:
         getdb().rollback()
         raise
@@ -474,6 +474,7 @@ def changetitle(ticket_id):
             SET title = :title
             WHERE id = :ticket_id
         ''', locals())
+        populatesearch(ticket_id)
     except:
         getdb().rollback()
     else:
@@ -594,6 +595,7 @@ def newnote(ticket_id):
             SET datemodified = datetime('now', 'localtime')
             WHERE id = :ticket_id
         ''', locals())
+        populatesearch(ticket_id)
     except:
         getdb().rollback()
         raise
@@ -803,6 +805,34 @@ def forceuserpassword(username):
         return u'usuário %s teve nova senha forçada: %s' % ( username, password )
 
 
+@get('/admin/reindex-fts')
+@requires_auth
+@requires_admin
+def reindexfts():
+    "Recria o índice de Full Text Search"
+    c = getdb().cursor()
+    try:
+        print 'limpando índices'
+        c.execute('''
+            DELETE FROM search
+        ''')
+        print 'iniciando recriação dos índices'
+        c.execute('''
+            SELECT id
+            FROM tickets
+            ORDER BY id
+        ''')
+        for r in c:
+            print 'reindexando ticket #%s' % r['id']
+            populatesearch(r['id'])
+    except:
+        getdb().rollback()
+        raise
+    finally:
+        getdb().commit()
+        return 'índices de full text search recriados!'
+
+
 ########################################################################################
 # Funções auxiliares
 ########################################################################################
@@ -950,6 +980,33 @@ def sendmail(fromemail, toemail, smtpserver, subject, body):
         s = smtplib.SMTP(smtpserver, timeout=10)
         s.sendmail(fromemail, contact, msg.as_string())
         s.quit()
+
+
+def populatesearch(ticket_id):
+    text = ''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT title
+        FROM tickets
+        WHERE id = :ticket_id
+    ''', locals())
+    r = c.fetchone()
+    text += ' ' + r['title'] + ' '
+    c.execute('''
+        SELECT comment
+        FROM comments
+        WHERE ticket_id = :ticket_id
+    ''', locals())
+    for r in c:
+        text += ' ' + r['comment'] + ' '
+    c.execute('''
+        DELETE FROM search
+        WHERE docid = :ticket_id
+    ''', locals())
+    c.execute('''
+        INSERT INTO search ( docid, text )
+        VALUES ( :ticket_id, :text )
+    ''', locals())
 
 
 if __name__ == '__main__':
