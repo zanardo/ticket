@@ -101,7 +101,7 @@ def index():
     if 'filter' not in request.query.keys():
         return redirect('/?filter=o:p g:p')
     filter = request.query.filter
-    if filter.strip() == '': filter = u'o:p'
+    if filter.strip() == '': filter = u'o:p g:p'
 
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
