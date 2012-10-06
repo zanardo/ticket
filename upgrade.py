@@ -11,7 +11,7 @@ import psycopg2.extras
 import sqlite3
 
 print ';; conectando-se ao PostgreSQL...'
-db1 = psycopg2.connect(database='ticket', user='postgres')
+db1 = psycopg2.connect(database='ticket', host='localhost', user='postgres')
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
