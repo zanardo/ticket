@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Importa os dados de um banco de dados em PostgreSQL para
 # um banco de dados SQLite.
