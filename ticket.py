@@ -883,6 +883,29 @@ def forceuserpassword(username):
         return u'usuário %s teve nova senha forçada: %s' % ( username, password )
 
 
+@get('/admin/change-user-admin-status/:username/:status')
+@requires_auth
+@requires_admin
+def changeuseradminstatus(username, status):
+    '''Altera status de administrador de um usuário'''
+    if username == currentuser():
+        return 'não é possível alterar status de admin para usuário corrente'
+    c = getdb().cursor()
+    assert status in ( '0', '1' )
+    try:
+        c.execute('''
+            UPDATE users
+            SET is_admin = :status
+            WHERE username = :username
+        ''', locals())
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return redirect('/admin')
+
+
 @get('/admin/reindex-fts')
 @requires_auth
 @requires_admin

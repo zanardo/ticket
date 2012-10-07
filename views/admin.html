@@ -22,6 +22,11 @@
 				%if username != user['username']:
 					<a href="/admin/remove-user/{{user['username']}}">excluir</a>
 					<a href="/admin/force-new-password/{{user['username']}}">forçar nova senha</a>
+					%if user['is_admin']:
+						<a href="/admin/change-user-admin-status/{{user['username']}}/0">retirar admin</a>
+					%else:
+						<a href="/admin/change-user-admin-status/{{user['username']}}/1">tornar admin</a>
+					%end
 				%end
 			</td>
 		</tr>
