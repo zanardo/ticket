@@ -14,7 +14,9 @@
 			<td>
 				%if user['is_admin']:
 					sim
-					%end
+				%else:
+					não
+				%end
 			</td>
 			<td>
 				%if username != user['username']:
