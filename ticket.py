@@ -794,14 +794,15 @@ def saveconfig():
     c = getdb().cursor()
     try:
         for conf in config:
+            k, v = conf, config[conf]
             c.execute('''
                 DELETE FROM config
-                WHERE key = ?
+                WHERE key = :k
             ''', (conf,))
             c.execute('''
                 INSERT INTO config
-                VALUES (?,?)
-            ''', ( conf, config[conf] ))
+                VALUES (:k, :v)
+            ''', locals())
     except:
         getdb().rollback()
         raise
