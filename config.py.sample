@@ -1,8 +1,0 @@
-email_from = 'me@domain.com'
-email_smtp = 'smtp.domain.com'
-bind_address = '0.0.0.0'
-bind_port = 8080
-db_name = 'ticket'
-db_user = 'postgres'
-db_passwd = '<password>'
-devel_mode = False

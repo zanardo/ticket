@@ -15,6 +15,7 @@ import time
 import getopt
 import bottle
 import random
+import getopt
 import smtplib
 import sqlite3
 import datetime
@@ -26,7 +27,6 @@ from email.mime.text import MIMEText
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
-import config
 VERSION = '1.2dev'
 
 # Cores de fundo das prioridades
@@ -61,7 +61,7 @@ weekdays = {
 def getdb():
     '''Retorna um handle de conexão de banco de dados por thread'''
     if not hasattr(local, 'db'):
-        local.db = sqlite3.connect('ticket.db', detect_types=sqlite3.PARSE_DECLTYPES)
+        local.db = sqlite3.connect(dbname, detect_types=sqlite3.PARSE_DECLTYPES)
         local.db.row_factory = sqlite3.Row
     return local.db
 
@@ -1051,6 +1051,37 @@ def populatesearch(ticket_id):
 
 if __name__ == '__main__':
 
-    bottle.debug(config.devel_mode)
-    run(host=config.bind_address, port=config.bind_port,
-        server='paste', reloader=config.devel_mode)
+    def usage():
+        print '''
+            uso: %s -h <host> -p <port> -f <db> [ -d ]
+            exemplo: %s -h localhost -p 5000 -f /var/ticket/ticket.db
+        ''' % ( sys.argv[0], sys.argv[0] )
+        exit(0)
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'h:p:f:d')
+    except getopt.GetoptError, err:
+        usage()
+
+    host = '127.0.0.1'
+    port = 5000
+    debug = False
+    dbname = 'ticket.db'
+
+    for o, a in opts:
+        if o == '-d': debug = True
+        elif o == '-h': host = a
+        elif o == '-p': port = a
+        elif o == '-f': dbname = a
+        else: usage()
+
+    print ';; carregando ticket'
+    print ';; banco de dados = %s' % dbname
+    print ';; host = %s' % host
+    print ';; port = %s' % port
+    if debug:
+        print ';; modo de debug ativado'
+
+    bottle.debug(debug)
+    run(host=host, port=port,
+        server='paste', reloader=debug)
