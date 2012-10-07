@@ -645,7 +645,7 @@ def newnote(ticket_id):
 -- Este é um e-mail automático enviado pelo sistema ticket.
         ''' % ( time.strftime('%Y-%m-%d %H:%M'), currentuser(), note )
 
-        sendmail(config.email_from, toemail, config.email_smtp,
+        sendmail(getconfig('mail.from'), toemail, getconfig('mail.smtp'),
             subject, body)
 
     return redirect('/%s' % ticket_id)
@@ -1054,6 +1054,17 @@ def tickettitle(ticket_id):
     ''', locals())
     title = c.fetchone()[0]
     return title
+
+
+def getconfig(key):
+    '''Retorna o valor de uma configuração'''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT value
+        FROM config
+        WHERE key = :key
+    ''', locals())
+    return c.fetchone()[0]
 
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):
