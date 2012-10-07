@@ -70,9 +70,17 @@ CREATE TABLE sessions (
 	username text NOT NULL
 );
 
+CREATE TABLE config (
+	key text NOT NULL PRIMARY KEY,
+	value text NOT NULL
+);
+
 CREATE VIRTUAL TABLE search USING fts3 ( text );
 
 INSERT INTO users ( username, password, is_admin )
 VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );
+
+INSERT INTO config ( key, value ) VALUES ( 'mail.smtp', '' );
+INSERT INTO config ( key, value ) VALUES ( 'mail.from', '' );
 
 COMMIT;

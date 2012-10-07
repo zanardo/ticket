@@ -770,8 +770,44 @@ def admin():
     ''')
     for user in c:
         users.append({'username': user[0], 'is_admin': user[1]})
-    return dict(version=VERSION, username=username, users=users,
+    config = {}
+    c = getdb().cursor()
+    c.execute('''
+        SELECT key, value
+        FROM config
+    ''')
+    for k in c:
+        config[k[0]] = k[1]
+    return dict(version=VERSION, username=username, users=users, config=config,
         userisadmin=userisadmin(username))
+
+
+@post('/admin/save-config')
+@requires_auth
+@requires_admin
+def saveconfig():
+    '''Salva configurações'''
+    config = {}
+    for k in request.forms:
+        if k in ('mail.from', 'mail.smtp'):
+            config[k] = getattr(request.forms, k)
+    c = getdb().cursor()
+    try:
+        for conf in config:
+            c.execute('''
+                DELETE FROM config
+                WHERE key = ?
+            ''', (conf,))
+            c.execute('''
+                INSERT INTO config
+                VALUES (?,?)
+            ''', ( conf, config[conf] ))
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return redirect('/admin')
 
 
 @get('/admin/remove-user/:username')
@@ -793,6 +829,7 @@ def removeuser(username):
     else:
         getdb().commit()
         return redirect('/admin')
+
 
 @post('/admin/save-new-user')
 @requires_auth

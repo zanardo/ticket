@@ -28,6 +28,19 @@
 	%end
 </table>
 
+<h2>Configurações</h2>
+<form method="post" action="/admin/save-config" enctype="multipart/form-data">
+	<input type="text" size="40" name="mail.from" value="{{ config['mail.from'] }}">
+	<tt>mail.from</tt> (Endereço de e-mail do remetente)
+	<p>
+
+	<input type="text" size="40" name="mail.smtp" value="{{ config['mail.smtp'] }}">
+	<tt>mail.smtp</tt> (Servidor SMTP para envio de e-mail)
+
+	<p>
+	<input type="submit" name="submit" value="salvar configurações">
+</form>
+
 <h2>Manutenção</h2>
 <a href="/admin/reindex-fts">Recria índices de busca</a>: Utilizar
 caso você tenha modificado dados diretamente no banco de dados (exemplo: importação de dados
