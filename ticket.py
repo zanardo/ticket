@@ -411,7 +411,9 @@ def showticket(ticket_id):
           WHERE ticket_id = :ticket_id        
     ''', locals())
     for r in c:
-        comments.append(dict(r))
+        cs = dict(r)
+        cs['comment'] = sanitizecomment(cs['comment'])
+        comments.append(cs)
     c.execute('''
           SELECT datecreated
             , user
@@ -1102,6 +1104,19 @@ def sendmail(fromemail, toemail, smtpserver, subject, body):
         s = smtplib.SMTP(smtpserver, timeout=10)
         s.sendmail(fromemail, contact, msg.as_string())
         s.quit()
+
+
+def sanitizecomment(comment):
+    '''Sanitiza o texto do comentário (quebras de linhas, links, etc)'''
+    comment = re.sub(r'\r', '', comment)
+    comment = re.sub(r'&', '&amp;', comment)
+    comment = re.sub(r'<', '&lt;', comment)
+    comment = re.sub(r'>', '&gt;', comment)
+    comment = re.sub(r'\r?\n', '<br>\r\n', comment)
+    comment = re.sub(r'\t', '&nbsp;&nbsp;&nbsp;', comment)
+    comment = re.sub(r'  ', '&nbsp;&nbsp;', comment)
+    comment = re.sub(r'#(\d+)', r'<a href="/\1">#\1</a>', comment)
+    return comment
 
 
 def populatesearch(ticket_id):
