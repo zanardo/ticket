@@ -1038,9 +1038,9 @@ def tagsdesc():
     tagdesc = {}
     for r in c:
         tagdesc[r['tag']] = {
-            'description': r['description'],
-            'bgcolor': r['bgcolor'],
-            'fgcolor': r['fgcolor']
+            'description': r['description'] or '',
+            'bgcolor': r['bgcolor'] or 'yellow',
+            'fgcolor': r['fgcolor'] or 'red'
         }
     return tagdesc
 

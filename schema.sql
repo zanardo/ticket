@@ -29,9 +29,9 @@ CREATE INDEX idx_tags_ticket_id ON tags ( ticket_id );
 
 CREATE TABLE tagsdesc (
 	tag text NOT NULL,
-	description text NOT NULL,
-	fgcolor text NOT NULL,
-	bgcolor text NOT NULL
+	description text,
+	fgcolor text,
+	bgcolor text
 );
 
 CREATE TABLE timetrack (
