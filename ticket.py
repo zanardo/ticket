@@ -386,6 +386,9 @@ def showticket(ticket_id):
     ''', locals())
     ticket = c.fetchone()
 
+    if not ticket:
+        return 'ticket inexistente!'
+
     # Obtém notas, mudanças de status e registro de tempo
 
     comments = []
