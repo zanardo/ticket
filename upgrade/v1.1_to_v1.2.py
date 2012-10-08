@@ -22,7 +22,7 @@ db2 = sqlite3.connect('ticket.db')
 # Importação inicial para SQLite
 
 tables = ('tickets', 'comments', 'tags', 'tagsdesc', 'timetrack', 
-	'statustrack', 'contacts', 'users', 'sessions')
+	'statustrack', 'contacts' )
 
 for table in tables:
 	print ';; migrando dados da tabela %s' % table
