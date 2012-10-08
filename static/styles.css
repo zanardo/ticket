@@ -110,6 +110,12 @@ input, textarea, select, submit {
 	padding-left: 10px;
 }
 
+.tktitle2 {
+	font-family: Verdana, sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+}
+
 .tktitleclosed {
 	font-family: Verdana, sans-serif;
 	font-size: 12px;
