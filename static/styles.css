@@ -102,7 +102,6 @@ input, textarea, select, submit {
 .tag {
 	font-weight: bold;
 	text-decoration: none;
-	opacity: 0.4;
 }
 
 .tktitle {
