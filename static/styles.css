@@ -55,6 +55,7 @@ input, textarea, select, submit {
 	color: #808080;
 	border-bottom: 1px solid #CCCCCC;
 	background-color: #E2E7E9;
+	box-shadow: 1px 1px 1px #D4D4D4;
 	margin-bottom: 5px;
 }
 
@@ -73,6 +74,7 @@ input, textarea, select, submit {
 	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
 	font-size: 24pt;
 	font-weight: normal;
+	text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.2);
 }
 
 .tags {
@@ -85,7 +87,7 @@ input, textarea, select, submit {
 }
 
 .ticket {
-	border: 1px solid #ffffff;
+	padding: 1px;
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 10px;
 }
@@ -134,6 +136,7 @@ input, textarea, select, submit {
 	background-color: #E2E7E9;
 	padding: 20px;
 	margin-top: 70px;
+	box-shadow: 1px 1px 1px #D4D4D4;
 }
 
 .deschelp {
