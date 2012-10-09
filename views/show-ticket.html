@@ -2,6 +2,8 @@
 
 <script type="text/javascript" src="/static/show-ticket.js"></script>
 
+%import urllib
+
 %if ticket['status'] == 0:
 <table class="ticket" width="100%" border="0" bgcolor="">
 %else:
@@ -42,7 +44,7 @@
 					%bgcolor = 'yellow'
 					%fgcolor = 'red'
 				%end
-				<a href="/?filter=t:{{tag}} o:p g:p"
+				<a href="/?filter=t:{{urllib.quote(tag, '')}} o:p g:p"
 					class="tag"
 					title="{{description}}"
 					style="background-color:{{bgcolor}};color:{{fgcolor}};"

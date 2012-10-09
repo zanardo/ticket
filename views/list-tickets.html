@@ -1,5 +1,6 @@
 %rebase base title="Tickets", filter=filter, username=username, userisadmin=userisadmin, version=version
 
+%import urllib
 %data1 = ''
 %prio1 = ''
 %for tk in tickets:
@@ -44,7 +45,7 @@
 					%bgcolor = 'yellow'
 					%fgcolor = 'red'
 				%end
-				<a href="/?filter=t:{{tag}} o:p g:p"
+				<a href="/?filter=t:{{urllib.quote(tag, '')}} o:p g:p"
 					class="tag"
 					title="{{description}}"
 					style="background-color:{{bgcolor}};color:{{fgcolor}};"
