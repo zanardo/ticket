@@ -8,7 +8,8 @@ CREATE TABLE tickets (
 	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
 	datemodified timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
 	dateclosed timestamp,
-	user text NOT NULL
+	user text NOT NULL,
+	admin_only integer NOT NULL DEFAULT ( 0 )
 );
 CREATE INDEX idx_tickets_status ON tickets ( status );
 
