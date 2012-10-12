@@ -65,7 +65,11 @@
 			%end
 		</td>
 		<td valign="top">
-			<span class="tktitle2">{{ticket['title']}}</span>
+			%title = ticket['title']
+			%if ticket['admin_only'] == 1:
+				%title = u'[admin] ' + title
+			%end
+			<span class="tktitle2">{{title}}</span>
 			<p>
 			%for comment in comments:
 				<br>
@@ -113,6 +117,11 @@
 				| 
 			<a class="tab" onclick="return showPanel(this, 'contacts');">
 				Contatos</a>
+			%end
+			%if userisadmin:
+				|
+			<a class="tab" onclick="return showPanel(this, 'security');">
+				Segurança</a>
 			%end
 		</td>
 	</tr>
@@ -208,4 +217,17 @@
 		<br>
 		<input type="submit" name="submit" value="Salvar contatos">
 	</form>
+</div>
+<div class="panel" id="security" style="display: none">
+	%if ticket['admin_only'] == 1:
+		Este ticket é visível apenas para administradores.
+		<p>
+		<a href="/change-admin-only/{{ticket['id']}}/0">Tornar visível para qualquer usuário
+			autenticado</a>
+	%else:
+		Este ticket é visível para qualquer usuário autenticado.
+		<p>
+		<a href="/change-admin-only/{{ticket['id']}}/1">Tornar visível apenas para
+			administradores</a>
+	%end
 </div>

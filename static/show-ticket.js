@@ -1,4 +1,4 @@
-var panels = new Array('note', 'prio', 'tags', 'title', 'minutes', 'contacts');
+var panels = new Array('note', 'prio', 'tags', 'title', 'minutes', 'contacts', 'security');
 var selectedTab = null;
 
 function showPanel(tab, name) {

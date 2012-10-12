@@ -257,6 +257,15 @@ def index():
                 or ( orderdate != '' and group == 'priority' ):
         return 'agrupamento inválido!'
 
+    # Caso usuário não seja administrador, vamos filtrar os
+    # tickets que ele não tem acesso.
+    username = currentuser()
+    user_is_admin = userisadmin(username)
+    if not user_is_admin:
+        sql += u"""
+            AND admin_only = 0
+        """
+
     searchstr = ''
     if len(search) > 0:
         s = ' '.join(search)
@@ -289,10 +298,9 @@ def index():
 
     getdb().commit()
 
-    username = currentuser()
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
         priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION,
-        username=username, userisadmin=userisadmin(username), 
+        username=username, userisadmin=user_is_admin, 
         orderdate=orderdate, weekdays=weekdays, group=group)
 
 
@@ -379,11 +387,19 @@ def showticket(ticket_id):
 
     # Obtém dados do ticket
 
+    username = currentuser()
+    user_is_admin = userisadmin(username)
+    sql_is_admin = ''
+    if not user_is_admin:
+        sql_is_admin = '''
+            AND admin_only = 0
+        '''
+
     c.execute('''
         SELECT *
         FROM tickets
         WHERE id = :ticket_id
-    ''', locals())
+    ''' + sql_is_admin, locals())
     ticket = c.fetchone()
 
     if not ticket:
@@ -455,7 +471,6 @@ def showticket(ticket_id):
 
     # Renderiza template
 
-    username = currentuser()
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
@@ -512,6 +527,26 @@ def changetitle(ticket_id):
     else:
         getdb().commit()
 
+    return redirect('/%s' % ticket_id)
+
+
+@get('/change-admin-only/<ticket_id:int>/:toggle')
+@requires_auth
+@requires_admin
+def changeadminonly(ticket_id, toggle):
+    '''Tornar ticket somente visível para administradores'''
+    assert toggle in ( '0', '1' )
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            UPDATE tickets
+            SET admin_only = :toggle
+            WHERE id = :ticket_id
+        ''', locals())
+    except:
+        getdb().rollback()
+    else:
+        getdb().commit()
     return redirect('/%s' % ticket_id)
 
 

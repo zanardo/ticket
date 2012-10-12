@@ -28,10 +28,14 @@
 			bgcolor="{{priobgcolor}}">&nbsp;
 		</td>
 		<td valign="top" align="left">
+			%title = tk['title']
+			%if tk['admin_only'] == 1:
+				%title = u'[admin] ' + title
+			%end
 			%if tk['status'] == 0:
-				<span class="tktitle"><a href="/{{tk['id']}}">{{tk['title']}}</span>
+				<span class="tktitle"><a href="/{{tk['id']}}">{{title}}</span>
 			%elif tk['status'] == 1:
-				<span class="tktitleclosed"><a href="/{{tk['id']}}">{{tk['title']}}</span>
+				<span class="tktitleclosed"><a href="/{{tk['id']}}">{{title}}</span>
 			%end
 		</td>
 		<td valign="top" align="right">
