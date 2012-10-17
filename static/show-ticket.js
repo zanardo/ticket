@@ -24,11 +24,12 @@ function showPanel(tab, name) {
 }
 
 var cron;
-var minutes = 0;
-var seconds = 0;
+var start_date;
+var ms_acum = 0.0;
 var title = document.title;
 
 function startCron() {
+    start_date = new Date().getTime();
     cron = setTimeout(doCron, 1000);
     document.fminutes.bstartcron.style.visibility = 'hidden';
     document.fminutes.bstopcron.style.visibility = 'visible';
@@ -41,12 +42,11 @@ function stopCron() {
 }
 
 function doCron() {
-    seconds++;
-    if (seconds == 60) {
-        seconds = 0;
-        minutes++
-    };
-    document.title = '[' + minutes + '\'' + seconds + '"' + '] ' + title;
-    document.fminutes.minutes.value = minutes + (seconds / 60);
+    var delta = (new Date()).getTime() - start_date;
+    ms_acum += delta;
+    start_date = new Date().getTime();
+    minutes = Math.floor(ms_acum/1000/60);
+    document.title = '[' + minutes + '\'' + '] ' + title;
+    document.fminutes.minutes.value = minutes;
     cron = setTimeout(doCron, 1000);
 }
