@@ -30,4 +30,4 @@ except:
 	db.rollback()
 	raise
 else:
-	db.rollback()
+	db.commit()
