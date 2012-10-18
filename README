@@ -22,10 +22,6 @@ instalando ticket
 
     $ git clone git://github.com/zanardo/ticket -b stable
 
-criando o banco de dados
-
-    $ sqlite3 ticket.db < schema.sql
-
 iniciando ticket
 
   Iniciar o servidor web:
@@ -33,7 +29,8 @@ iniciando ticket
     $ ./ticket.py
 
   Como padrão, o servidor web escuta no host 127.0.0.1, e na porta 5000. O
-  banco de dados default é ticket.db, criado previamente.
+  banco de dados default é no arquivo ticket.db, o qual será criado
+  automaticamente na primeira incialização.
 
   Agora basta acessar o sistema via navegador. O usuário padrão é "admin" com
   senha "admin". Ao acessar o sistema, crie um usuário para você, dê poderes

@@ -28,6 +28,7 @@ import getopt
 import random
 import getopt
 import smtplib
+import os.path
 import sqlite3
 import datetime
 
@@ -1185,6 +1186,22 @@ def populatesearch(ticket_id):
     ''', locals())
 
 
+def createdb(dbname):
+    '''Cria o banco de dados caso arquivo não exista'''
+    print ';; criando banco de dados %s' % dbname
+    db = sqlite3.connect(dbname)
+    fp = file('schema.sql', 'r')
+    sql = "\n".join(fp.readlines())
+    fp.close()
+    c = db.cursor()
+    c.executescript(sql)
+    print ';; banco de dados vazio criado com sucesso!'
+    print ';; o primeiro login deverá ser feito com:'
+    print ';; usuario: admin     senha: admin'
+    db.commit()
+    db.close()
+
+
 if __name__ == '__main__':
 
     def usage():
@@ -1217,6 +1234,10 @@ if __name__ == '__main__':
     print ';; port = %s' % port
     if debug:
         print ';; modo de debug ativado'
+
+    # Cria banco de dados caso arquivo não exista
+    if not os.path.isfile(dbname):
+        createdb(dbname)
 
     bottle.debug(debug)
     run(host=host, port=port,
