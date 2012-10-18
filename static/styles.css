@@ -152,3 +152,9 @@ input, textarea, select, submit {
 	margin: 10px;
 	color: #a5a5a5;
 }
+
+.icon {
+	height: 12px;
+	padding-left: 3px;
+	padding-right: 3px;
+}

@@ -65,11 +65,14 @@
 			%end
 		</td>
 		<td valign="top">
-			%title = ticket['title']
+			%admin = ''
 			%if ticket['admin_only'] == 1:
-				%title = u'[admin] ' + title
+				%admin = '<img src="/static/key-icon.png" class="icon" title="somente administradores">'
 			%end
-			<span class="tktitle2">{{title}}</span>
+			<span class="tktitle2">
+				<a href="/{{ticket['id']}}">{{ticket['title']}}</a>
+				{{!admin}}
+			</span>
 			<p>
 			%for comment in comments:
 				<br>

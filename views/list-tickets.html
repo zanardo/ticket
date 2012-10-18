@@ -28,15 +28,20 @@
 			bgcolor="{{priobgcolor}}">&nbsp;
 		</td>
 		<td valign="top" align="left">
-			%title = tk['title']
-			%if tk['admin_only'] == 1:
-				%title = u'[admin] ' + title
-			%end
+			%class1 = ''
 			%if tk['status'] == 0:
-				<span class="tktitle"><a href="/{{tk['id']}}">{{title}}</span>
+				%class1 = 'tktitle'
 			%elif tk['status'] == 1:
-				<span class="tktitleclosed"><a href="/{{tk['id']}}">{{title}}</span>
+				%class1 = 'tktitleclosed'
 			%end
+			%admin = ''
+			%if tk['admin_only'] == 1:
+				%admin = '<img src="/static/key-icon.png" class="icon" title="somente administradores">'
+			%end
+			<span class="{{class1}}">
+				<a href="/{{tk['id']}}">{{tk['title']}}</a>
+				{{!admin}}
+			</span>
 		</td>
 		<td valign="top" align="right">
 			%for tag in sorted(tk['tags']):
