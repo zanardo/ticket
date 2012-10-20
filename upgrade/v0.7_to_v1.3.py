@@ -59,7 +59,7 @@ for r in c1:
 		VALUES ( ?, ?, ?, ? )
 	''', ( r['ID'], r['DATECREATED'], r['USER'], r['TEXT'] ))
 
-print ';; importando notas'
+print ';; importando eventos'
 c1.execute('''
 	SELECT IDPARENT, STATUS, TYPE, PRIO, DATECREATED, DATECLOSED,
 		DATEMODIFIED, USER, TEXT
@@ -68,10 +68,24 @@ c1.execute('''
 	ORDER BY IDPARENT, ID
 ''')
 for r in c1:
-	c2.execute('''
-		INSERT INTO comments ( ticket_id, datecreated, user, comment )
-		VALUES ( ?, ?, ?, ? )
-	''', ( r['IDPARENT'], r['DATECREATED'], r['USER'], r['TEXT'] ))
+	if r['TEXT'].strip() != '':
+		c2.execute('''
+			INSERT INTO comments ( ticket_id, datecreated, user, comment )
+			VALUES ( ?, ?, ?, ? )
+		''', ( r['IDPARENT'], r['DATECREATED'], r['USER'], r['TEXT'] ))
+	# Fechamento
+	if r['TYPE'] == 5:
+		c2.execute('''
+			INSERT INTO statustrack ( ticket_id, datecreated, user, status )
+			VALUES ( ?, ?, ?, ? )
+		''', ( r['IDPARENT'], r['DATECREATED'], r['USER'], 'close' ))
+	# Reabertura
+	elif r['TYPE'] == 6:
+		c2.execute('''
+			INSERT INTO statustrack ( ticket_id, datecreated, user, status )
+			VALUES ( ?, ?, ?, ? )
+		''', ( r['IDPARENT'], r['DATECREATED'], r['USER'], 'reopen' ))
+
 
 db1.rollback()
 db2.commit()
