@@ -183,3 +183,7 @@ a.tag:hover {
 	margin-top: 3px;
 	margin-bottom: 10px;
 }
+
+.commentevent {
+	font-weight: bold;
+}

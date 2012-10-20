@@ -84,8 +84,7 @@
 						%minutes = minutes % 60
 						%comment['comment'] = "%dh%dm trabalhados" % ( hours, minutes )
 					%end
-					<b><i>{{ comment['comment'] }}</i></b>
-					</div>
+					<span class="commentevent">{{ comment['comment'] }}</span>
 				%else:
 					</div>
 					<div class="commenttext">
