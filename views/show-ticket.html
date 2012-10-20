@@ -76,7 +76,7 @@
 				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
 				%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
 				<div class="commentauthor">
-				<b title="{{datelong}}">{{ datelong }}</b> (<b>{{ comment['user']}}</b>):
+				<b title="{{datelong}}">{{ dateshort }}</b> (<b>{{ comment['user']}}</b>):
 				%if comment['negrito']:
 					%if comment['minutes'] > 0:
 						%minutes = comment['minutes']
