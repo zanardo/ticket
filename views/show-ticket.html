@@ -16,12 +16,7 @@
 		%else:
 			bgcolor="#e1e1e1">&nbsp;</td>
 		%end
-		<td width="120px" valign="top">
-			<b>
-				<a class="ticketlabel" href="/{{ticket['id']}}">
-					Ticket #{{ticket['id']}}</a>
-			</b>
-			<br>
+		<td width="140px" valign="top">
 			Criado: <span title="{{ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
 				{{ticket['datecreated'].strftime("%Y-%m-%d")}}
 			</span>
@@ -34,6 +29,8 @@
 			%end
 			Autor: {{ticket['user']}}
 			<br>
+			{{priodesc[ticket['priority']]}}
+			<p>
 			%for tag in sorted(tags):
 				%if tag in tagsdesc:
 					%description = tagsdesc[tag]['description']
