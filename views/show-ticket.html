@@ -82,7 +82,7 @@
 						%minutes = comment['minutes']
 						%hours = minutes / 60
 						%minutes = minutes % 60
-						%comment['comment'] = "%dh%2dm trabalhados" % ( hours, minutes )
+						%comment['comment'] = "%dh%dm trabalhados" % ( hours, minutes )
 					%end
 					<b><i>{{ comment['comment'] }}</i></b>
 					</div>
@@ -209,7 +209,7 @@
 		%hours = minutes / 60
 		%minutes = minutes % 60
 		<small>
-			<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%2dm" % (hours,minutes)}}</b> no total
+			<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%dm" % (hours,minutes)}}</b> no total
 		</small>
 		<br>
 	%end
