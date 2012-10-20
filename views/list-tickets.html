@@ -67,5 +67,11 @@
 <p>
 
 <div class="ticketsfiltrados">
-	{{ len(tickets) }} ticket(s) filtrado(s)
+	%if len(tickets) == 0:
+		nenhum ticket encontrado com o filtro especificado
+	%elif len(tickets) == 1:
+		1 ticket filtrado
+	%else:
+		{{ len(tickets) }} tickets filtrados
+	%end
 </div>
