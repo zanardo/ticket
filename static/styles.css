@@ -170,6 +170,10 @@ a.tag:hover {
 	padding-right: 3px;
 }
 
+.comment {
+	margin-bottom: 2px;
+}
+
 .commentauthor {
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 11px;

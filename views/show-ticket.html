@@ -70,14 +70,13 @@
 					</td>
 				</tr>
 			</table>
-			<div class="comment">
 			%for comment in comments:
+			<div class="comment">
 				%minutes = comment['minutes']
 				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
 				%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
 				<span class="commentauthor">
-				<span title="{{datelong}}">{{ dateshort }}</span> ({{ comment['user']}}):
-				</span>
+				<span title="{{datelong}}">{{ dateshort }}</span> [{{ comment['user']}}]:</span>
 				%if comment['negrito']:
 					%if comment['minutes'] > 0:
 						%minutes = comment['minutes']
@@ -92,8 +91,8 @@
 						{{! comment['comment'] }}
 					</div>
 				%end
-			%end
 			</div>
+			%end
 		</td>
 	</tr>
 </table>
