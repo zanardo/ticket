@@ -171,3 +171,15 @@ a.tag:hover {
 	padding-left: 3px;
 	padding-right: 3px;
 }
+
+.commentauthor {
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 11px;
+}
+
+.commenttext {
+	font-family: Verdana, Arial, sans-serif;
+	font-size: 10px;
+	max-width: 700px;
+	padding: 10px;
+}

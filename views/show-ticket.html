@@ -70,24 +70,28 @@
 				%admin = '<img src="/static/key-icon.png" class="icon" title="somente administradores">'
 			%end
 			<span class="tktitle2">{{ticket['title']}} {{!admin}}</span>
-			<p>
+			<p class="comment">
 			%for comment in comments:
 				<br>
 				%minutes = comment['minutes']
 				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
 				%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
-				<b title="{{datelong}}">{{ dateshort }}</b> - <b>{{ comment['user']}}: </b>
-				%if comment['minutes'] > 0:
-					%minutes = comment['minutes']
-					%hours = minutes / 60
-					%minutes = minutes % 60
-					%comment['comment'] = "%dh%2dm trabalhados" % ( hours, minutes )
-				%end
-				%if comment['negrito']:
-					<b><i>{{ comment['comment'] }}</i></b>
-				%else:
-					{{! comment['comment'] }}
-				%end
+				<div class="commentauthor">
+				<b title="{{datelong}}">{{ datelong }}</b> (<b>{{ comment['user']}}</b>):
+				</div>
+				<div class="commenttext">
+					%if comment['minutes'] > 0:
+						%minutes = comment['minutes']
+						%hours = minutes / 60
+						%minutes = minutes % 60
+						%comment['comment'] = "%dh%2dm trabalhados" % ( hours, minutes )
+					%end
+					%if comment['negrito']:
+						<b><i>{{ comment['comment'] }}</i></b>
+					%else:
+						{{! comment['comment'] }}
+					%end
+				</div>
 			%end
 		</td>
 	</tr>
