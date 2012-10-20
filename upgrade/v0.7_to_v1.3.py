@@ -86,6 +86,17 @@ for r in c1:
 			VALUES ( ?, ?, ?, ? )
 		''', ( r['IDPARENT'], r['DATECREATED'], r['USER'], 'reopen' ))
 
+print ';; importando tags'
+c1.execute('''
+	SELECT TICKET, TAG
+	FROM TAG
+	ORDER BY TICKET
+''')
+for r in c1:
+	c2.execute('''
+		INSERT INTO tags ( ticket_id, tag )
+		VALUES ( ?, ? )
+	''', (r['TICKET'], r['TAG']))
 
 db1.rollback()
 db2.commit()
