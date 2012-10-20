@@ -75,8 +75,9 @@
 				%minutes = comment['minutes']
 				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
 				%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
-				<div class="commentauthor">
-				<b title="{{datelong}}">{{ dateshort }} ({{ comment['user']}}):</b>
+				<span class="commentauthor">
+				<span title="{{datelong}}">{{ dateshort }}</span> ({{ comment['user']}}):
+				</span>
 				%if comment['negrito']:
 					%if comment['minutes'] > 0:
 						%minutes = comment['minutes']
@@ -85,13 +86,14 @@
 						%comment['comment'] = "%dh%dm trabalhados" % ( hours, minutes )
 					%end
 					<span class="commentevent">{{ comment['comment'] }}</span>
+					<br>
 				%else:
-					</div>
 					<div class="commenttext">
 						{{! comment['comment'] }}
 					</div>
 				%end
 			%end
+			</div>
 		</td>
 	</tr>
 </table>
