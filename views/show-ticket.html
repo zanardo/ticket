@@ -10,12 +10,6 @@
 <table class="ticket" width="100%" border="0" bgcolor="#e1e1e1">
 %end
 	<tr>
-		<td width="5px" title="{{priodesc[ticket['priority']]}}" 
-		%if ticket['status'] == 0:
-			bgcolor="{{priocolor[ticket['priority']]}}">&nbsp;</td>
-		%else:
-			bgcolor="#e1e1e1">&nbsp;</td>
-		%end
 		<td width="140px" valign="top">
 			Criado: <span title="{{ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
 				{{ticket['datecreated'].strftime("%Y-%m-%d")}}
@@ -62,11 +56,20 @@
 			%end
 		</td>
 		<td valign="top">
-			%admin = ''
-			%if ticket['admin_only'] == 1:
-				%admin = '<img src="/static/key-icon.png" class="icon" title="somente administradores">'
-			%end
-			<div class="tktitle2">{{ticket['title']}} {{!admin}}</div>
+			<table border="0" class="tktitle2">
+				<tr>
+					<td width="5px" title="{{priodesc[ticket['priority']]}}"
+						bgcolor="{{priocolor[ticket['priority']]}}">&nbsp;
+					</td>
+					<td>
+						%admin = ''
+						%if ticket['admin_only'] == 1:
+							%admin = '<img src="/static/key-icon.png" class="icon" title="somente administradores">'
+						%end
+						<span class="tktitle">{{ticket['title']}} {{!admin}}</span>
+					</td>
+				</tr>
+			</table>
 			<div class="comment">
 			%for comment in comments:
 				%minutes = comment['minutes']
