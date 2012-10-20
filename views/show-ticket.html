@@ -15,6 +15,10 @@
 				{{ticket['datecreated'].strftime("%Y-%m-%d")}}
 			</span>
 			<br>
+			Modificado: <span title="{{ticket['datemodified'].strftime("%Y-%m-%d %H:%M:%S")}}">
+				{{ticket['datemodified'].strftime("%Y-%m-%d")}}
+			</span>
+			<br>
 			%if ticket['status'] == 1:
 			Fechado: <span title="{{ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
 				{{ticket['dateclosed'].strftime("%Y-%m-%d")}}
