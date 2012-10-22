@@ -45,7 +45,7 @@
 					%bgcolor = 'yellow'
 					%fgcolor = 'red'
 				%end
-				<a href="/?filter=t:{{urllib.quote(tag, '')}} o:p g:p"
+				<a href="/?filter=t:{{urllib.quote(tag.encode('utf8'), '')}} o:p g:p"
 					class="tag"
 					title="{{description}}"
 					style="background-color:{{bgcolor}};color:{{fgcolor}};"
