@@ -336,6 +336,7 @@ def logout():
     if session_id:
         removesession(session_id)
         response.delete_cookie('ticket_session')
+        expire_old_sessions()
     return redirect('/login')
 
 
@@ -1200,6 +1201,21 @@ def createdb(dbname):
     print ';; usuario: admin     senha: admin'
     db.commit()
     db.close()
+
+
+def expire_old_sessions():
+    '''Expira sessões mais antigas que 7 dias'''
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            DELETE FROM sessions
+            WHERE julianday('now') - julianday(date_login) > 7
+        ''')
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
 
 
 if __name__ == '__main__':
