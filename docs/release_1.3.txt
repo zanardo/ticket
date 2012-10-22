@@ -1,0 +1,21 @@
+Esta é a documentação de mudanças na versão 1.3 do sistema ticket.
+
+--------------------- Funcionalidades Novas ------------------------
+
+Tickets podem ser configurados como restritos, sendo visíveis apenas
+para usuários administradores.
+
+O banco de dados é criado automaticamente na inicialização caso não 
+exista.
+
+Cronômetro agora exibe somente os minutos na contagem, e não mais os
+segundos, para simplificar contagem.
+
+Criado script para migração da versão 0.7 para a versão 1.3.
+
+Sessões mais antigas que 7 dias são expiradas e removidas do banco de 
+dados.
+
+------------------------ Bugs corrigidos ---------------------------
+
+------------------------- Atualização ------------------------------
