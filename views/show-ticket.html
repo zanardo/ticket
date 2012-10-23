@@ -95,6 +95,8 @@
 								%comment['comment'] = "%dh%dm" % ( hours, minutes )
 								<img src="/static/clock-icon.png" class="icon" title="tempo trabalhado">
 								{{ comment['comment'] }}
+							%elif comment['negrito'] == 1:
+								{{ comment['comment'] }}
 							%end
 						</td>
 					</tr>
