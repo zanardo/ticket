@@ -550,12 +550,18 @@ def changedatedue(ticket_id):
     '''Altera data de previsão de solução de um ticket'''
     assert 'datedue' in request.forms
     datedue = request.forms.datedue.strip()
-    if datedue != '' and not re.match(r'^\d{4}-\d{2}-\d{2}$', datedue):
-        return 'erro: data de previsão inválida'
-    if datedue == '':
-        datedue = None
-    else: 
+    if datedue != '':
+        # Testando máscara
+        if not re.match(r'^2\d{3}-\d{2}-\d{2}$', datedue):
+            return 'erro: data de previsão inválida'
+        # Testando validade da data
+        try:
+            time.strptime(datedue, '%Y-%m-%d')
+        except ValueError:
+            return 'erro: data de previsão inválida'
         datedue += ' 23:59:59'
+    else:
+        datedue = None
     c = getdb().cursor()
     try:
         c.execute('''
