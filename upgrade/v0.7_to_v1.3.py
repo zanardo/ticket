@@ -36,8 +36,8 @@ c1.execute('''
 for r in c1:
 
 	title = r['TEXT']
-	if len(title) > 50:
-		title = title[:50] + ' ...'
+	if len(title) > 100:
+		title = title[:100] + ' ...'
 	elif title.strip() == '':
 		title = '(sem título)'
 
