@@ -532,6 +532,33 @@ def changetitle(ticket_id):
     return redirect('/%s' % ticket_id)
 
 
+@post('/change-datedue/<ticket_id:int>')
+@requires_auth
+def changedatedue(ticket_id):
+    '''Altera data de previsão de solução de um ticket'''
+    assert 'datedue' in request.forms
+    datedue = request.forms.datedue.strip()
+    if datedue != '' and not re.match(r'^\d{4}-\d{2}-\d{2}$', datedue):
+        return 'erro: data de previsão inválida'
+    if datedue == '':
+        datedue = None
+    else: 
+        datedue += ' 23:59:59'
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            UPDATE tickets
+            SET datedue = :datedue
+            WHERE id = :ticket_id
+        ''', locals())
+    except:
+        getdb().rollback()
+    else:
+        getdb().commit()
+
+    return redirect('/%s' % ticket_id)
+
+
 @get('/change-admin-only/<ticket_id:int>/:toggle')
 @requires_auth
 @requires_admin

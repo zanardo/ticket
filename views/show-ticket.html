@@ -4,6 +4,13 @@
 
 %import urllib
 
+%datedue = ticket['datedue']
+%if datedue is None:
+	%datedue = ''
+%else:
+	%datedue = datedue.strftime('%Y-%m-%d')
+%end
+
 %if ticket['status'] == 0:
 <table class="ticket" width="100%" border="0" bgcolor="">
 %else:
@@ -19,6 +26,12 @@
 				{{ticket['datemodified'].strftime("%Y-%m-%d")}}
 			</span>
 			<br>
+			%if ticket['status'] == 0 and ticket['datedue']:
+				Previsão: <span title="{{datedue}}">
+					{{datedue}}
+				</span>
+				<br>
+			%end
 			%if ticket['status'] == 1:
 			Fechado: <span title="{{ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
 				{{ticket['dateclosed'].strftime("%Y-%m-%d")}}
@@ -134,6 +147,9 @@
 				Tempo</a> 
 			%if ticket['status'] == 0:
 				| 
+			<a class="tab" onclick="return showPanel(this, 'datedue');">
+				Previsão</a>
+				| 
 			<a class="tab" onclick="return showPanel(this, 'contacts');">
 				Contatos</a>
 			%end
@@ -228,6 +244,18 @@
 		</small>
 		<br>
 	%end
+</div>
+<div class="panel" id="datedue" style="display: none">
+	<form method="post" action="/change-datedue/{{ticket['id']}}"
+			enctype="multipart/form-data" name="ftag">
+		<input type="text" name="datedue" value="{{datedue}}" size="10" id="formdatedue">
+		<input type="submit" name="submit" value="Salvar previsão">
+		<p>
+		<div class="deschelp">
+			É possível digitar uma data de previsão de resolução deste
+			chamado. Utilizar o formato YYYY-MM-DD. Exemplo: <b>2030-01-01</b>
+		</div>
+	</form>
 </div>
 <div class="panel" id="contacts" style="display: none">
 	<form method="post" action="/change-contacts/{{ticket['id']}}"

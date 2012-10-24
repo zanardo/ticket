@@ -7,11 +7,13 @@ CREATE TABLE tickets (
 	priority integer NOT NULL DEFAULT ( 3 ),
 	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
 	datemodified timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
+	datedue timestamp,
 	dateclosed timestamp,
 	user text NOT NULL,
 	admin_only integer NOT NULL DEFAULT ( 0 )
 );
 CREATE INDEX idx_tickets_status ON tickets ( status );
+CREATE INDEX idx_tickets_datedue ON tickets ( datedue );
 
 CREATE TABLE comments (
 	id integer NOT NULL PRIMARY KEY,

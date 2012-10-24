@@ -19,12 +19,21 @@ db = sqlite3.connect(db_name)
 print ';; migrando schema da versão 1.2 para 1.3'
 try:
 	c = db.cursor()
+	# Tickets restritos para administradores
 	c.execute('''
 		ALTER TABLE tickets
 		ADD COLUMN admin_only integer NOT NULL DEFAULT ( 0 )
 	''')
 	c.execute('''
 		CREATE INDEX idx_tickets_admin_only ON tickets ( admin_only )
+	''')
+	# Data de previsão de solução de tickets
+	c.execute('''
+		ALTER TABLE tickets
+		ADD COLUMN datedue timestamp
+	''')
+	c.execute('''
+		CREATE INDEX idx_tickets_datedue ON tickets ( datedue )
 	''')
 except:
 	db.rollback()
