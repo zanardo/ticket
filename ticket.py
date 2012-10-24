@@ -166,7 +166,7 @@ def index():
             continue
 
         # Ordenação (o:m)
-        m = re.match(r'^o:([mcfp])$', t)
+        m = re.match(r'^o:([mcfpv])$', t)
         if m:
             o = m.group(1)
             if o == 'c':
@@ -178,6 +178,9 @@ def index():
             elif o == 'f':
                 order = u'ORDER BY dateclosed DESC'
                 orderdate = 'dateclosed'
+            elif o == 'v':
+                order = u'ORDER BY datedue DESC'
+                orderdate = 'datedue'
             elif o == 'p':
                 order = u'ORDER BY priority ASC, datecreated ASC'
                 orderdate = ''
@@ -206,20 +209,21 @@ def index():
             sqlparams += [u,u,u,u]
             continue
 
-        # Faixa de data de criação, fechamento, modificação
-        m = re.match(r'^d([fmc]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$', t)
+        # Faixa de data de criação, fechamento, modificação e previsão
+        m = re.match(r'^d([fmcv]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$', t)
         if m:
             dt = ''
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
             if m.group(1) == 'c': dt = 'datecreated'
             elif m.group(1) == 'm': dt = 'datemodified'
             elif m.group(1) == 'f': dt = 'dateclosed'
+            elif m.group(1) == 'v': dt = 'datedue'
             sql += u"""
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y2, m2, d2 )
             continue
 
-        # Data de criação, fechamento, modificação
+        # Data de criação, fechamento, modificação e previsão
         m = re.match(r'^d([fmc]):(\d{4})(\d{2})(\d{2})$', t)
         if m:
             dt = ''
@@ -227,6 +231,7 @@ def index():
             if m.group(1) == 'c': dt = 'datecreated'
             elif m.group(1) == 'm': dt = 'datemodified'
             elif m.group(1) == 'f': dt = 'dateclosed'
+            elif m.group(1) == 'v': dt = 'datedue'
             sql += u"""
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y1, m1, d1 )
@@ -274,6 +279,13 @@ def index():
             AND id IN ( SELECT docid FROM search WHERE search MATCH ? )
         """
         sqlparams.append(s)
+
+    # Caso ordenação seja por data de previsão, mostrando
+    # somente tickets com date de previsão preenchida.
+    if orderdate == 'datedue':
+        sql += '''
+            AND datedue IS NOT NULL
+        '''
 
     if status != '':
         sql += '''
