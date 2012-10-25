@@ -179,7 +179,7 @@ def index():
                 order = u'ORDER BY dateclosed DESC'
                 orderdate = 'dateclosed'
             elif o == 'v':
-                order = u'ORDER BY datedue DESC'
+                order = u'ORDER BY datedue ASC'
                 orderdate = 'datedue'
             elif o == 'p':
                 order = u'ORDER BY priority ASC, datecreated ASC'
