@@ -9,7 +9,7 @@
 		%data = tk[orderdate].strftime("%Y-%m-%d") + ' (' + weekday + ')'
 		%rotulo = ''
 		%if orderdate == 'datecreated':
-			%rotulo = 'Abertura'
+			%rotulo = 'Criação'
 		%elif orderdate == 'datemodified':
 			%rotulo = 'Última Modificação'
 		%elif orderdate == 'dateclosed':
