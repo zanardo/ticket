@@ -287,6 +287,13 @@ def index():
             AND datedue IS NOT NULL
         '''
 
+    # Caso ordenação seja por data de fechamento, mostrando
+    # somente os tickets fechados.
+    if orderdate == 'dateclosed':
+        sql += '''
+            AND status = 1
+        '''
+
     if status != '':
         sql += '''
             %s
