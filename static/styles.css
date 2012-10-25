@@ -45,6 +45,7 @@ input, textarea, select, submit {
 .topmenu {
 	font-family: Arial, sans-serif;
 	font-size: 9pt;
+	padding-bottom: 5px;
 }
 
 #topusermenu {
