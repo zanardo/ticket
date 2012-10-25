@@ -6,15 +6,25 @@
 %for tk in tickets:
 	%if group == 'date':
 		%weekday = weekdays[int(tk[orderdate].strftime("%w"))]
-		%data = tk[orderdate].strftime("%Y-%m-%d") + ' - ' + weekday
+		%data = tk[orderdate].strftime("%Y-%m-%d") + ' (' + weekday + ')'
+		%rotulo = ''
+		%if orderdate == 'datecreated':
+			%rotulo = 'Abertura'
+		%elif orderdate == 'datemodified':
+			%rotulo = 'Última Modificação'
+		%elif orderdate == 'dateclosed':
+			%rotulo = 'Fechamento'
+		%elif orderdate == 'datedue':
+			%rotulo = 'Previsão de Solução'
+		%end
 		%if data1 != data:
-			<div class="orderdate">{{data}}</div>
+			<div class="orderdate">{{rotulo}}: {{data}}</div>
 		%end
 		%data1 = data
 	%elif group == 'priority':
 		%prio = priodesc[tk['priority']]
 		%if prio1 != prio:
-			<div class="orderdate">{{prio}}</div>
+			<div class="orderdate">Prioridade: {{prio}}</div>
 		%end
 		%prio1 = prio
 	%end
