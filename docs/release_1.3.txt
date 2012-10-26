@@ -1,9 +1,12 @@
 Esta é a documentação de mudanças na versão 1.3 do sistema ticket.
 
---------------------- Funcionalidades Novas ------------------------
+1. Funcionalidades Novas
 
 Tickets podem ser configurados como restritos, sendo visíveis apenas
 para usuários administradores.
+
+Novo campo para digitação da data de previsão de solução de um ticket,
+e o novo filtro o:v para ordenar pela data de previsão.
 
 O banco de dados é criado automaticamente na inicialização caso não 
 exista.
@@ -16,6 +19,6 @@ Criado script para migração da versão 0.7 para a versão 1.3.
 Sessões mais antigas que 7 dias são expiradas e removidas do banco de 
 dados.
 
------------------------- Bugs corrigidos ---------------------------
 
-------------------------- Atualização ------------------------------
+2. Atualização
+
