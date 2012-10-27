@@ -20,5 +20,7 @@ Sessões mais antigas que 7 dias são expiradas e removidas do banco de
 dados.
 
 
-2. Atualização
+2. Atualização da versão 1.2
 
+ $ cp ticket.db ticket.db.v1.2
+ $ upgrade/v1.2_to_v1.3.py ticket.db
