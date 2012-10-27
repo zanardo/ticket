@@ -39,7 +39,7 @@ from email.mime.text import MIMEText
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
-VERSION = '1.3dev'
+VERSION = '1.3'
 
 # Cores de fundo das prioridades
 priocolor = {
