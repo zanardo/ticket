@@ -798,6 +798,30 @@ def changepriority(ticket_id):
     return redirect('/%s' % ticket_id)
 
 
+@post('/upload-file/<ticket_id:int>')
+@requires_auth
+def uploadfile(ticket_id):
+    '''Anexa um arquivo ao ticket'''
+    f = request.files.file
+    filename = f.filename
+    blob = f.file.read()
+    filesize = len(blob)
+    username = currentuser()
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            INSERT INTO files ( ticket_id, name, user, size, contents )
+            VALUES ( :ticket_id, :filename, :username, :filesize, :blob )
+        ''', locals())
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
+    return redirect('/%s' % ticket_id)
+
+
 @route('/static/:filename')
 def static(filename):
     '''Retorna um arquivo estático em ./static/'''
