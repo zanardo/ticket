@@ -23,6 +23,7 @@ except ImportError:
 import re
 import os
 import sys
+import zlib
 import time
 import getopt
 import random
@@ -806,6 +807,7 @@ def uploadfile(ticket_id):
     filename = f.filename
     blob = f.file.read()
     filesize = len(blob)
+    blob = buffer(zlib.compress(blob))
     username = currentuser()
     c = getdb().cursor()
     try:
