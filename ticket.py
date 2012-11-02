@@ -828,9 +828,10 @@ def changepriority(ticket_id):
 @requires_auth
 def uploadfile(ticket_id):
     '''Anexa um arquivo ao ticket'''
-    f = request.files.file
-    filename = f.filename
-    blob = f.file.read()
+    if not 'file' in request.files:
+        return 'arquivo inválido'
+    filename = request.files.file.filename
+    blob = request.files.file.file.read()
     filesize = len(blob)
     blob = buffer(zlib.compress(blob))
     username = currentuser()
