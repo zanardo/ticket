@@ -514,14 +514,21 @@ def getfile(id, name):
     '''Retorna um arquivo em anexo'''
     c = getdb().cursor()
     c.execute('''
-        SELECT ticket_id, size, contents
+        SELECT files.ticket_id AS ticket_id
+            , files.size AS size
+            , files.contents AS contents
+            , tickets.admin_only AS admin_only
         FROM files
-        WHERE id = :id
+            JOIN tickets ON tickets.id = files.ticket_id
+        WHERE files.id = :id
     ''', locals())
     row = c.fetchone()
     blob = zlib.decompress(row['contents'])
-    response.content_type = 'application/object'
-    return blob
+    if not userisadmin(currentuser()) and row['admin_only'] == 1:
+        return 'você não tem permissão para acessar este recurso!'
+    else:
+        response.content_type = 'application/object'
+        return blob
 
 
 @post('/close-ticket/<ticket_id:int>')
