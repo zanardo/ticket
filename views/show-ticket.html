@@ -147,6 +147,8 @@
 				Tempo</a> 
 			%if ticket['status'] == 0:
 				| 
+			<a class="tab" onclick="return showPanel(this, 'file');">
+				Anexo</a>				| 
 			<a class="tab" onclick="return showPanel(this, 'datedue');">
 				Previsão</a>
 				| 
@@ -244,6 +246,18 @@
 		</small>
 		<br>
 	%end
+</div>
+<div class="panel" id="file" style="display: none">
+	<form method="post" action="/upload-file/{{ticket['id']}}"
+			enctype="multipart/form-data">
+		<input type="file" name="file" size="30">
+		<p>
+		<input type="submit" name="submit" value="Enviar anexo">
+		<p>
+		<div class="deschelp">
+			É possível enviar um arquivo em anexo a este ticket, como por exemplo uma imagem, um script, etc.
+		</div>
+	</form>
 </div>
 <div class="panel" id="datedue" style="display: none">
 	<form method="post" action="/change-datedue/{{ticket['id']}}"
