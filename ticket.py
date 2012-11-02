@@ -32,6 +32,7 @@ import smtplib
 import os.path
 import sqlite3
 import datetime
+import mimetypes
 
 from uuid import uuid4
 from hashlib import sha1
@@ -512,6 +513,9 @@ def showticket(ticket_id):
 @requires_auth
 def getfile(id, name):
     '''Retorna um arquivo em anexo'''
+    mime = mimetypes.guess_type(name)[0]
+    if mime is None:
+        mime = 'application/octet-stream'
     c = getdb().cursor()
     c.execute('''
         SELECT files.ticket_id AS ticket_id
@@ -527,7 +531,7 @@ def getfile(id, name):
     if not userisadmin(currentuser()) and row['admin_only'] == 1:
         return 'você não tem permissão para acessar este recurso!'
     else:
-        response.content_type = 'application/object'
+        response.content_type = mime
         return blob
 
 
