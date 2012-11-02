@@ -96,5 +96,6 @@ VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );
 
 INSERT INTO config ( key, value ) VALUES ( 'mail.smtp', '' );
 INSERT INTO config ( key, value ) VALUES ( 'mail.from', '' );
+INSERT INTO config ( key, value ) VALUES ( 'file.maxsize', '128000' );
 
 COMMIT;

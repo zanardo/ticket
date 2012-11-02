@@ -41,8 +41,12 @@
 
 	<input type="text" size="40" name="mail.smtp" value="{{ config['mail.smtp'] }}">
 	<tt>mail.smtp</tt> (Servidor SMTP para envio de e-mail)
-
 	<p>
+
+	<input type="text" size="40" name="file.maxsize" value="{{ config['file.maxsize'] }}">
+	<tt>file.maxsize</tt> (Tamanho máximo em bytes de arquivos anexos)
+	<p>
+
 	<input type="submit" name="submit" value="salvar configurações">
 </form>
 

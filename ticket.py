@@ -831,8 +831,17 @@ def uploadfile(ticket_id):
     if not 'file' in request.files:
         return 'arquivo inválido'
     filename = request.files.file.filename.decode('utf-8')
-    blob = request.files.file.file.read()
-    filesize = len(blob)
+    maxfilesize = int(getconfig('file.maxsize'))
+    blob = ''
+    filesize = 0
+    while True:
+        chunk = request.files.file.file.read(4096)
+        if not chunk: break
+        chunksize = len(chunk)
+        if filesize + chunksize > maxfilesize:
+            return 'erro: arquivo maior do que máximo permitido'
+        filesize += chunksize
+        blob += chunk
     blob = buffer(zlib.compress(blob))
     username = currentuser()
     c = getdb().cursor()
@@ -940,7 +949,7 @@ def saveconfig():
     '''Salva configurações'''
     config = {}
     for k in request.forms:
-        if k in ('mail.from', 'mail.smtp'):
+        if k in ('mail.from', 'mail.smtp', 'file.maxsize'):
             config[k] = getattr(request.forms, k)
     c = getdb().cursor()
     try:
