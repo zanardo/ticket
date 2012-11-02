@@ -30,6 +30,7 @@ try:
 			contents blob NOT NULL
 		);
 		CREATE INDEX idx_files_ticket_id ON files ( ticket_id );
+		INSERT INTO config ( key, value ) VALUES ( 'file.maxsize', '128000' );
 	''')
 except:
 	db.rollback()
