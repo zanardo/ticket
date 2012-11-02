@@ -81,6 +81,7 @@ CREATE TABLE config (
 CREATE TABLE files (
 	id integer NOT NULL PRIMARY KEY,
 	ticket_id integer NOT NULL,
+	name text NOT NULL,
 	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
 	user text NOT NULL,
 	size integer NOT NULL,
