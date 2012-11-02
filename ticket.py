@@ -815,6 +815,11 @@ def uploadfile(ticket_id):
             INSERT INTO files ( ticket_id, name, user, size, contents )
             VALUES ( :ticket_id, :filename, :username, :filesize, :blob )
         ''', locals())
+        c.execute('''
+            UPDATE tickets
+            SET datemodified = datetime('now', 'localtime')
+            WHERE id = :ticket_id
+        ''', locals())
     except:
         getdb().rollback()
         raise
