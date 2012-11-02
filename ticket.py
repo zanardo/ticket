@@ -830,7 +830,7 @@ def uploadfile(ticket_id):
     '''Anexa um arquivo ao ticket'''
     if not 'file' in request.files:
         return 'arquivo inválido'
-    filename = request.files.file.filename
+    filename = request.files.file.filename.decode('utf-8')
     blob = request.files.file.file.read()
     filesize = len(blob)
     blob = buffer(zlib.compress(blob))
