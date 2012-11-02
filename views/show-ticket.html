@@ -114,6 +114,7 @@
 									reaberto
 								%end
 							%elif comment['type'] == 'files':
+								<img src="/static/attach-icon.png" class="icon" title="arquivo anexado">
 								anexado <a href="/file/{{comment['id']}}/{{ comment['name'] }}">{{ comment['name'] }}</a>
 							%end
 						</td>
