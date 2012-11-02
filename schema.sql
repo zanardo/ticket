@@ -78,6 +78,16 @@ CREATE TABLE config (
 	value text NOT NULL
 );
 
+CREATE TABLE files (
+	id integer NOT NULL PRIMARY KEY,
+	ticket_id integer NOT NULL,
+	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
+	user text NOT NULL,
+	size integer NOT NULL,
+	contents blob NOT NULL
+);
+CREATE INDEX idx_files_ticket_id ON files ( ticket_id );
+
 CREATE VIRTUAL TABLE search USING fts3 ( text );
 
 INSERT INTO users ( username, password, is_admin )
