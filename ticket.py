@@ -431,41 +431,50 @@ def showticket(ticket_id):
 
     comments = []
 
+    # Mudanças de status
     c.execute('''
-        SELECT datecreated
-            , user
-            , CASE status WHEN \'close\' THEN \'fechado\' WHEN \'reopen\' THEN \'reaberto\' END AS comment
-            , 1 AS negrito
-            , 0 AS minutes
-      FROM statustrack
-      WHERE ticket_id = :ticket_id
+        SELECT datecreated, user, status
+        FROM statustrack
+        WHERE ticket_id = :ticket_id
     ''', locals())
     for r in c:
-        comments.append(dict(r))
+        reg = dict(r)
+        reg['type'] = 'statustrack'
+        comments.append(reg)
+
+    # Comentários
     c.execute('''
-          SELECT datecreated
-            , user
-            , comment
-            , 0 AS negrito
-            , 0 AS minutes
-          FROM comments
-          WHERE ticket_id = :ticket_id        
+        SELECT datecreated, user, comment
+        FROM comments
+        WHERE ticket_id = :ticket_id        
     ''', locals())
     for r in c:
-        cs = dict(r)
-        cs['comment'] = sanitizecomment(cs['comment'])
-        comments.append(cs)
+        reg = dict(r)
+        reg['comment'] = sanitizecomment(reg['comment'])
+        reg['type'] = 'comments'
+        comments.append(reg)
+
+    # Registro de tempo
     c.execute('''
-          SELECT datecreated
-            , user
-            , minutes || \' minutos trabalhados\' AS comment
-            , 1 AS negrito
-            , minutes
-          FROM timetrack
-          WHERE ticket_id = :ticket_id 
+        SELECT datecreated, user, minutes
+        FROM timetrack
+        WHERE ticket_id = :ticket_id 
     ''', locals())
     for r in c:
-        comments.append(dict(r))
+        reg = dict(r)
+        reg['type'] = 'timetrack'
+        comments.append(reg)
+
+    # Arquivos anexos
+    c.execute('''
+        SELECT datecreated, user, name, id
+        FROM files
+        WHERE ticket_id = :ticket_id 
+    ''', locals())
+    for r in c:
+        reg = dict(r)
+        reg['type'] = 'files'
+        comments.append(reg)
 
     # Ordenando comentários por data
     comments = sorted(comments, key=lambda comments: comments['datecreated'])

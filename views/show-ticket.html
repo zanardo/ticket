@@ -89,7 +89,6 @@
 			</table>
 			%for comment in comments:
 			<div class="comment">
-				%minutes = comment['minutes']
 				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
 				%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
 				<table border="0">
@@ -101,20 +100,26 @@
 							{{ comment['user']}}
 						</td>
 						<td class="commentevent">
-							%if comment['minutes'] > 0:
+							%if comment['type'] == 'timetrack':
 								%minutes = comment['minutes']
 								%hours = minutes / 60
 								%minutes = minutes % 60
-								%comment['comment'] = "%dh%dm" % ( hours, minutes )
+								%comment['comment'] = "%dh%dm trabalhados" % ( hours, minutes )
 								<img src="/static/clock-icon.png" class="icon" title="tempo trabalhado">
 								{{ comment['comment'] }}
-							%elif comment['negrito'] == 1:
-								{{ comment['comment'] }}
+							%elif comment['type'] == 'statustrack':
+								%if comment['status'] == 'close':
+									fechado
+								%elif comment['status'] == 'reopen':
+									reaberto
+								%end
+							%elif comment['type'] == 'files':
+								anexado <a href="/file/{{comment['id']}}/{{ comment['name'] }}">{{ comment['name'] }}</a>
 							%end
 						</td>
 					</tr>
 				</table>
-				%if comment['negrito'] == 0:
+				%if comment['type'] == 'comments':
 					<div class="commenttext">
 						{{! comment['comment'] }}
 					</div>
