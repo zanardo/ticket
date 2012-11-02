@@ -508,6 +508,22 @@ def showticket(ticket_id):
         userisadmin=userisadmin(username))
 
 
+@get('/file/<id:int>/:name')
+@requires_auth
+def getfile(id, name):
+    '''Retorna um arquivo em anexo'''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT ticket_id, size, contents
+        FROM files
+        WHERE id = :id
+    ''', locals())
+    row = c.fetchone()
+    blob = zlib.decompress(row['contents'])
+    response.content_type = 'application/object'
+    return blob
+
+
 @post('/close-ticket/<ticket_id:int>')
 @requires_auth
 def closeticket(ticket_id):
