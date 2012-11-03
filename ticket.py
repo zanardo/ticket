@@ -23,6 +23,7 @@ except ImportError:
 import re
 import os
 import sys
+import zlib
 import time
 import getopt
 import random
@@ -31,6 +32,7 @@ import smtplib
 import os.path
 import sqlite3
 import datetime
+import mimetypes
 
 from uuid import uuid4
 from hashlib import sha1
@@ -430,41 +432,50 @@ def showticket(ticket_id):
 
     comments = []
 
+    # Mudanças de status
     c.execute('''
-        SELECT datecreated
-            , user
-            , CASE status WHEN \'close\' THEN \'fechado\' WHEN \'reopen\' THEN \'reaberto\' END AS comment
-            , 1 AS negrito
-            , 0 AS minutes
-      FROM statustrack
-      WHERE ticket_id = :ticket_id
+        SELECT datecreated, user, status
+        FROM statustrack
+        WHERE ticket_id = :ticket_id
     ''', locals())
     for r in c:
-        comments.append(dict(r))
+        reg = dict(r)
+        reg['type'] = 'statustrack'
+        comments.append(reg)
+
+    # Comentários
     c.execute('''
-          SELECT datecreated
-            , user
-            , comment
-            , 0 AS negrito
-            , 0 AS minutes
-          FROM comments
-          WHERE ticket_id = :ticket_id        
+        SELECT datecreated, user, comment
+        FROM comments
+        WHERE ticket_id = :ticket_id        
     ''', locals())
     for r in c:
-        cs = dict(r)
-        cs['comment'] = sanitizecomment(cs['comment'])
-        comments.append(cs)
+        reg = dict(r)
+        reg['comment'] = sanitizecomment(reg['comment'])
+        reg['type'] = 'comments'
+        comments.append(reg)
+
+    # Registro de tempo
     c.execute('''
-          SELECT datecreated
-            , user
-            , minutes || \' minutos trabalhados\' AS comment
-            , 1 AS negrito
-            , minutes
-          FROM timetrack
-          WHERE ticket_id = :ticket_id 
+        SELECT datecreated, user, minutes
+        FROM timetrack
+        WHERE ticket_id = :ticket_id 
     ''', locals())
     for r in c:
-        comments.append(dict(r))
+        reg = dict(r)
+        reg['type'] = 'timetrack'
+        comments.append(reg)
+
+    # Arquivos anexos
+    c.execute('''
+        SELECT datecreated, user, name, id
+        FROM files
+        WHERE ticket_id = :ticket_id 
+    ''', locals())
+    for r in c:
+        reg = dict(r)
+        reg['type'] = 'files'
+        comments.append(reg)
 
     # Ordenando comentários por data
     comments = sorted(comments, key=lambda comments: comments['datecreated'])
@@ -496,6 +507,32 @@ def showticket(ticket_id):
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
         userisadmin=userisadmin(username))
+
+
+@get('/file/<id:int>/:name')
+@requires_auth
+def getfile(id, name):
+    '''Retorna um arquivo em anexo'''
+    mime = mimetypes.guess_type(name)[0]
+    if mime is None:
+        mime = 'application/octet-stream'
+    c = getdb().cursor()
+    c.execute('''
+        SELECT files.ticket_id AS ticket_id
+            , files.size AS size
+            , files.contents AS contents
+            , tickets.admin_only AS admin_only
+        FROM files
+            JOIN tickets ON tickets.id = files.ticket_id
+        WHERE files.id = :id
+    ''', locals())
+    row = c.fetchone()
+    blob = zlib.decompress(row['contents'])
+    if not userisadmin(currentuser()) and row['admin_only'] == 1:
+        return 'você não tem permissão para acessar este recurso!'
+    else:
+        response.content_type = mime
+        return blob
 
 
 @post('/close-ticket/<ticket_id:int>')
@@ -798,6 +835,46 @@ def changepriority(ticket_id):
     return redirect('/%s' % ticket_id)
 
 
+@post('/upload-file/<ticket_id:int>')
+@requires_auth
+def uploadfile(ticket_id):
+    '''Anexa um arquivo ao ticket'''
+    if not 'file' in request.files:
+        return 'arquivo inválido'
+    filename = request.files.file.filename.decode('utf-8')
+    maxfilesize = int(getconfig('file.maxsize'))
+    blob = ''
+    filesize = 0
+    while True:
+        chunk = request.files.file.file.read(4096)
+        if not chunk: break
+        chunksize = len(chunk)
+        if filesize + chunksize > maxfilesize:
+            return 'erro: arquivo maior do que máximo permitido'
+        filesize += chunksize
+        blob += chunk
+    blob = buffer(zlib.compress(blob))
+    username = currentuser()
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            INSERT INTO files ( ticket_id, name, user, size, contents )
+            VALUES ( :ticket_id, :filename, :username, :filesize, :blob )
+        ''', locals())
+        c.execute('''
+            UPDATE tickets
+            SET datemodified = datetime('now', 'localtime')
+            WHERE id = :ticket_id
+        ''', locals())
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
+    return redirect('/%s' % ticket_id)
+
+
 @route('/static/:filename')
 def static(filename):
     '''Retorna um arquivo estático em ./static/'''
@@ -883,7 +960,7 @@ def saveconfig():
     '''Salva configurações'''
     config = {}
     for k in request.forms:
-        if k in ('mail.from', 'mail.smtp'):
+        if k in ('mail.from', 'mail.smtp', 'file.maxsize'):
             config[k] = getattr(request.forms, k)
     c = getdb().cursor()
     try:
