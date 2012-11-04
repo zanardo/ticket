@@ -1,0 +1,9 @@
+%rebase base title="Editar Usuário: " + user, filter="", username=username, userisadmin=userisadmin, version=version
+
+<form method="post" action="/admin/edit-user/{{ user }}" enctype="multipart/form-data">
+	<input type="text" name="name" value="{{ name }}" size="30"> (Nome)
+	<p>
+	<input type="text" name="email" value="{{ email }}" size="30"> (E-Mail)
+	<p>
+	<input type="submit" name="submit" value="salvar usuário">
+</form>

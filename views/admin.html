@@ -7,10 +7,12 @@
 </form>
 <p>
 <table>
-	<th>usuário</th><th>administrador</th><th>ações</th>
+	<th>usuário</th><th>nome</th><th>e-mail</th><th>administrador</th><th>ações</th>
 	%for user in users:
 		<tr>
 			<td> {{user['username']}} </td>
+			<td> {{user['name']}} </td>
+			<td> {{user['email']}} </td>
 			<td>
 				%if user['is_admin']:
 					sim

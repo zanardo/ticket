@@ -935,12 +935,15 @@ def admin():
     users = []
     c = getdb().cursor()
     c.execute('''
-        SELECT username, is_admin
+        SELECT username, is_admin, name, email
         FROM users
         ORDER BY username
     ''')
     for user in c:
-        users.append({'username': user[0], 'is_admin': user[1]})
+        user = dict(user)
+        user['name'] = user['name'] or ''
+        user['email'] = user['email'] or ''
+        users.append(user)
     config = {}
     c = getdb().cursor()
     c.execute('''
@@ -994,6 +997,54 @@ def removeuser(username):
         c.execute('''
             DELETE FROM users
             WHERE username = :username
+        ''', locals())
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return redirect('/admin')
+
+
+@get('/admin/edit-user/:username')
+@view('edit-user')
+@requires_auth
+@requires_admin
+def edituser(username):
+    ''' Exibe tela de edição de usuários '''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT name, email
+        FROM users
+        WHERE username = :username
+    ''', locals())
+    r = c.fetchone()
+    name = ''
+    email = ''
+    if not r:
+        return 'usuário %s não encontrado!' % username
+    else:
+        name = r['name'] or ''
+        email = r['email'] or ''
+        return dict(user=username, name=name, email=email, username=currentuser(),
+            version=VERSION, userisadmin=userisadmin(currentuser()))
+
+
+@post('/admin/edit-user/:username')
+@requires_auth
+@requires_admin
+def editusersave(username):
+    ''' Salva os dados de um usuário editado '''
+    assert 'name' in request.forms
+    assert 'email' in request.forms
+    name = request.forms.name.strip()
+    email = request.forms.email.strip()
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            UPDATE users
+            SET name=:name, email=:email
+            WHERE username=:username
         ''', locals())
     except:
         getdb().rollback()
