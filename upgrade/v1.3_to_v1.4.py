@@ -31,6 +31,8 @@ try:
 		);
 		CREATE INDEX idx_files_ticket_id ON files ( ticket_id );
 		INSERT INTO config ( key, value ) VALUES ( 'file.maxsize', '128000' );
+		ALTER TABLE users ADD COLUMN email text;
+		ALTER TABLE users ADD COLUMN name text;
 	''')
 except:
 	db.rollback()
