@@ -19,8 +19,8 @@
 				%end
 			</td>
 			<td>
+				<a href="/admin/edit-user/{{user['username']}}">editar</a> 
 				%if username != user['username']:
-					<a href="/admin/edit-user/{{user['username']}}">editar</a> 
 					<a href="/admin/remove-user/{{user['username']}}">excluir</a>
 					<a href="/admin/force-new-password/{{user['username']}}">forçar nova senha</a>
 					%if user['is_admin']:
