@@ -65,7 +65,8 @@ CREATE TABLE users (
 	username text NOT NULL PRIMARY KEY,
 	password text NOT NULL,
 	is_admin int,
-	email text
+	email text,
+	name text
 );
 
 CREATE TABLE sessions (
