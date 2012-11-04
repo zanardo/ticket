@@ -36,10 +36,6 @@
 
 <h2>Configurações</h2>
 <form method="post" action="/admin/save-config" enctype="multipart/form-data">
-	<input type="text" size="40" name="mail.from" value="{{ config['mail.from'] }}">
-	<tt>mail.from</tt> (Endereço de e-mail do remetente)
-	<p>
-
 	<input type="text" size="40" name="mail.smtp" value="{{ config['mail.smtp'] }}">
 	<tt>mail.smtp</tt> (Servidor SMTP para envio de e-mail)
 	<p>

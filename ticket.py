@@ -960,7 +960,7 @@ def saveconfig():
     '''Salva configurações'''
     config = {}
     for k in request.forms:
-        if k in ('mail.from', 'mail.smtp', 'file.maxsize'):
+        if k in ('mail.smtp', 'file.maxsize'):
             config[k] = getattr(request.forms, k)
     c = getdb().cursor()
     try:
