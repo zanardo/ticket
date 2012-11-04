@@ -64,7 +64,8 @@ CREATE INDEX idx_contacts_ticket_id ON contacts ( ticket_id );
 CREATE TABLE users (
 	username text NOT NULL PRIMARY KEY,
 	password text NOT NULL,
-	is_admin int
+	is_admin int,
+	email text
 );
 
 CREATE TABLE sessions (
