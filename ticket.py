@@ -499,6 +499,14 @@ def showticket(ticket_id):
     # Obtém contatos
     contacts = ticketcontacts(ticket_id)
 
+    # Obtém dados do usuário corrente
+    c.execute('''
+        SELECT name, email
+        FROM users
+        WHERE username = :username
+    ''', locals())
+    user = dict(c.fetchone())
+
     getdb().commit()
 
     # Renderiza template
@@ -506,7 +514,7 @@ def showticket(ticket_id):
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
-        userisadmin=userisadmin(username))
+        userisadmin=userisadmin(username), user=user)
 
 
 @get('/file/<id:int>/:name')
