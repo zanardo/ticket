@@ -778,7 +778,7 @@ def newnote(ticket_id):
 -- Este é um e-mail automático enviado pelo sistema ticket.
         ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
 
-        sendmail(u"%s <%s>" % (user['name'], user['email']), toemail,
+        sendmail(u'"%s" <%s>' % (user['name'], user['email']), toemail,
             getconfig('mail.smtp'), subject, body)
 
     return redirect('/%s' % ticket_id)
