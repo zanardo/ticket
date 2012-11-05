@@ -499,14 +499,6 @@ def showticket(ticket_id):
     # Obtém contatos
     contacts = ticketcontacts(ticket_id)
 
-    # Obtém dados do usuário corrente
-    c.execute('''
-        SELECT name, email
-        FROM users
-        WHERE username = :username
-    ''', locals())
-    user = dict(c.fetchone())
-
     getdb().commit()
 
     # Renderiza template
@@ -514,7 +506,7 @@ def showticket(ticket_id):
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
-        userisadmin=userisadmin(username), user=user)
+        userisadmin=userisadmin(username), user=userident(username))
 
 
 @get('/file/<id:int>/:name')
@@ -772,7 +764,9 @@ def newnote(ticket_id):
     else:
         getdb().commit()
 
-    if len(toemail) > 0:
+    user = userident(username)
+
+    if len(toemail) > 0 and user['name'] and user['email']:
         title = tickettitle(ticket_id)
         subject = u'#%s - %s' % (ticket_id, title)
         body = u'''
@@ -782,10 +776,10 @@ def newnote(ticket_id):
 
 
 -- Este é um e-mail automático enviado pelo sistema ticket.
-        ''' % ( time.strftime('%Y-%m-%d %H:%M'), currentuser(), note )
+        ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
 
-        sendmail(getconfig('mail.from'), toemail, getconfig('mail.smtp'),
-            subject, body)
+        sendmail(u"%s <%s>" % (user['name'], user['email']), toemail,
+            getconfig('mail.smtp'), subject, body)
 
     return redirect('/%s' % ticket_id)
 
@@ -1195,6 +1189,17 @@ def validatesession(session_id):
     r = c.fetchone()
     if r: return True
     else: return False
+
+
+def userident(username):
+    ''' Retorna nome e e-mail de usuário '''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT name, email
+        FROM users
+        WHERE username=:username
+    ''', locals())
+    return dict(c.fetchone())
 
 
 def currentuser():
