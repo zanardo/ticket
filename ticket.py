@@ -506,7 +506,7 @@ def showticket(ticket_id):
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
-        userisadmin=userisadmin(username))
+        userisadmin=userisadmin(username), user=userident(username))
 
 
 @get('/file/<id:int>/:name')
@@ -764,7 +764,9 @@ def newnote(ticket_id):
     else:
         getdb().commit()
 
-    if len(toemail) > 0:
+    user = userident(username)
+
+    if len(toemail) > 0 and user['name'] and user['email']:
         title = tickettitle(ticket_id)
         subject = u'#%s - %s' % (ticket_id, title)
         body = u'''
@@ -774,10 +776,10 @@ def newnote(ticket_id):
 
 
 -- Este é um e-mail automático enviado pelo sistema ticket.
-        ''' % ( time.strftime('%Y-%m-%d %H:%M'), currentuser(), note )
+        ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
 
-        sendmail(getconfig('mail.from'), toemail, getconfig('mail.smtp'),
-            subject, body)
+        sendmail(user['email'], toemail,
+            getconfig('mail.smtp'), subject, body)
 
     return redirect('/%s' % ticket_id)
 
@@ -935,12 +937,15 @@ def admin():
     users = []
     c = getdb().cursor()
     c.execute('''
-        SELECT username, is_admin
+        SELECT username, is_admin, name, email
         FROM users
         ORDER BY username
     ''')
     for user in c:
-        users.append({'username': user[0], 'is_admin': user[1]})
+        user = dict(user)
+        user['name'] = user['name'] or ''
+        user['email'] = user['email'] or ''
+        users.append(user)
     config = {}
     c = getdb().cursor()
     c.execute('''
@@ -960,7 +965,7 @@ def saveconfig():
     '''Salva configurações'''
     config = {}
     for k in request.forms:
-        if k in ('mail.from', 'mail.smtp', 'file.maxsize'):
+        if k in ('mail.smtp', 'file.maxsize'):
             config[k] = getattr(request.forms, k)
     c = getdb().cursor()
     try:
@@ -994,6 +999,54 @@ def removeuser(username):
         c.execute('''
             DELETE FROM users
             WHERE username = :username
+        ''', locals())
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return redirect('/admin')
+
+
+@get('/admin/edit-user/:username')
+@view('edit-user')
+@requires_auth
+@requires_admin
+def edituser(username):
+    ''' Exibe tela de edição de usuários '''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT name, email
+        FROM users
+        WHERE username = :username
+    ''', locals())
+    r = c.fetchone()
+    name = ''
+    email = ''
+    if not r:
+        return 'usuário %s não encontrado!' % username
+    else:
+        name = r['name'] or ''
+        email = r['email'] or ''
+        return dict(user=username, name=name, email=email, username=currentuser(),
+            version=VERSION, userisadmin=userisadmin(currentuser()))
+
+
+@post('/admin/edit-user/:username')
+@requires_auth
+@requires_admin
+def editusersave(username):
+    ''' Salva os dados de um usuário editado '''
+    assert 'name' in request.forms
+    assert 'email' in request.forms
+    name = request.forms.name.strip()
+    email = request.forms.email.strip()
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            UPDATE users
+            SET name=:name, email=:email
+            WHERE username=:username
         ''', locals())
     except:
         getdb().rollback()
@@ -1136,6 +1189,17 @@ def validatesession(session_id):
     r = c.fetchone()
     if r: return True
     else: return False
+
+
+def userident(username):
+    ''' Retorna nome e e-mail de usuário '''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT name, email
+        FROM users
+        WHERE username=:username
+    ''', locals())
+    return dict(c.fetchone())
 
 
 def currentuser():

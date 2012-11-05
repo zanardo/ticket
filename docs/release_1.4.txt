@@ -5,6 +5,9 @@ Esta é a documentação de mudanças na versão 1.4 do sistema ticket.
 Funcionalidade para anexar arquivos aos tickets, com tamanho máximo
 configurável pelo administrador.
 
+Os e-mails automáticos agora são enviados utilizando como remetente o e-mail
+do usuário, e não mais um e-mail padrão para todos os usuários.
+
 
 2. Atualização da versão 1.3
 
