@@ -87,6 +87,25 @@
 					</td>
 				</tr>
 			</table>
+			%if blocks:
+				<blockquote>
+				%for blocked in blocks:
+					Bloqueia: #{{ blocked }} <a style="{{ blocks[blocked]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{blocked}}">{{ blocks[blocked]['title'] }}</a>
+					<br>
+				%end
+				</blockquote>
+				<p>
+			%end
+
+			%if depends:
+				<blockquote>
+				%for dep in depends:
+					Depende de: #{{ dep }} <a style="{{ depends[dep]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{dep}}">{{ depends[dep]['title'] }}</a>
+					<br>
+				%end
+				</blockquote>
+				<p>
+			%end
 			%for comment in comments:
 			<div class="comment">
 				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
@@ -306,7 +325,7 @@
 <div class="panel" id="dependencies" style="display: none">
 	<form method="post" action="/change-dependencies/{{ticket['id']}}"
 			enctype="multipart/form-data" name="fdeps">
-		<input type="text" name="text" value="{{' '.join([str(x) for x in list(deps)])}}" size="70" id="formdeps">
+		<input type="text" name="text" value="{{' '.join([str(x) for x in blocks.keys()])}}" size="70" id="formdeps">
 		<input type="submit" name="submit" value="Salvar dependências">
 		<p>
 		<div class="deschelp">

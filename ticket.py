@@ -500,7 +500,8 @@ def showticket(ticket_id):
     contacts = ticketcontacts(ticket_id)
 
     # Obtém dependências
-    deps = ticketblocks(ticket_id)
+    blocks = ticketblocks(ticket_id)
+    depends = ticketdepends(ticket_id)
 
     getdb().commit()
 
@@ -510,8 +511,7 @@ def showticket(ticket_id):
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
         userisadmin=userisadmin(username), user=userident(username),
-        deps=deps)
-
+        blocks=blocks, depends=depends)
 
 @get('/file/<id:int>/:name')
 @requires_auth
@@ -1339,15 +1339,30 @@ def tagsdesc():
 
 def ticketblocks(ticket_id):
     ''' Retorna quais ticket são bloqueados por um ticket '''
-    deps = []
+    deps = {}
     c = getdb().cursor()
     c.execute('''
-        SELECT blocks
-        FROM dependencies
-        WHERE ticket_id = :ticket_id
+        SELECT d.blocks, t.title, t.status
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.blocks
+        WHERE d.ticket_id = :ticket_id
     ''', locals())
     for r in c:
-        deps.append(r[0])
+        deps[r[0]] = { 'title': r[1], 'status': r[2] }
+    return deps
+
+def ticketdepends(ticket_id):
+    ''' Retorna quais ticket dependem de um ticket '''
+    deps = {}
+    c = getdb().cursor()
+    c.execute('''
+        SELECT d.ticket_id, t.title, t.status
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.ticket_id
+        WHERE d.blocks = :ticket_id
+    ''', locals())
+    for r in c:
+        deps[r[0]] = { 'title': r[1], 'status': r[2] }
     return deps
 
 def tickettags(ticket_id):
