@@ -89,7 +89,7 @@
 			</table>
 			%if blocks:
 				<blockquote>
-				%for blocked in blocks:
+				%for blocked in sorted(blocks):
 					Bloqueia: #{{ blocked }} <a style="{{ blocks[blocked]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{blocked}}">{{ blocks[blocked]['title'] }}</a>
 					<br>
 				%end
@@ -99,7 +99,7 @@
 
 			%if depends:
 				<blockquote>
-				%for dep in depends:
+				%for dep in sorted(depends):
 					Depende de: #{{ dep }} <a style="{{ depends[dep]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{dep}}">{{ depends[dep]['title'] }}</a>
 					<br>
 				%end
