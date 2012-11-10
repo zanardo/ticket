@@ -852,6 +852,21 @@ def newnote(ticket_id):
 def reopenticket(ticket_id):
     '''Reabre um ticket'''
     c = getdb().cursor()
+    # Verifica se existem tickets bloqueados por este ticket
+    # que estão fechados.
+    c.execute('''
+        SELECT d.blocks
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.blocks
+        WHERE d.ticket_id = :ticket_id
+          AND t.status = 1
+    ''', locals())
+    blocks = []
+    for r in c:
+        blocks.append(r[0])
+    if len(blocks) > 0:
+        return 'os seguintes tickets são bloqueados por este ticket e estão fechados: %s' % \
+            ' '.join([str(x) for x in blocks])
     username = currentuser()
     try:
         c.execute('''
