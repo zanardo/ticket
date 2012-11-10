@@ -306,7 +306,7 @@
 <div class="panel" id="dependencies" style="display: none">
 	<form method="post" action="/change-dependencies/{{ticket['id']}}"
 			enctype="multipart/form-data" name="fdeps">
-		<input type="text" name="text" value="{{' '.join(list(sorted(deps)))}}" size="70" id="formdeps">
+		<input type="text" name="text" value="{{' '.join([str(x) for x in list(deps)])}}" size="70" id="formdeps">
 		<input type="submit" name="submit" value="Salvar dependências">
 		<p>
 		<div class="deschelp">

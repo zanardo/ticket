@@ -671,6 +671,49 @@ def changetags(ticket_id):
     return redirect('/%s' % ticket_id)
 
 
+@post('/change-dependencies/<ticket_id:int>')
+@requires_auth
+def changedependencies(ticket_id):
+    ''' Altera dependências de um ticket '''
+    assert 'text' in request.forms
+    deps = request.forms.text
+    deps = deps.strip().split()
+    # Validando dependências
+    for dep in deps:
+        # Valida sintaxe
+        if not re.match(r'^\d+$', dep):
+            return u'sintaxe inválida para dependência: %s' % dep
+        # Valida se não é o mesmo ticket
+        dep = int(dep)
+        if dep == ticket_id:
+            return u'ticket não pode bloquear ele mesmo'
+        # Valida se ticket existe
+        c = getdb().cursor()
+        c.execute('''SELECT count(*) FROM tickets WHERE id=:dep''', locals())
+        if c.fetchone()[0] == 0:
+            return u'ticket %s não existe' % dep
+        # Valida dependência circular
+        if ticket_id in ticketblocks(dep):
+            return u'dependência circular: %s' % dep
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            DELETE FROM dependencies
+            WHERE ticket_id = :ticket_id
+        ''', locals())
+        for dep in deps:
+            c.execute('''
+                INSERT INTO dependencies ( ticket_id, blocks )
+                VALUES ( :ticket_id, :dep )
+            ''', locals())
+    except:
+        getdb().rollback()
+    else:
+        getdb().commit()
+
+    return redirect('/%s' % ticket_id)
+
+
 @post('/change-contacts/<ticket_id:int>')
 @requires_auth
 def changecontacts(ticket_id):
