@@ -34,6 +34,11 @@ try:
 		ALTER TABLE users ADD COLUMN email text;
 		ALTER TABLE users ADD COLUMN name text;
 		DELETE FROM config WHERE key = 'mail.from';
+		CREATE TABLE dependencies (
+			ticket_id integer NOT NULL,
+			blocks integer NOT NULL,
+			PRIMARY KEY(ticket_id, blocks)
+		);
 	''')
 except:
 	db.rollback()

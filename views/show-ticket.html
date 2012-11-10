@@ -87,6 +87,25 @@
 					</td>
 				</tr>
 			</table>
+			%if blocks:
+				<blockquote>
+				%for blocked in sorted(blocks):
+					Bloqueia: #{{ blocked }} <a style="{{ blocks[blocked]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{blocked}}">{{ blocks[blocked]['title'] }}</a>
+					<br>
+				%end
+				</blockquote>
+				<p>
+			%end
+
+			%if depends:
+				<blockquote>
+				%for dep in sorted(depends):
+					Depende de: #{{ dep }} <a style="{{ depends[dep]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{dep}}">{{ depends[dep]['title'] }}</a>
+					<br>
+				%end
+				</blockquote>
+				<p>
+			%end
 			%for comment in comments:
 			<div class="comment">
 				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
@@ -166,6 +185,9 @@
 			<a class="tab" onclick="return showPanel(this, 'security');">
 				Segurança</a>
 			%end
+				|
+			<a class="tab" onclick="return showPanel(this, 'dependencies');">
+				Dependências</a>
 		</td>
 	</tr>
 </table>
@@ -299,4 +321,16 @@
 		<a href="/change-admin-only/{{ticket['id']}}/1">Tornar visível apenas para
 			administradores</a>
 	%end
+</div>
+<div class="panel" id="dependencies" style="display: none">
+	<form method="post" action="/change-dependencies/{{ticket['id']}}"
+			enctype="multipart/form-data" name="fdeps">
+		<input type="text" name="text" value="{{' '.join([str(x) for x in blocks.keys()])}}" size="70" id="formdeps">
+		<input type="submit" name="submit" value="Salvar dependências">
+		<p>
+		<div class="deschelp">
+			Listar os tickets que são bloqueados por este ticket, com seus números separados por espaços.
+		</div>
+		<p>
+	</form>
 </div>

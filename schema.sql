@@ -91,6 +91,12 @@ CREATE TABLE files (
 );
 CREATE INDEX idx_files_ticket_id ON files ( ticket_id );
 
+CREATE TABLE dependencies (
+	ticket_id integer NOT NULL,
+	blocks integer NOT NULL,
+	PRIMARY KEY(ticket_id, blocks)
+);
+
 CREATE VIRTUAL TABLE search USING fts3 ( text );
 
 INSERT INTO users ( username, password, is_admin )

@@ -8,6 +8,9 @@ configurável pelo administrador.
 Os e-mails automáticos agora são enviados utilizando como remetente o e-mail
 do usuário, e não mais um e-mail padrão para todos os usuários.
 
+Tickets podem ter relação de dependência, com ticket bloqueando outros tickets
+ou sendo bloqueado por eles.
+
 
 2. Atualização da versão 1.3
 

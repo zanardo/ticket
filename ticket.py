@@ -499,6 +499,10 @@ def showticket(ticket_id):
     # Obtém contatos
     contacts = ticketcontacts(ticket_id)
 
+    # Obtém dependências
+    blocks = ticketblocks(ticket_id)
+    depends = ticketdepends(ticket_id)
+
     getdb().commit()
 
     # Renderiza template
@@ -506,8 +510,8 @@ def showticket(ticket_id):
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
-        userisadmin=userisadmin(username), user=userident(username))
-
+        userisadmin=userisadmin(username), user=userident(username),
+        blocks=blocks, depends=depends)
 
 @get('/file/<id:int>/:name')
 @requires_auth
@@ -540,6 +544,22 @@ def getfile(id, name):
 def closeticket(ticket_id):
     '''Fecha um ticket'''
     c = getdb().cursor()
+    # Verifica se existem tickets que bloqueiam este
+    # ticket que ainda estão abertos.
+    c.execute('''
+        SELECT d.ticket_id
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.ticket_id
+        WHERE d.blocks = :ticket_id
+          AND t.status = 0
+    ''', locals())
+    blocks = []
+    for r in c:
+        blocks.append(r[0])
+    if len(blocks) > 0:
+        return 'os seguintes tickets bloqueiam este ticket e estão em aberto: %s' % \
+            ' '.join([str(x) for x in blocks])
+
     username = currentuser()
     try:
         c.execute('''
@@ -658,6 +678,49 @@ def changetags(ticket_id):
             c.execute('''
                 INSERT INTO tags ( ticket_id, tag )
                 VALUES ( :ticket_id, :tag )
+            ''', locals())
+    except:
+        getdb().rollback()
+    else:
+        getdb().commit()
+
+    return redirect('/%s' % ticket_id)
+
+
+@post('/change-dependencies/<ticket_id:int>')
+@requires_auth
+def changedependencies(ticket_id):
+    ''' Altera dependências de um ticket '''
+    assert 'text' in request.forms
+    deps = request.forms.text
+    deps = deps.strip().split()
+    # Validando dependências
+    for dep in deps:
+        # Valida sintaxe
+        if not re.match(r'^\d+$', dep):
+            return u'sintaxe inválida para dependência: %s' % dep
+        # Valida se não é o mesmo ticket
+        dep = int(dep)
+        if dep == ticket_id:
+            return u'ticket não pode bloquear ele mesmo'
+        # Valida se ticket existe
+        c = getdb().cursor()
+        c.execute('''SELECT count(*) FROM tickets WHERE id=:dep''', locals())
+        if c.fetchone()[0] == 0:
+            return u'ticket %s não existe' % dep
+        # Valida dependência circular
+        if ticket_id in ticketblocks(dep):
+            return u'dependência circular: %s' % dep
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            DELETE FROM dependencies
+            WHERE ticket_id = :ticket_id
+        ''', locals())
+        for dep in deps:
+            c.execute('''
+                INSERT INTO dependencies ( ticket_id, blocks )
+                VALUES ( :ticket_id, :dep )
             ''', locals())
     except:
         getdb().rollback()
@@ -789,6 +852,21 @@ def newnote(ticket_id):
 def reopenticket(ticket_id):
     '''Reabre um ticket'''
     c = getdb().cursor()
+    # Verifica se existem tickets bloqueados por este ticket
+    # que estão fechados.
+    c.execute('''
+        SELECT d.blocks
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.blocks
+        WHERE d.ticket_id = :ticket_id
+          AND t.status = 1
+    ''', locals())
+    blocks = []
+    for r in c:
+        blocks.append(r[0])
+    if len(blocks) > 0:
+        return 'os seguintes tickets são bloqueados por este ticket e estão fechados: %s' % \
+            ' '.join([str(x) for x in blocks])
     username = currentuser()
     try:
         c.execute('''
@@ -1274,6 +1352,33 @@ def tagsdesc():
         }
     return tagdesc
 
+def ticketblocks(ticket_id):
+    ''' Retorna quais ticket são bloqueados por um ticket '''
+    deps = {}
+    c = getdb().cursor()
+    c.execute('''
+        SELECT d.blocks, t.title, t.status
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.blocks
+        WHERE d.ticket_id = :ticket_id
+    ''', locals())
+    for r in c:
+        deps[r[0]] = { 'title': r[1], 'status': r[2] }
+    return deps
+
+def ticketdepends(ticket_id):
+    ''' Retorna quais ticket dependem de um ticket '''
+    deps = {}
+    c = getdb().cursor()
+    c.execute('''
+        SELECT d.ticket_id, t.title, t.status
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.ticket_id
+        WHERE d.blocks = :ticket_id
+    ''', locals())
+    for r in c:
+        deps[r[0]] = { 'title': r[1], 'status': r[2] }
+    return deps
 
 def tickettags(ticket_id):
     '''Retorna tags de um ticket'''
