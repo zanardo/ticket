@@ -166,6 +166,9 @@
 			<a class="tab" onclick="return showPanel(this, 'security');">
 				Segurança</a>
 			%end
+				|
+			<a class="tab" onclick="return showPanel(this, 'dependencies');">
+				Dependências</a>
 		</td>
 	</tr>
 </table>
@@ -299,4 +302,16 @@
 		<a href="/change-admin-only/{{ticket['id']}}/1">Tornar visível apenas para
 			administradores</a>
 	%end
+</div>
+<div class="panel" id="dependencies" style="display: none">
+	<form method="post" action="/change-dependencies/{{ticket['id']}}"
+			enctype="multipart/form-data" name="fdeps">
+		<input type="text" name="text" value="{{' '.join(list(sorted(deps)))}}" size="70" id="formdeps">
+		<input type="submit" name="submit" value="Salvar dependências">
+		<p>
+		<div class="deschelp">
+			Listar os tickets que são bloqueados por este ticket, com seus números separados por espaços.
+		</div>
+		<p>
+	</form>
 </div>

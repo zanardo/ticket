@@ -499,6 +499,9 @@ def showticket(ticket_id):
     # Obtém contatos
     contacts = ticketcontacts(ticket_id)
 
+    # Obtém dependências
+    deps = ticketblocks(ticket_id)
+
     getdb().commit()
 
     # Renderiza template
@@ -506,7 +509,8 @@ def showticket(ticket_id):
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
-        userisadmin=userisadmin(username), user=userident(username))
+        userisadmin=userisadmin(username), user=userident(username),
+        deps=deps)
 
 
 @get('/file/<id:int>/:name')
@@ -1274,6 +1278,18 @@ def tagsdesc():
         }
     return tagdesc
 
+def ticketblocks(ticket_id):
+    ''' Retorna quais ticket são bloqueados por um ticket '''
+    deps = []
+    c = getdb().cursor()
+    c.execute('''
+        SELECT blocks
+        FROM dependencies
+        WHERE ticket_id = :ticket_id
+    ''', locals())
+    for r in c:
+        deps.append(r[0])
+    return deps
 
 def tickettags(ticket_id):
     '''Retorna tags de um ticket'''
