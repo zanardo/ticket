@@ -544,6 +544,22 @@ def getfile(id, name):
 def closeticket(ticket_id):
     '''Fecha um ticket'''
     c = getdb().cursor()
+    # Verifica se existem tickets que bloqueiam este
+    # ticket que ainda estão abertos.
+    c.execute('''
+        SELECT d.ticket_id
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.ticket_id
+        WHERE d.blocks = :ticket_id
+          AND t.status = 0
+    ''', locals())
+    blocks = []
+    for r in c:
+        blocks.append(r[0])
+    if len(blocks) > 0:
+        return 'os seguintes tickets bloqueiam este ticket e estão em aberto: %s' % \
+            ' '.join([str(x) for x in blocks])
+
     username = currentuser()
     try:
         c.execute('''
