@@ -1,4 +1,4 @@
-var panels = new Array('note', 'prio', 'tags', 'title', 'minutes', 'datedue', 'contacts', 'security');
+var panels = new Array('note', 'prio', 'tags', 'title', 'minutes', 'file', 'datedue', 'contacts', 'security', 'dependencies');
 var selectedTab = null;
 
 function showPanel(tab, name) {
@@ -20,6 +20,8 @@ function showPanel(tab, name) {
         document.getElementById('formcontacts').focus();
     } else if (name == 'datedue') {
         document.getElementById('formdatedue').focus()
+    } else if (name == 'dependencies') {
+        document.getElementById('formdeps').focus()
     }
 
     return false;

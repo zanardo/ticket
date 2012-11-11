@@ -7,10 +7,12 @@
 </form>
 <p>
 <table>
-	<th>usuário</th><th>administrador</th><th>ações</th>
+	<th>usuário</th><th>nome</th><th>e-mail</th><th>administrador</th><th>ações</th>
 	%for user in users:
 		<tr>
 			<td> {{user['username']}} </td>
+			<td> {{user['name']}} </td>
+			<td> {{user['email']}} </td>
 			<td>
 				%if user['is_admin']:
 					sim
@@ -19,6 +21,7 @@
 				%end
 			</td>
 			<td>
+				<a href="/admin/edit-user/{{user['username']}}">editar</a> 
 				%if username != user['username']:
 					<a href="/admin/remove-user/{{user['username']}}">excluir</a>
 					<a href="/admin/force-new-password/{{user['username']}}">forçar nova senha</a>
@@ -35,14 +38,14 @@
 
 <h2>Configurações</h2>
 <form method="post" action="/admin/save-config" enctype="multipart/form-data">
-	<input type="text" size="40" name="mail.from" value="{{ config['mail.from'] }}">
-	<tt>mail.from</tt> (Endereço de e-mail do remetente)
-	<p>
-
 	<input type="text" size="40" name="mail.smtp" value="{{ config['mail.smtp'] }}">
 	<tt>mail.smtp</tt> (Servidor SMTP para envio de e-mail)
-
 	<p>
+
+	<input type="text" size="40" name="file.maxsize" value="{{ config['file.maxsize'] }}">
+	<tt>file.maxsize</tt> (Tamanho máximo em bytes de arquivos anexos)
+	<p>
+
 	<input type="submit" name="submit" value="salvar configurações">
 </form>
 

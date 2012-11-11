@@ -23,6 +23,7 @@ except ImportError:
 import re
 import os
 import sys
+import zlib
 import time
 import getopt
 import random
@@ -31,6 +32,7 @@ import smtplib
 import os.path
 import sqlite3
 import datetime
+import mimetypes
 
 from uuid import uuid4
 from hashlib import sha1
@@ -39,7 +41,7 @@ from email.mime.text import MIMEText
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
-VERSION = '1.3'
+VERSION = '1.4'
 
 # Cores de fundo das prioridades
 priocolor = {
@@ -430,41 +432,50 @@ def showticket(ticket_id):
 
     comments = []
 
+    # Mudanças de status
     c.execute('''
-        SELECT datecreated
-            , user
-            , CASE status WHEN \'close\' THEN \'fechado\' WHEN \'reopen\' THEN \'reaberto\' END AS comment
-            , 1 AS negrito
-            , 0 AS minutes
-      FROM statustrack
-      WHERE ticket_id = :ticket_id
+        SELECT datecreated, user, status
+        FROM statustrack
+        WHERE ticket_id = :ticket_id
     ''', locals())
     for r in c:
-        comments.append(dict(r))
+        reg = dict(r)
+        reg['type'] = 'statustrack'
+        comments.append(reg)
+
+    # Comentários
     c.execute('''
-          SELECT datecreated
-            , user
-            , comment
-            , 0 AS negrito
-            , 0 AS minutes
-          FROM comments
-          WHERE ticket_id = :ticket_id        
+        SELECT datecreated, user, comment
+        FROM comments
+        WHERE ticket_id = :ticket_id        
     ''', locals())
     for r in c:
-        cs = dict(r)
-        cs['comment'] = sanitizecomment(cs['comment'])
-        comments.append(cs)
+        reg = dict(r)
+        reg['comment'] = sanitizecomment(reg['comment'])
+        reg['type'] = 'comments'
+        comments.append(reg)
+
+    # Registro de tempo
     c.execute('''
-          SELECT datecreated
-            , user
-            , minutes || \' minutos trabalhados\' AS comment
-            , 1 AS negrito
-            , minutes
-          FROM timetrack
-          WHERE ticket_id = :ticket_id 
+        SELECT datecreated, user, minutes
+        FROM timetrack
+        WHERE ticket_id = :ticket_id 
     ''', locals())
     for r in c:
-        comments.append(dict(r))
+        reg = dict(r)
+        reg['type'] = 'timetrack'
+        comments.append(reg)
+
+    # Arquivos anexos
+    c.execute('''
+        SELECT datecreated, user, name, id
+        FROM files
+        WHERE ticket_id = :ticket_id 
+    ''', locals())
+    for r in c:
+        reg = dict(r)
+        reg['type'] = 'files'
+        comments.append(reg)
 
     # Ordenando comentários por data
     comments = sorted(comments, key=lambda comments: comments['datecreated'])
@@ -488,6 +499,10 @@ def showticket(ticket_id):
     # Obtém contatos
     contacts = ticketcontacts(ticket_id)
 
+    # Obtém dependências
+    blocks = ticketblocks(ticket_id)
+    depends = ticketdepends(ticket_id)
+
     getdb().commit()
 
     # Renderiza template
@@ -495,7 +510,33 @@ def showticket(ticket_id):
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
         priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
-        userisadmin=userisadmin(username))
+        userisadmin=userisadmin(username), user=userident(username),
+        blocks=blocks, depends=depends)
+
+@get('/file/<id:int>/:name')
+@requires_auth
+def getfile(id, name):
+    '''Retorna um arquivo em anexo'''
+    mime = mimetypes.guess_type(name)[0]
+    if mime is None:
+        mime = 'application/octet-stream'
+    c = getdb().cursor()
+    c.execute('''
+        SELECT files.ticket_id AS ticket_id
+            , files.size AS size
+            , files.contents AS contents
+            , tickets.admin_only AS admin_only
+        FROM files
+            JOIN tickets ON tickets.id = files.ticket_id
+        WHERE files.id = :id
+    ''', locals())
+    row = c.fetchone()
+    blob = zlib.decompress(row['contents'])
+    if not userisadmin(currentuser()) and row['admin_only'] == 1:
+        return 'você não tem permissão para acessar este recurso!'
+    else:
+        response.content_type = mime
+        return blob
 
 
 @post('/close-ticket/<ticket_id:int>')
@@ -503,6 +544,22 @@ def showticket(ticket_id):
 def closeticket(ticket_id):
     '''Fecha um ticket'''
     c = getdb().cursor()
+    # Verifica se existem tickets que bloqueiam este
+    # ticket que ainda estão abertos.
+    c.execute('''
+        SELECT d.ticket_id
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.ticket_id
+        WHERE d.blocks = :ticket_id
+          AND t.status = 0
+    ''', locals())
+    blocks = []
+    for r in c:
+        blocks.append(r[0])
+    if len(blocks) > 0:
+        return 'os seguintes tickets bloqueiam este ticket e estão em aberto: %s' % \
+            ' '.join([str(x) for x in blocks])
+
     username = currentuser()
     try:
         c.execute('''
@@ -630,6 +687,49 @@ def changetags(ticket_id):
     return redirect('/%s' % ticket_id)
 
 
+@post('/change-dependencies/<ticket_id:int>')
+@requires_auth
+def changedependencies(ticket_id):
+    ''' Altera dependências de um ticket '''
+    assert 'text' in request.forms
+    deps = request.forms.text
+    deps = deps.strip().split()
+    # Validando dependências
+    for dep in deps:
+        # Valida sintaxe
+        if not re.match(r'^\d+$', dep):
+            return u'sintaxe inválida para dependência: %s' % dep
+        # Valida se não é o mesmo ticket
+        dep = int(dep)
+        if dep == ticket_id:
+            return u'ticket não pode bloquear ele mesmo'
+        # Valida se ticket existe
+        c = getdb().cursor()
+        c.execute('''SELECT count(*) FROM tickets WHERE id=:dep''', locals())
+        if c.fetchone()[0] == 0:
+            return u'ticket %s não existe' % dep
+        # Valida dependência circular
+        if ticket_id in ticketblocks(dep):
+            return u'dependência circular: %s' % dep
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            DELETE FROM dependencies
+            WHERE ticket_id = :ticket_id
+        ''', locals())
+        for dep in deps:
+            c.execute('''
+                INSERT INTO dependencies ( ticket_id, blocks )
+                VALUES ( :ticket_id, :dep )
+            ''', locals())
+    except:
+        getdb().rollback()
+    else:
+        getdb().commit()
+
+    return redirect('/%s' % ticket_id)
+
+
 @post('/change-contacts/<ticket_id:int>')
 @requires_auth
 def changecontacts(ticket_id):
@@ -727,7 +827,9 @@ def newnote(ticket_id):
     else:
         getdb().commit()
 
-    if len(toemail) > 0:
+    user = userident(username)
+
+    if len(toemail) > 0 and user['name'] and user['email']:
         title = tickettitle(ticket_id)
         subject = u'#%s - %s' % (ticket_id, title)
         body = u'''
@@ -737,10 +839,10 @@ def newnote(ticket_id):
 
 
 -- Este é um e-mail automático enviado pelo sistema ticket.
-        ''' % ( time.strftime('%Y-%m-%d %H:%M'), currentuser(), note )
+        ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
 
-        sendmail(getconfig('mail.from'), toemail, getconfig('mail.smtp'),
-            subject, body)
+        sendmail(user['email'], toemail,
+            getconfig('mail.smtp'), subject, body)
 
     return redirect('/%s' % ticket_id)
 
@@ -750,6 +852,21 @@ def newnote(ticket_id):
 def reopenticket(ticket_id):
     '''Reabre um ticket'''
     c = getdb().cursor()
+    # Verifica se existem tickets bloqueados por este ticket
+    # que estão fechados.
+    c.execute('''
+        SELECT d.blocks
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.blocks
+        WHERE d.ticket_id = :ticket_id
+          AND t.status = 1
+    ''', locals())
+    blocks = []
+    for r in c:
+        blocks.append(r[0])
+    if len(blocks) > 0:
+        return 'os seguintes tickets são bloqueados por este ticket e estão fechados: %s' % \
+            ' '.join([str(x) for x in blocks])
     username = currentuser()
     try:
         c.execute('''
@@ -787,6 +904,46 @@ def changepriority(ticket_id):
         c.execute('''
             UPDATE tickets
             SET priority = :priority
+            WHERE id = :ticket_id
+        ''', locals())
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+
+    return redirect('/%s' % ticket_id)
+
+
+@post('/upload-file/<ticket_id:int>')
+@requires_auth
+def uploadfile(ticket_id):
+    '''Anexa um arquivo ao ticket'''
+    if not 'file' in request.files:
+        return 'arquivo inválido'
+    filename = request.files.file.filename.decode('utf-8')
+    maxfilesize = int(getconfig('file.maxsize'))
+    blob = ''
+    filesize = 0
+    while True:
+        chunk = request.files.file.file.read(4096)
+        if not chunk: break
+        chunksize = len(chunk)
+        if filesize + chunksize > maxfilesize:
+            return 'erro: arquivo maior do que máximo permitido'
+        filesize += chunksize
+        blob += chunk
+    blob = buffer(zlib.compress(blob))
+    username = currentuser()
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            INSERT INTO files ( ticket_id, name, user, size, contents )
+            VALUES ( :ticket_id, :filename, :username, :filesize, :blob )
+        ''', locals())
+        c.execute('''
+            UPDATE tickets
+            SET datemodified = datetime('now', 'localtime')
             WHERE id = :ticket_id
         ''', locals())
     except:
@@ -858,12 +1015,15 @@ def admin():
     users = []
     c = getdb().cursor()
     c.execute('''
-        SELECT username, is_admin
+        SELECT username, is_admin, name, email
         FROM users
         ORDER BY username
     ''')
     for user in c:
-        users.append({'username': user[0], 'is_admin': user[1]})
+        user = dict(user)
+        user['name'] = user['name'] or ''
+        user['email'] = user['email'] or ''
+        users.append(user)
     config = {}
     c = getdb().cursor()
     c.execute('''
@@ -883,7 +1043,7 @@ def saveconfig():
     '''Salva configurações'''
     config = {}
     for k in request.forms:
-        if k in ('mail.from', 'mail.smtp'):
+        if k in ('mail.smtp', 'file.maxsize'):
             config[k] = getattr(request.forms, k)
     c = getdb().cursor()
     try:
@@ -917,6 +1077,54 @@ def removeuser(username):
         c.execute('''
             DELETE FROM users
             WHERE username = :username
+        ''', locals())
+    except:
+        getdb().rollback()
+        raise
+    else:
+        getdb().commit()
+        return redirect('/admin')
+
+
+@get('/admin/edit-user/:username')
+@view('edit-user')
+@requires_auth
+@requires_admin
+def edituser(username):
+    ''' Exibe tela de edição de usuários '''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT name, email
+        FROM users
+        WHERE username = :username
+    ''', locals())
+    r = c.fetchone()
+    name = ''
+    email = ''
+    if not r:
+        return 'usuário %s não encontrado!' % username
+    else:
+        name = r['name'] or ''
+        email = r['email'] or ''
+        return dict(user=username, name=name, email=email, username=currentuser(),
+            version=VERSION, userisadmin=userisadmin(currentuser()))
+
+
+@post('/admin/edit-user/:username')
+@requires_auth
+@requires_admin
+def editusersave(username):
+    ''' Salva os dados de um usuário editado '''
+    assert 'name' in request.forms
+    assert 'email' in request.forms
+    name = request.forms.name.strip()
+    email = request.forms.email.strip()
+    c = getdb().cursor()
+    try:
+        c.execute('''
+            UPDATE users
+            SET name=:name, email=:email
+            WHERE username=:username
         ''', locals())
     except:
         getdb().rollback()
@@ -1061,6 +1269,17 @@ def validatesession(session_id):
     else: return False
 
 
+def userident(username):
+    ''' Retorna nome e e-mail de usuário '''
+    c = getdb().cursor()
+    c.execute('''
+        SELECT name, email
+        FROM users
+        WHERE username=:username
+    ''', locals())
+    return dict(c.fetchone())
+
+
 def currentuser():
     '''Retorna usuário corrente'''
     session_id = request.get_cookie('ticket_session')
@@ -1133,6 +1352,33 @@ def tagsdesc():
         }
     return tagdesc
 
+def ticketblocks(ticket_id):
+    ''' Retorna quais ticket são bloqueados por um ticket '''
+    deps = {}
+    c = getdb().cursor()
+    c.execute('''
+        SELECT d.blocks, t.title, t.status, t.admin_only
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.blocks
+        WHERE d.ticket_id = :ticket_id
+    ''', locals())
+    for r in c:
+        deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
+    return deps
+
+def ticketdepends(ticket_id):
+    ''' Retorna quais ticket dependem de um ticket '''
+    deps = {}
+    c = getdb().cursor()
+    c.execute('''
+        SELECT d.ticket_id, t.title, t.status, t.admin_only
+        FROM dependencies AS d
+        INNER JOIN tickets AS t ON t.id = d.ticket_id
+        WHERE d.blocks = :ticket_id
+    ''', locals())
+    for r in c:
+        deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
+    return deps
 
 def tickettags(ticket_id):
     '''Retorna tags de um ticket'''

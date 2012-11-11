@@ -64,7 +64,9 @@ CREATE INDEX idx_contacts_ticket_id ON contacts ( ticket_id );
 CREATE TABLE users (
 	username text NOT NULL PRIMARY KEY,
 	password text NOT NULL,
-	is_admin int
+	is_admin int,
+	email text,
+	name text
 );
 
 CREATE TABLE sessions (
@@ -78,12 +80,29 @@ CREATE TABLE config (
 	value text NOT NULL
 );
 
+CREATE TABLE files (
+	id integer NOT NULL PRIMARY KEY,
+	ticket_id integer NOT NULL,
+	name text NOT NULL,
+	datecreated timestamp NOT NULL DEFAULT ( datetime('now', 'localtime') ),
+	user text NOT NULL,
+	size integer NOT NULL,
+	contents blob NOT NULL
+);
+CREATE INDEX idx_files_ticket_id ON files ( ticket_id );
+
+CREATE TABLE dependencies (
+	ticket_id integer NOT NULL,
+	blocks integer NOT NULL,
+	PRIMARY KEY(ticket_id, blocks)
+);
+
 CREATE VIRTUAL TABLE search USING fts3 ( text );
 
 INSERT INTO users ( username, password, is_admin )
 VALUES ( 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1 );
 
 INSERT INTO config ( key, value ) VALUES ( 'mail.smtp', '' );
-INSERT INTO config ( key, value ) VALUES ( 'mail.from', '' );
+INSERT INTO config ( key, value ) VALUES ( 'file.maxsize', '128000' );
 
 COMMIT;

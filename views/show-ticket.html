@@ -87,9 +87,33 @@
 					</td>
 				</tr>
 			</table>
+			%if blocks:
+				<blockquote>
+				%for blocked in sorted(blocks):
+					%if not userisadmin and blocks[blocked]['admin_only']:
+					%	blocks[blocked]['title'] = "(acesso restrito)"
+					%end
+					Bloqueia: #{{ blocked }} <a style="{{ blocks[blocked]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{blocked}}">{{ blocks[blocked]['title'] }}</a>
+					<br>
+				%end
+				</blockquote>
+				<p>
+			%end
+
+			%if depends:
+				<blockquote>
+				%for dep in sorted(depends):
+					%if not userisadmin and depends[dep]['admin_only']:
+					%	depends[dep]['title'] = "(acesso restrito)"
+					%end
+					Depende de: #{{ dep }} <a style="{{ depends[dep]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{dep}}">{{ depends[dep]['title'] }}</a>
+					<br>
+				%end
+				</blockquote>
+				<p>
+			%end
 			%for comment in comments:
 			<div class="comment">
-				%minutes = comment['minutes']
 				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
 				%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
 				<table border="0">
@@ -101,20 +125,27 @@
 							{{ comment['user']}}
 						</td>
 						<td class="commentevent">
-							%if comment['minutes'] > 0:
+							%if comment['type'] == 'timetrack':
 								%minutes = comment['minutes']
 								%hours = minutes / 60
 								%minutes = minutes % 60
-								%comment['comment'] = "%dh%dm" % ( hours, minutes )
+								%comment['comment'] = "%dh%dm trabalhados" % ( hours, minutes )
 								<img src="/static/clock-icon.png" class="icon" title="tempo trabalhado">
 								{{ comment['comment'] }}
-							%elif comment['negrito'] == 1:
-								{{ comment['comment'] }}
+							%elif comment['type'] == 'statustrack':
+								%if comment['status'] == 'close':
+									fechado
+								%elif comment['status'] == 'reopen':
+									reaberto
+								%end
+							%elif comment['type'] == 'files':
+								<img src="/static/attach-icon.png" class="icon" title="arquivo anexado">
+								anexado <a href="/file/{{comment['id']}}/{{ comment['name'] }}">{{ comment['name'] }}</a>
 							%end
 						</td>
 					</tr>
 				</table>
-				%if comment['negrito'] == 0:
+				%if comment['type'] == 'comments':
 					<div class="commenttext">
 						{{! comment['comment'] }}
 					</div>
@@ -147,6 +178,8 @@
 				Tempo</a> 
 			%if ticket['status'] == 0:
 				| 
+			<a class="tab" onclick="return showPanel(this, 'file');">
+				Anexo</a>				| 
 			<a class="tab" onclick="return showPanel(this, 'datedue');">
 				Previsão</a>
 				| 
@@ -158,6 +191,9 @@
 			<a class="tab" onclick="return showPanel(this, 'security');">
 				Segurança</a>
 			%end
+				|
+			<a class="tab" onclick="return showPanel(this, 'dependencies');">
+				Dependências</a>
 		</td>
 	</tr>
 </table>
@@ -165,16 +201,18 @@
 <div class="panel" id="note" style="display: none">
 	<form method="post" action="/new-note/{{ticket['id']}}" enctype="multipart/form-data">
 		<textarea name="text" rows="10" cols="70" id="formnote"></textarea>
-		<p>
-			<div class="deschelp">
-				Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):
-			</div>
-		<p>
-		%contactsstr = ''
-		%for contact in contacts:
-			%contactsstr += "#%s\r\n" % contact
+		%if user['name'] and user['email']:
+			<p>
+				<div class="deschelp">
+					Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):
+				</div>
+			<p>
+			%contactsstr = ''
+			%for contact in contacts:
+				%contactsstr += "#%s\r\n" % contact
+			%end
+			<textarea name="contacts" rows="5" cols="50">{{contactsstr}}</textarea>
 		%end
-		<textarea name="contacts" rows="5" cols="50">{{contactsstr}}</textarea>
 		<p>
 		<input type="submit" name="submit" value="Adicionar nota">
 	</form>
@@ -245,6 +283,18 @@
 		<br>
 	%end
 </div>
+<div class="panel" id="file" style="display: none">
+	<form method="post" action="/upload-file/{{ticket['id']}}"
+			enctype="multipart/form-data">
+		<input type="file" name="file" size="30">
+		<p>
+		<input type="submit" name="submit" value="Enviar anexo">
+		<p>
+		<div class="deschelp">
+			É possível enviar um arquivo em anexo a este ticket, como por exemplo uma imagem, um script, etc.
+		</div>
+	</form>
+</div>
 <div class="panel" id="datedue" style="display: none">
 	<form method="post" action="/change-datedue/{{ticket['id']}}"
 			enctype="multipart/form-data" name="fdatedue">
@@ -277,4 +327,16 @@
 		<a href="/change-admin-only/{{ticket['id']}}/1">Tornar visível apenas para
 			administradores</a>
 	%end
+</div>
+<div class="panel" id="dependencies" style="display: none">
+	<form method="post" action="/change-dependencies/{{ticket['id']}}"
+			enctype="multipart/form-data" name="fdeps">
+		<input type="text" name="text" value="{{' '.join([str(x) for x in blocks.keys()])}}" size="70" id="formdeps">
+		<input type="submit" name="submit" value="Salvar dependências">
+		<p>
+		<div class="deschelp">
+			Listar os tickets que são bloqueados por este ticket, com seus números separados por espaços.
+		</div>
+		<p>
+	</form>
 </div>
