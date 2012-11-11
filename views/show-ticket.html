@@ -90,6 +90,9 @@
 			%if blocks:
 				<blockquote>
 				%for blocked in sorted(blocks):
+					%if not userisadmin and blocks[blocked]['admin_only']:
+					%	blocks[blocked]['title'] = "(acesso restrito)"
+					%end
 					Bloqueia: #{{ blocked }} <a style="{{ blocks[blocked]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{blocked}}">{{ blocks[blocked]['title'] }}</a>
 					<br>
 				%end
@@ -100,6 +103,9 @@
 			%if depends:
 				<blockquote>
 				%for dep in sorted(depends):
+					%if not userisadmin and depends[dep]['admin_only']:
+					%	depends[dep]['title'] = "(acesso restrito)"
+					%end
 					Depende de: #{{ dep }} <a style="{{ depends[dep]['status'] == 1 and 'text-decoration:line-through;' }}" href="/{{dep}}">{{ depends[dep]['title'] }}</a>
 					<br>
 				%end

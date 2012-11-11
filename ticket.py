@@ -1357,13 +1357,13 @@ def ticketblocks(ticket_id):
     deps = {}
     c = getdb().cursor()
     c.execute('''
-        SELECT d.blocks, t.title, t.status
+        SELECT d.blocks, t.title, t.status, t.admin_only
         FROM dependencies AS d
         INNER JOIN tickets AS t ON t.id = d.blocks
         WHERE d.ticket_id = :ticket_id
     ''', locals())
     for r in c:
-        deps[r[0]] = { 'title': r[1], 'status': r[2] }
+        deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
     return deps
 
 def ticketdepends(ticket_id):
@@ -1371,13 +1371,13 @@ def ticketdepends(ticket_id):
     deps = {}
     c = getdb().cursor()
     c.execute('''
-        SELECT d.ticket_id, t.title, t.status
+        SELECT d.ticket_id, t.title, t.status, t.admin_only
         FROM dependencies AS d
         INNER JOIN tickets AS t ON t.id = d.ticket_id
         WHERE d.blocks = :ticket_id
     ''', locals())
     for r in c:
-        deps[r[0]] = { 'title': r[1], 'status': r[2] }
+        deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
     return deps
 
 def tickettags(ticket_id):
