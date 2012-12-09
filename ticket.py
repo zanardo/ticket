@@ -257,6 +257,20 @@ def index():
             """ % (p1,)
             continue
 
+        # Restrição de tickets (administrador, normal e todos)
+        m = re.match(r'^r:([ant])$', t)
+        if m:
+            r = m.group(1)
+            if r == 'a':
+                sql += u"""
+                    AND admin_only = 1
+                """
+            elif r == 'n':
+                sql += u"""
+                    AND admin_only = 0
+                """
+            continue
+
         # Texto para busca
         search.append(t)
 
