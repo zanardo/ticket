@@ -63,14 +63,14 @@ weekdays = {
 }
 
 def getdb():
-    '''Retorna um handle de conexão de banco de dados por thread'''
+    # Retorna um handle de conexão de banco de dados por thread
     if not hasattr(local, 'db'):
         local.db = sqlite3.connect(dbname, detect_types=sqlite3.PARSE_DECLTYPES)
         local.db.row_factory = sqlite3.Row
     return local.db
 
 def requires_auth(f):
-    '''Decorator em router do Bottle para forçar autenticação do usuário'''
+    # Decorator em router do Bottle para forçar autenticação do usuário
     @wraps(f)
     def decorated(*args, **kwargs):
         session_id = request.get_cookie(cookie_session_name())
@@ -80,7 +80,7 @@ def requires_auth(f):
     return decorated
 
 def requires_admin(f):
-    '''Decorator em router do Bottle para forçar usuário administrador'''
+    # Decorator em router do Bottle para forçar usuário administrador
     @wraps(f)
     def decorated(*args, **kwargs):
         session_id = request.get_cookie(cookie_session_name())
@@ -89,6 +89,7 @@ def requires_admin(f):
             return 'não autorizado'
         return f(*args, **kwargs)
     return decorated
+
 
 ########################################################################################
 # Roteamento de URIs
@@ -100,7 +101,7 @@ def requires_admin(f):
 @view('list-tickets')
 @requires_auth
 def index():
-    '''Lista tickets utilizando critérios de um filtro'''
+    # Lista tickets utilizando critérios de um filtro
     # A página padrão exibe os tickets ordenados por prioridade
     if 'filter' not in request.query.keys():
         return redirect('/?filter=o:p g:p')
@@ -334,14 +335,14 @@ def index():
 @get('/login')
 @view('login')
 def login():
-    '''Retorna tela de login'''
+    # Retorna tela de login
     return dict(version=VERSION)
 
 
 # Valida login
 @post('/login')
 def validatelogin():
-    '''Valida login do usuário'''
+    # Valida login do usuário
     assert 'user' in request.forms
     assert 'passwd' in request.forms
     user = request.forms.user
@@ -356,7 +357,7 @@ def validatelogin():
 
 @get('/logout')
 def logout():
-    '''Logout do usuário - remove sessão ativa'''
+    # Logout do usuário - remove sessão ativa
     session_id = request.get_cookie(cookie_session_name())
     if session_id:
         removesession(session_id)
@@ -370,7 +371,7 @@ def logout():
 @view('new-ticket')
 @requires_auth
 def newticket():
-    '''Tela de novo ticket'''
+    # Tela de novo ticket
     username = currentuser()
     return dict(version=VERSION, username=username,
         userisadmin=userisadmin(username))
@@ -380,7 +381,7 @@ def newticket():
 @post('/new-ticket')
 @requires_auth
 def newticketpost():
-    '''Salva um novo ticket'''
+    # Salva um novo ticket
     assert 'title' in request.forms
     title = request.forms.title.strip()
     if title == '': return 'erro: título inválido'
@@ -409,7 +410,7 @@ def newticketpost():
 @view('show-ticket')
 @requires_auth
 def showticket(ticket_id):
-    '''Exibe detalhes de um ticket'''
+    # Exibe detalhes de um ticket
     c = getdb().cursor()
 
     # Obtém dados do ticket
@@ -520,7 +521,7 @@ def showticket(ticket_id):
 @get('/file/<id:int>/:name')
 @requires_auth
 def getfile(id, name):
-    '''Retorna um arquivo em anexo'''
+    # Retorna um arquivo em anexo
     mime = mimetypes.guess_type(name)[0]
     if mime is None:
         mime = 'application/octet-stream'
@@ -546,7 +547,7 @@ def getfile(id, name):
 @post('/close-ticket/<ticket_id:int>')
 @requires_auth
 def closeticket(ticket_id):
-    '''Fecha um ticket'''
+    # Fecha um ticket
     c = getdb().cursor()
     # Verifica se existem tickets que bloqueiam este
     # ticket que ainda estão abertos.
@@ -592,7 +593,7 @@ def closeticket(ticket_id):
 @post('/change-title/<ticket_id:int>')
 @requires_auth
 def changetitle(ticket_id):
-    '''Alter título de um ticket'''
+    # Altera título de um ticket
     assert 'text' in request.forms
     title = request.forms.text.strip()
     if title == '': return 'erro: título inválido'
@@ -615,7 +616,7 @@ def changetitle(ticket_id):
 @post('/change-datedue/<ticket_id:int>')
 @requires_auth
 def changedatedue(ticket_id):
-    '''Altera data de previsão de solução de um ticket'''
+    # Altera data de previsão de solução de um ticket
     assert 'datedue' in request.forms
     datedue = request.forms.datedue.strip()
     if datedue != '':
@@ -649,7 +650,7 @@ def changedatedue(ticket_id):
 @requires_auth
 @requires_admin
 def changeadminonly(ticket_id, toggle):
-    '''Tornar ticket somente visível para administradores'''
+    # Tornar ticket somente visível para administradores
     assert toggle in ( '0', '1' )
     c = getdb().cursor()
     try:
@@ -668,7 +669,7 @@ def changeadminonly(ticket_id, toggle):
 @post('/change-tags/<ticket_id:int>')
 @requires_auth
 def changetags(ticket_id):
-    '''Altera tags de um ticket'''
+    # Altera tags de um ticket
     assert 'text' in request.forms
     tags = request.forms.text
     tags = tags.strip().split()
@@ -694,7 +695,7 @@ def changetags(ticket_id):
 @post('/change-dependencies/<ticket_id:int>')
 @requires_auth
 def changedependencies(ticket_id):
-    ''' Altera dependências de um ticket '''
+    # Altera dependências de um ticket
     assert 'text' in request.forms
     deps = request.forms.text
     deps = deps.strip().split()
@@ -737,7 +738,7 @@ def changedependencies(ticket_id):
 @post('/change-contacts/<ticket_id:int>')
 @requires_auth
 def changecontacts(ticket_id):
-    '''Altera contatos de um ticket'''
+    # Altera contatos de um ticket
     assert 'contacts' in request.forms
     contacts = request.forms.contacts
     contacts = contacts.strip().split()
@@ -764,7 +765,7 @@ def changecontacts(ticket_id):
 @post('/register-minutes/<ticket_id:int>')
 @requires_auth
 def registerminutes(ticket_id):
-    '''Registra tempo trabalhado em um ticket'''
+    # Registra tempo trabalhado em um ticket
     assert 'minutes' in request.forms
     if not re.match(r'^[\-0-9\.]+$', request.forms.minutes):
         return 'tempo inválido'
@@ -795,7 +796,7 @@ def registerminutes(ticket_id):
 @post('/new-note/<ticket_id:int>')
 @requires_auth
 def newnote(ticket_id):
-    '''Cria um novo comentário para um ticket'''
+    # Cria um novo comentário para um ticket
     assert 'text' in request.forms
     assert 'contacts' in request.forms
     note = request.forms.text
@@ -854,7 +855,7 @@ def newnote(ticket_id):
 @post('/reopen-ticket/<ticket_id:int>')
 @requires_auth
 def reopenticket(ticket_id):
-    '''Reabre um ticket'''
+    # Reabre um ticket
     c = getdb().cursor()
     # Verifica se existem tickets bloqueados por este ticket
     # que estão fechados.
@@ -899,7 +900,7 @@ def reopenticket(ticket_id):
 @post('/change-priority/<ticket_id:int>')
 @requires_auth
 def changepriority(ticket_id):
-    '''Altera a prioridade de um ticket'''
+    # Altera a prioridade de um ticket
     assert 'prio' in request.forms
     assert re.match(r'^[1-5]$', request.forms.prio)
     priority = int(request.forms.prio)
@@ -922,7 +923,7 @@ def changepriority(ticket_id):
 @post('/upload-file/<ticket_id:int>')
 @requires_auth
 def uploadfile(ticket_id):
-    '''Anexa um arquivo ao ticket'''
+    # Anexa um arquivo ao ticket
     if not 'file' in request.files:
         return 'arquivo inválido'
     filename = request.files.file.filename.decode('utf-8')
@@ -961,7 +962,7 @@ def uploadfile(ticket_id):
 
 @route('/static/:filename')
 def static(filename):
-    '''Retorna um arquivo estático em ./static/'''
+    # Retorna um arquivo estático em ./static
     assert re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename)
     return static_file('static/%s' % filename, root='.')
 
@@ -970,7 +971,7 @@ def static(filename):
 @requires_auth
 @view('change-password')
 def changepassword():
-    '''Tela de alteração de senha do usuário'''
+    # Tela de alteração de senha do usuário
     username = currentuser()
     return dict(username=username, version=VERSION,
         userisadmin=userisadmin(username))
@@ -979,7 +980,7 @@ def changepassword():
 @post('/change-password')
 @requires_auth
 def changepasswordsave():
-    '''Altera a senha do usuário'''
+    # Altera a senha do usuário
     assert 'oldpasswd' in request.forms
     assert 'newpasswd' in request.forms
     assert 'newpasswd2' in request.forms
@@ -1014,7 +1015,7 @@ def changepasswordsave():
 @requires_auth
 @requires_admin
 def admin():
-    '''Tela de administração'''
+    # Tela de administração
     username = currentuser()
     users = []
     c = getdb().cursor()
@@ -1044,7 +1045,7 @@ def admin():
 @requires_auth
 @requires_admin
 def saveconfig():
-    '''Salva configurações'''
+    # Salva configurações
     config = {}
     for k in request.forms:
         if k in ('mail.smtp', 'file.maxsize'):
@@ -1073,7 +1074,7 @@ def saveconfig():
 @requires_auth
 @requires_admin
 def removeuser(username):
-    '''Apaga um usuário'''
+    # Apaga um usuário
     if username == currentuser():
         return 'não é possível remover usuário corrente'
     c = getdb().cursor()
@@ -1095,7 +1096,7 @@ def removeuser(username):
 @requires_auth
 @requires_admin
 def edituser(username):
-    ''' Exibe tela de edição de usuários '''
+    # Exibe tela de edição de usuários
     c = getdb().cursor()
     c.execute('''
         SELECT name, email
@@ -1118,7 +1119,7 @@ def edituser(username):
 @requires_auth
 @requires_admin
 def editusersave(username):
-    ''' Salva os dados de um usuário editado '''
+    # Salva os dados de um usuário editado
     assert 'name' in request.forms
     assert 'email' in request.forms
     name = request.forms.name.strip()
@@ -1142,7 +1143,7 @@ def editusersave(username):
 @requires_auth
 @requires_admin
 def newuser():
-    '''Cria um novo usuário'''
+    # Cria um novo usuário
     assert 'username' in request.forms
     username = request.forms.username
     if username.strip() == '':
@@ -1169,7 +1170,7 @@ def newuser():
 @requires_auth
 @requires_admin
 def forceuserpassword(username):
-    '''Reseta senha de um usuário'''
+    # Reseta senha de um usuário
     password = str(int(random.random() * 999999))
     sha1password = sha1(password).hexdigest()
     if username == currentuser():
@@ -1193,7 +1194,7 @@ def forceuserpassword(username):
 @requires_auth
 @requires_admin
 def changeuseradminstatus(username, status):
-    '''Altera status de administrador de um usuário'''
+    # Altera status de administrador de um usuário
     if username == currentuser():
         return 'não é possível alterar status de admin para usuário corrente'
     c = getdb().cursor()
@@ -1216,7 +1217,7 @@ def changeuseradminstatus(username, status):
 @requires_auth
 @requires_admin
 def reindexfts():
-    '''Recria o índice de Full Text Search'''
+    # Recria o índice de Full Text Search
     c = getdb().cursor()
     try:
         print 'limpando índices'
@@ -1246,7 +1247,7 @@ def reindexfts():
 
 
 def validateuserdb(user, passwd):
-    '''Valida usuário e senha no banco de dados'''
+    # Valida usuário e senha no banco de dados
     passwdsha1 = sha1(passwd).hexdigest()
     c = getdb().cursor()
     c.execute('''
@@ -1261,7 +1262,7 @@ def validateuserdb(user, passwd):
 
 
 def validatesession(session_id):
-    '''Valida sessão ativa no banco de dados'''
+    # Valida sessão ativa no banco de dados
     c = getdb().cursor()
     c.execute('''
         SELECT session_id
@@ -1274,7 +1275,7 @@ def validatesession(session_id):
 
 
 def userident(username):
-    ''' Retorna nome e e-mail de usuário '''
+    # Retorna nome e e-mail de usuário
     c = getdb().cursor()
     c.execute('''
         SELECT name, email
@@ -1285,7 +1286,7 @@ def userident(username):
 
 
 def currentuser():
-    '''Retorna usuário corrente'''
+    # Retorna usuário corrente
     session_id = request.get_cookie(cookie_session_name())
     c = getdb().cursor()
     c.execute('''
@@ -1298,7 +1299,7 @@ def currentuser():
 
 
 def userisadmin(username):
-    '''Checa se usuário tem poderes administrativos'''
+    # Checa se usuário tem poderes administrativos
     c = getdb().cursor()
     c.execute('''
         SELECT is_admin
@@ -1309,7 +1310,7 @@ def userisadmin(username):
 
 
 def removesession(session_id):
-    '''Remove uma sessão do banco de dados'''
+    # Remove uma sessão do banco de dados
     c = getdb().cursor()
     try:
         c.execute('''
@@ -1324,7 +1325,7 @@ def removesession(session_id):
 
 
 def makesession(user):
-    '''Cria uma nova sessão no banco de dados'''
+    # Cria uma nova sessão no banco de dados
     c = getdb().cursor()
     try:
         session_id = str(uuid4())
@@ -1341,7 +1342,7 @@ def makesession(user):
 
 
 def tagsdesc():
-    '''Retorna as descrições de tags'''
+    # Retorna as descrições de tags
     c = getdb().cursor()
     c.execute('''
         SELECT tag, description, bgcolor, fgcolor
@@ -1357,7 +1358,7 @@ def tagsdesc():
     return tagdesc
 
 def ticketblocks(ticket_id):
-    ''' Retorna quais ticket são bloqueados por um ticket '''
+    # Retorna quais ticket são bloqueados por um ticket
     deps = {}
     c = getdb().cursor()
     c.execute('''
@@ -1371,7 +1372,7 @@ def ticketblocks(ticket_id):
     return deps
 
 def ticketdepends(ticket_id):
-    ''' Retorna quais ticket dependem de um ticket '''
+    # Retorna quais ticket dependem de um ticket
     deps = {}
     c = getdb().cursor()
     c.execute('''
@@ -1385,7 +1386,7 @@ def ticketdepends(ticket_id):
     return deps
 
 def tickettags(ticket_id):
-    '''Retorna tags de um ticket'''
+    # Retorna tags de um ticket
     tags = []
     c = getdb().cursor()
     c.execute('''
@@ -1399,7 +1400,7 @@ def tickettags(ticket_id):
 
 
 def ticketcontacts(ticket_id):
-    '''Retorna os contatos de um ticket'''
+    # Retorna os contatos de um ticket
     contacts = []
     c = getdb().cursor()
     c.execute('''
@@ -1413,7 +1414,7 @@ def ticketcontacts(ticket_id):
 
 
 def tickettitle(ticket_id):
-    '''Retorna o título de um ticket'''
+    # Retorna o título de um ticket
     c = getdb().cursor()
     c.execute('''
         SELECT title
@@ -1425,7 +1426,7 @@ def tickettitle(ticket_id):
 
 
 def getconfig(key):
-    '''Retorna o valor de uma configuração'''
+    # Retorna o valor de uma configuração
     c = getdb().cursor()
     c.execute('''
         SELECT value
@@ -1436,7 +1437,7 @@ def getconfig(key):
 
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):
-    '''Envia um e-mail'''
+    # Envia um e-mail
     for contact in toemail:
         msg = MIMEText(body.encode('utf-8'))
         msg.set_charset('utf-8')
@@ -1449,7 +1450,7 @@ def sendmail(fromemail, toemail, smtpserver, subject, body):
 
 
 def sanitizecomment(comment):
-    '''Sanitiza o texto do comentário (quebras de linhas, links, etc)'''
+    # Sanitiza o texto do comentário (quebras de linhas, links, etc)
     comment = re.sub(r'\r', '', comment)
     comment = re.sub(r'&', '&amp;', comment)
     comment = re.sub(r'<', '&lt;', comment)
@@ -1462,7 +1463,7 @@ def sanitizecomment(comment):
 
 
 def populatesearch(ticket_id):
-    '''Popula o índice de busca full-text para um ticket'''
+    # Popula o índice de busca full-text para um ticket
     text = ''
     c = getdb().cursor()
     c.execute('''
@@ -1490,7 +1491,7 @@ def populatesearch(ticket_id):
 
 
 def createdb(dbname):
-    '''Cria o banco de dados caso arquivo não exista'''
+    # Cria o banco de dados caso arquivo não exista
     print ';; criando banco de dados %s' % dbname
     db = sqlite3.connect(dbname)
     fp = file('schema.sql', 'r')
@@ -1506,7 +1507,7 @@ def createdb(dbname):
 
 
 def expire_old_sessions():
-    '''Expira sessões mais antigas que 7 dias'''
+    # Expira sessões mais antigas que 7 dias
     c = getdb().cursor()
     try:
         c.execute('''
@@ -1521,7 +1522,7 @@ def expire_old_sessions():
 
 
 def cookie_session_name():
-    ''' Retorna o nome do cookie para a sessão '''
+    # Retorna o nome do cookie para a sessão
     return 'ticket_session_%s' % port
 
 
