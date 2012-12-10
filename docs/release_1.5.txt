@@ -1,0 +1,14 @@
+Esta é a documentação de mudanças na versão 1.5 do sistema ticket.
+
+1. Funcionalidades Novas
+
+...
+
+2. Correções
+
+O cookie de sessão agora respeita a porta http, fazendo com que possa-se utilizar
+várias instâncias do sistema ticket em portas separadas no mesmo servidor.
+
+3. Atualização da versão 1.4
+
+...
