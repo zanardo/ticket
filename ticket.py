@@ -8,23 +8,13 @@
 # Para detalhes do licenciamento, ver COPYING na distribuição
 #
 
-try:
-    import bottle
-except ImportError:
-    print 'ERRO: o seguinte módulo do Python precisa ser instalado: bottle'
-    exit(1)
-
-try:
-    import paste
-except ImportError:
-    print 'ERRO: o seguinte módulo do Python precisa ser instalado: paste'
-    exit(1)
-
 import re
 import os
 import sys
 import zlib
 import time
+import paste
+import bottle
 import getopt
 import random
 import getopt
