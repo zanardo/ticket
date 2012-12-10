@@ -2,7 +2,10 @@ Esta é a documentação de mudanças na versão 1.5 do sistema ticket.
 
 1. Funcionalidades Novas
 
-...
+Novo filtro "r" para restrição dos tickets:
+	r:a -> tickets restritos para administradores
+	r:n -> tickets exibidos para usuários normais
+	r:t -> tickets com qualquer restrição (default)
 
 2. Correções
 
