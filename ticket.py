@@ -83,7 +83,7 @@ def requires_auth(f):
     '''Decorator em router do Bottle para forçar autenticação do usuário'''
     @wraps(f)
     def decorated(*args, **kwargs):
-        session_id = request.get_cookie('ticket_session')
+        session_id = request.get_cookie(cookie_session_name())
         if not session_id or not validatesession(session_id):
             return redirect('/login')
         return f(*args, **kwargs)
@@ -93,7 +93,7 @@ def requires_admin(f):
     '''Decorator em router do Bottle para forçar usuário administrador'''
     @wraps(f)
     def decorated(*args, **kwargs):
-        session_id = request.get_cookie('ticket_session')
+        session_id = request.get_cookie(cookie_session_name())
         if not session_id or not validatesession(session_id) or \
                 not userisadmin(currentuser()):
             return 'não autorizado'
@@ -360,17 +360,17 @@ def validatelogin():
     if not v: return 'usuário ou senha inválidos'
     else:
         session_id = makesession(user)
-        response.set_cookie("ticket_session", session_id)
+        response.set_cookie(cookie_session_name(), session_id)
         return redirect('/')
 
 
 @get('/logout')
 def logout():
     '''Logout do usuário - remove sessão ativa'''
-    session_id = request.get_cookie('ticket_session')
+    session_id = request.get_cookie(cookie_session_name())
     if session_id:
         removesession(session_id)
-        response.delete_cookie('ticket_session')
+        response.delete_cookie(cookie_session_name())
         expire_old_sessions()
     return redirect('/login')
 
@@ -1296,7 +1296,7 @@ def userident(username):
 
 def currentuser():
     '''Retorna usuário corrente'''
-    session_id = request.get_cookie('ticket_session')
+    session_id = request.get_cookie(cookie_session_name())
     c = getdb().cursor()
     c.execute('''
         SELECT username
@@ -1528,6 +1528,11 @@ def expire_old_sessions():
         raise
     else:
         getdb().commit()
+
+
+def cookie_session_name():
+    ''' Retorna o nome do cookie para a sessão '''
+    return 'ticket_session_%s' % port
 
 
 if __name__ == '__main__':
