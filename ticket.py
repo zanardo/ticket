@@ -671,8 +671,7 @@ def changeadminonly(ticket_id, toggle):
 def changetags(ticket_id):
     # Altera tags de um ticket
     assert 'text' in request.forms
-    tags = request.forms.text
-    tags = tags.strip().split()
+    tags = list(set(request.forms.text.strip().split()))
     c = getdb().cursor()
     try:
         c.execute('''
