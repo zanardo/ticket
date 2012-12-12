@@ -244,12 +244,12 @@
 		<p>
 		<small>
 		%for tag in sorted(tagsdesc):
-			<a href="#"
+			<span
 				onclick="document.ftag.text.value+=' {{tag}}'"
 				class="tag"
 				title="{{tagsdesc[tag]['description']}}"
-				style="background-color:{{tagsdesc[tag]['bgcolor']}};color:{{tagsdesc[tag]['fgcolor']}};"
-			>{{tag}}</a> 
+				style="background-color:{{tagsdesc[tag]['bgcolor']}};color:{{tagsdesc[tag]['fgcolor']}};cursor: pointer;"
+			>{{tag}}</span>
 		%end
 		</small>
 	</form>
