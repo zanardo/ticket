@@ -501,9 +501,6 @@ def showticket(ticket_id):
     # Obtém palavras-chave
     tags = tickettags(ticket_id)
 
-    # Obtém contatos
-    contacts = ticketcontacts(ticket_id)
-
     # Obtém dependências
     blocks = ticketblocks(ticket_id)
     depends = ticketdepends(ticket_id)
@@ -513,7 +510,7 @@ def showticket(ticket_id):
     # Renderiza template
 
     return dict(ticket=ticket, comments=comments, priocolor=priocolor,
-        priodesc=priodesc, timetrack=timetrack, tags=tags, contacts=contacts,
+        priodesc=priodesc, timetrack=timetrack, tags=tags,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
         userisadmin=userisadmin(username), user=userident(username),
         blocks=blocks, depends=depends)
@@ -734,33 +731,6 @@ def changedependencies(ticket_id):
     return redirect('/%s' % ticket_id)
 
 
-@post('/change-contacts/<ticket_id:int>')
-@requires_auth
-def changecontacts(ticket_id):
-    # Altera contatos de um ticket
-    assert 'contacts' in request.forms
-    contacts = request.forms.contacts
-    contacts = contacts.strip().split()
-    c = getdb().cursor()
-    try:
-        c.execute('''
-            DELETE FROM contacts
-            WHERE ticket_id = :ticket_id
-        ''', locals())
-        for contact in contacts:
-            c.execute('''
-                INSERT INTO contacts ( ticket_id, email )
-                VALUES ( :ticket_id, :contact )
-            ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-
-    return redirect('/%s' % ticket_id)
-
-
 @post('/register-minutes/<ticket_id:int>')
 @requires_auth
 def registerminutes(ticket_id):
@@ -802,13 +772,9 @@ def newnote(ticket_id):
     contacts = request.forms.contacts.strip().split()
     if note.strip() == '': return 'nota inválida'
 
-    toemail = []
-    for contact in contacts:
-        if contact.startswith('#'): continue
-        toemail.append(contact)
-    if len(toemail) > 0:
+    if len(contacts) > 0:
         note += u' [Notificação enviada para: %s]' % (
-            ', '.join(toemail)
+            ', '.join(contacts)
         )
 
     c = getdb().cursor()
@@ -833,7 +799,7 @@ def newnote(ticket_id):
 
     user = userident(username)
 
-    if len(toemail) > 0 and user['name'] and user['email']:
+    if len(contacts) > 0 and user['name'] and user['email']:
         title = tickettitle(ticket_id)
         subject = u'#%s - %s' % (ticket_id, title)
         body = u'''
@@ -845,7 +811,7 @@ def newnote(ticket_id):
 -- Este é um e-mail automático enviado pelo sistema ticket.
         ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
 
-        sendmail(user['email'], toemail,
+        sendmail(user['email'], contacts,
             getconfig('mail.smtp'), subject, body)
 
     return redirect('/%s' % ticket_id)
@@ -1396,20 +1362,6 @@ def tickettags(ticket_id):
     for r in c:
         tags.append(r[0])
     return tags
-
-
-def ticketcontacts(ticket_id):
-    # Retorna os contatos de um ticket
-    contacts = []
-    c = getdb().cursor()
-    c.execute('''
-        SELECT email
-        FROM contacts
-        WHERE ticket_id = :ticket_id
-    ''', locals())
-    for r in c:
-        contacts.append(r[0])
-    return contacts
 
 
 def tickettitle(ticket_id):

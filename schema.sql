@@ -55,12 +55,6 @@ CREATE TABLE statustrack (
 );
 CREATE INDEX idx_statustrack_ticket_id ON statustrack ( ticket_id );
 
-CREATE TABLE contacts (
-	ticket_id integer NOT NULL,
-	email text NOT NULL
-);
-CREATE INDEX idx_contacts_ticket_id ON contacts ( ticket_id );
-
 CREATE TABLE users (
 	username text NOT NULL PRIMARY KEY,
 	password text NOT NULL,

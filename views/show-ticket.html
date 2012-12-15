@@ -182,9 +182,6 @@
 				Anexo</a>				| 
 			<a class="tab" onclick="return showPanel(this, 'datedue');">
 				Previsão</a>
-				| 
-			<a class="tab" onclick="return showPanel(this, 'contacts');">
-				Contatos</a>
 			%end
 			%if userisadmin:
 				|
@@ -209,11 +206,7 @@
 					Opcional: enviar esta nota para os seguintes contatos por email:
 				</div>
 			<p>
-			%contactsstr = ''
-			%for contact in contacts:
-				%contactsstr += "#%s\r\n" % contact
-			%end
-			<textarea name="contacts" rows="2" cols="40">{{contactsstr}}</textarea>
+			<textarea name="contacts" rows="2" cols="40"></textarea>
 		%end
 	</form>
 </div>
@@ -305,14 +298,6 @@
 			É possível digitar uma data de previsão de resolução deste
 			chamado. Utilizar o formato YYYY-MM-DD. Exemplo: <b>2012-09-27</b>
 		</div>
-	</form>
-</div>
-<div class="panel" id="contacts" style="display: none">
-	<form method="post" action="/change-contacts/{{ticket['id']}}"
-		enctype="multipart/form-data">
-		<textarea name="contacts"  rows="5" cols="50" id="formcontacts">{{'\r\n'.join(list(contacts))}}</textarea>
-		<br>
-		<input type="submit" name="submit" value="Salvar contatos">
 	</form>
 </div>
 <div class="panel" id="security" style="display: none">
