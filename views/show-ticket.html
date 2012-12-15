@@ -201,20 +201,20 @@
 <div class="panel" id="note" style="display: none">
 	<form method="post" action="/new-note/{{ticket['id']}}" enctype="multipart/form-data">
 		<textarea name="text" rows="10" cols="70" id="formnote"></textarea>
+		<p>
+		<input type="submit" name="submit" value="Adicionar nota">
 		%if user['name'] and user['email']:
-			<p>
+			<p><br><br>
 				<div class="deschelp">
-					Alertar os seguintes contatos por email (linhas iniciadas por # serão ignoradas):
+					Opcional: enviar esta nota para os seguintes contatos por email:
 				</div>
 			<p>
 			%contactsstr = ''
 			%for contact in contacts:
 				%contactsstr += "#%s\r\n" % contact
 			%end
-			<textarea name="contacts" rows="5" cols="50">{{contactsstr}}</textarea>
+			<textarea name="contacts" rows="2" cols="40">{{contactsstr}}</textarea>
 		%end
-		<p>
-		<input type="submit" name="submit" value="Adicionar nota">
 	</form>
 </div>
 <div class="panel" id="prio" style="display: none">
