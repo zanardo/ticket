@@ -1304,13 +1304,7 @@ def populatesearch(ticket_id):
     # Popula o índice de busca full-text para um ticket
     text = ''
     with db_trans() as c:
-        c.execute('''
-            SELECT title
-            FROM tickets
-            WHERE id = :ticket_id
-        ''', locals())
-        r = c.fetchone()
-        text += ' ' + r['title'] + ' '
+        text += ' ' + tickettitle(ticket_id) + ' '
         c.execute('''
             SELECT comment
             FROM comments
