@@ -70,6 +70,24 @@ def getdb():
         local.db.row_factory = sqlite3.Row
     return local.db
 
+def getcursor():
+    # Retorna um cursor
+    return getdb().cursor()
+
+@contextmanager
+def db_trans():
+    # Abre uma transação no banco de dados e faz o commit ao
+    # finalizar o contexto, ou rollback caso algo falhe.
+    dbh = getdb()
+    c = dbh.cursor()
+    try:
+        yield c     # Retornar cursor
+    except:
+        dbh.rollback()
+        raise
+    finally:
+        dbh.commit()
+
 def requires_auth(f):
     # Decorator em router do Bottle para forçar autenticação do usuário
     @wraps(f)
@@ -91,19 +109,6 @@ def requires_admin(f):
         return f(*args, **kwargs)
     return decorated
 
-@contextmanager
-def db_trans():
-    # Abre uma transação no banco de dados e faz o commit ao
-    # finalizar o contexto, ou rollback caso algo falhe.
-    dbh = getdb()
-    c = dbh.cursor()
-    try:
-        yield c     # Retornar cursor
-    except:
-        dbh.rollback()
-        raise
-    finally:
-        dbh.commit()
 
 
 ########################################################################################
@@ -1303,7 +1308,7 @@ def sanitizecomment(comment):
 def populatesearch(ticket_id):
     # Popula o índice de busca full-text para um ticket
     text = ''
-    c = getdb().cursor()    # Utiliza transação do caller
+    c = getcursor()     # Utiliza transação do caller
     text += ' ' + tickettitle(ticket_id) + ' '
     c.execute('''
         SELECT comment
