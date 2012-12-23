@@ -559,16 +559,14 @@ def closeticket(ticket_id):
     # ticket que ainda estão abertos.
     c = getcursor()
     c.execute('''
-        SELECT d.ticket_id
+        SELECT d.ticket_id AS ticket_id
         FROM dependencies AS d
         INNER JOIN tickets AS t ON t.id = d.ticket_id
         WHERE d.blocks = :ticket_id
           AND t.status = 0
     ''', locals())
-    blocks = []
-    for r in c:
-        blocks.append(r[0])
-    if len(blocks) > 0:
+    blocks = [r['ticket_id'] for r in c]
+    if blocks:
         return 'os seguintes tickets bloqueiam este ticket e estão em aberto: %s' % \
             ' '.join([str(x) for x in blocks])
 
@@ -788,16 +786,14 @@ def reopenticket(ticket_id):
     # que estão fechados.
     c = getcursor()
     c.execute('''
-        SELECT d.blocks
+        SELECT d.blocks AS blocks
         FROM dependencies AS d
         INNER JOIN tickets AS t ON t.id = d.blocks
         WHERE d.ticket_id = :ticket_id
           AND t.status = 1
     ''', locals())
-    blocks = []
-    for r in c:
-        blocks.append(r[0])
-    if len(blocks) > 0:
+    blocks = [r['blocks'] for r in c]
+    if blocks:
         return 'os seguintes tickets são bloqueados por este ticket e estão fechados: %s' % \
             ' '.join([str(x) for x in blocks])
     username = currentuser()
@@ -1141,8 +1137,7 @@ def userident(username):
         FROM users
         WHERE username=:username
     ''', locals())
-    r = c.fetchone()
-    return dict(r)
+    return dict(c.fetchone())
 
 
 def currentuser():
@@ -1154,8 +1149,7 @@ def currentuser():
         FROM sessions
         WHERE session_id = :session_id
     ''', locals())
-    r = c.fetchone()
-    return r[0]
+    return c.fetchone()['username']
 
 
 def userisadmin(username):
@@ -1166,8 +1160,7 @@ def userisadmin(username):
         FROM users
         WHERE username = :username
     ''', locals())
-    r = c.fetchone()
-    return r[0]
+    return c.fetchone()['is_admin']
 
 
 def removesession(session_id):
@@ -1236,16 +1229,13 @@ def ticketdepends(ticket_id):
 
 def tickettags(ticket_id):
     # Retorna tags de um ticket
-    tags = []
     c = getcursor()
-    c.execute('''
+    getcursor().execute('''
         SELECT tag
         FROM tags
         WHERE ticket_id = :ticket_id
     ''', locals())
-    for r in c:
-        tags.append(r[0])
-    return tags
+    return [r['tag'] for r in c]
 
 
 def tickettitle(ticket_id):
@@ -1256,8 +1246,7 @@ def tickettitle(ticket_id):
         FROM tickets
         WHERE id = :ticket_id
     ''', locals())
-    title = c.fetchone()[0]
-    return title
+    return c.fetchone()['title']
 
 
 def getconfig(key):
@@ -1268,8 +1257,7 @@ def getconfig(key):
         FROM config
         WHERE key = :key
     ''', locals())
-    r = c.fetchone()
-    return r[0]
+    return c.fetchone()['value']
 
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):
