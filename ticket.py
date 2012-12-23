@@ -28,6 +28,7 @@ from uuid import uuid4
 from hashlib import sha1
 from functools import wraps
 from email.mime.text import MIMEText
+from contextlib import contextmanager
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
@@ -90,6 +91,20 @@ def requires_admin(f):
         return f(*args, **kwargs)
     return decorated
 
+@contextmanager
+def db_trans():
+    # Abre uma transação no banco de dados e faz o commit ao
+    # finalizar o contexto, ou rollback caso algo falhe.
+    dbh = getdb()
+    c = dbh.cursor()
+    try:
+        yield c     # Retornar cursor
+    except:
+        dbh.rollback()
+        raise
+    finally:
+        dbh.commit()
+
 
 ########################################################################################
 # Roteamento de URIs
@@ -111,8 +126,6 @@ def index():
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
     if m: return redirect('/%s' % m.group(1))
-
-    c = getdb().cursor()
 
     # Dividindo filtro em tokens separados por espaços
     tokens = filter.strip().split()
@@ -316,14 +329,13 @@ def index():
             %s
         ''' % limit
 
-    c.execute(sql, sqlparams)
-    tickets = []
-    for ticket in c:
-        ticketdict = dict(ticket)
-        ticketdict['tags'] = tickettags(ticket['id'])
-        tickets.append(ticketdict)
-
-    getdb().commit()
+    with db_trans() as c:
+        c.execute(sql, sqlparams)
+        tickets = []
+        for ticket in c:
+            ticketdict = dict(ticket)
+            ticketdict['tags'] = tickettags(ticket['id'])
+            tickets.append(ticketdict)
 
     return dict(tickets=tickets, filter=filter, priodesc=priodesc, 
         priocolor=priocolor, tagsdesc=tagsdesc(), version=VERSION,
@@ -385,9 +397,8 @@ def newticketpost():
     assert 'title' in request.forms
     title = request.forms.title.strip()
     if title == '': return 'erro: título inválido'
-    c = getdb().cursor()
     username = currentuser()
-    try:
+    with db_trans() as c:
         c.execute('''
             INSERT INTO TICKETS (
                 title, "user"
@@ -396,11 +407,6 @@ def newticketpost():
         ''', locals())
         ticket_id = c.lastrowid
         populatesearch(ticket_id)
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
 
     return redirect('/%s' % ticket_id)
 
@@ -411,7 +417,6 @@ def newticketpost():
 @requires_auth
 def showticket(ticket_id):
     # Exibe detalhes de um ticket
-    c = getdb().cursor()
 
     # Obtém dados do ticket
 
@@ -423,12 +428,13 @@ def showticket(ticket_id):
             AND admin_only = 0
         '''
 
-    c.execute('''
-        SELECT *
-        FROM tickets
-        WHERE id = :ticket_id
-    ''' + sql_is_admin, locals())
-    ticket = c.fetchone()
+    with db_trans() as c:
+        c.execute('''
+            SELECT *
+            FROM tickets
+            WHERE id = :ticket_id
+        ''' + sql_is_admin, locals())
+        ticket = c.fetchone()
 
     if not ticket:
         return 'ticket inexistente!'
@@ -438,49 +444,53 @@ def showticket(ticket_id):
     comments = []
 
     # Mudanças de status
-    c.execute('''
-        SELECT datecreated, user, status
-        FROM statustrack
-        WHERE ticket_id = :ticket_id
-    ''', locals())
-    for r in c:
-        reg = dict(r)
-        reg['type'] = 'statustrack'
-        comments.append(reg)
+    with db_trans() as c:
+        c.execute('''
+            SELECT datecreated, user, status
+            FROM statustrack
+            WHERE ticket_id = :ticket_id
+        ''', locals())
+        for r in c:
+            reg = dict(r)
+            reg['type'] = 'statustrack'
+            comments.append(reg)
 
     # Comentários
-    c.execute('''
-        SELECT datecreated, user, comment
-        FROM comments
-        WHERE ticket_id = :ticket_id        
-    ''', locals())
-    for r in c:
-        reg = dict(r)
-        reg['comment'] = sanitizecomment(reg['comment'])
-        reg['type'] = 'comments'
-        comments.append(reg)
+    with db_trans() as c:
+        c.execute('''
+            SELECT datecreated, user, comment
+            FROM comments
+            WHERE ticket_id = :ticket_id        
+        ''', locals())
+        for r in c:
+            reg = dict(r)
+            reg['comment'] = sanitizecomment(reg['comment'])
+            reg['type'] = 'comments'
+            comments.append(reg)
 
     # Registro de tempo
-    c.execute('''
-        SELECT datecreated, user, minutes
-        FROM timetrack
-        WHERE ticket_id = :ticket_id 
-    ''', locals())
-    for r in c:
-        reg = dict(r)
-        reg['type'] = 'timetrack'
-        comments.append(reg)
+    with db_trans() as c:
+        c.execute('''
+            SELECT datecreated, user, minutes
+            FROM timetrack
+            WHERE ticket_id = :ticket_id 
+        ''', locals())
+        for r in c:
+            reg = dict(r)
+            reg['type'] = 'timetrack'
+            comments.append(reg)
 
     # Arquivos anexos
-    c.execute('''
-        SELECT datecreated, user, name, id
-        FROM files
-        WHERE ticket_id = :ticket_id 
-    ''', locals())
-    for r in c:
-        reg = dict(r)
-        reg['type'] = 'files'
-        comments.append(reg)
+    with db_trans() as c:
+        c.execute('''
+            SELECT datecreated, user, name, id
+            FROM files
+            WHERE ticket_id = :ticket_id 
+        ''', locals())
+        for r in c:
+            reg = dict(r)
+            reg['type'] = 'files'
+            comments.append(reg)
 
     # Ordenando comentários por data
     comments = sorted(comments, key=lambda comments: comments['datecreated'])
@@ -488,15 +498,16 @@ def showticket(ticket_id):
     # Obtém resumo de tempo trabalhado
 
     timetrack = []
-    c.execute('''
-        SELECT user, SUM(minutes) AS minutes
-        FROM timetrack
-        WHERE ticket_id = :ticket_id
-        GROUP BY user
-        ORDER BY user
-    ''', locals())
-    for r in c:
-        timetrack.append(dict(r))
+    with db_trans() as c:
+        c.execute('''
+            SELECT user, SUM(minutes) AS minutes
+            FROM timetrack
+            WHERE ticket_id = :ticket_id
+            GROUP BY user
+            ORDER BY user
+        ''', locals())
+        for r in c:
+            timetrack.append(dict(r))
 
     # Obtém palavras-chave
     tags = tickettags(ticket_id)
@@ -522,17 +533,17 @@ def getfile(id, name):
     mime = mimetypes.guess_type(name)[0]
     if mime is None:
         mime = 'application/octet-stream'
-    c = getdb().cursor()
-    c.execute('''
-        SELECT files.ticket_id AS ticket_id
-            , files.size AS size
-            , files.contents AS contents
-            , tickets.admin_only AS admin_only
-        FROM files
-            JOIN tickets ON tickets.id = files.ticket_id
-        WHERE files.id = :id
-    ''', locals())
-    row = c.fetchone()
+    with db_trans() as c:
+        c.execute('''
+            SELECT files.ticket_id AS ticket_id
+                , files.size AS size
+                , files.contents AS contents
+                , tickets.admin_only AS admin_only
+            FROM files
+                JOIN tickets ON tickets.id = files.ticket_id
+            WHERE files.id = :id
+        ''', locals())
+        row = c.fetchone()
     blob = zlib.decompress(row['contents'])
     if not userisadmin(currentuser()) and row['admin_only'] == 1:
         return 'você não tem permissão para acessar este recurso!'
@@ -545,25 +556,25 @@ def getfile(id, name):
 @requires_auth
 def closeticket(ticket_id):
     # Fecha um ticket
-    c = getdb().cursor()
     # Verifica se existem tickets que bloqueiam este
     # ticket que ainda estão abertos.
-    c.execute('''
-        SELECT d.ticket_id
-        FROM dependencies AS d
-        INNER JOIN tickets AS t ON t.id = d.ticket_id
-        WHERE d.blocks = :ticket_id
-          AND t.status = 0
-    ''', locals())
-    blocks = []
-    for r in c:
-        blocks.append(r[0])
+    with db_trans() as c:
+        c.execute('''
+            SELECT d.ticket_id
+            FROM dependencies AS d
+            INNER JOIN tickets AS t ON t.id = d.ticket_id
+            WHERE d.blocks = :ticket_id
+              AND t.status = 0
+        ''', locals())
+        blocks = []
+        for r in c:
+            blocks.append(r[0])
     if len(blocks) > 0:
         return 'os seguintes tickets bloqueiam este ticket e estão em aberto: %s' % \
             ' '.join([str(x) for x in blocks])
 
     username = currentuser()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE tickets
             SET status = 1,
@@ -578,11 +589,6 @@ def closeticket(ticket_id):
             VALUES (
                 :ticket_id, :username, 'close')
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
 
     return redirect('/%s' % ticket_id)
 
@@ -594,19 +600,13 @@ def changetitle(ticket_id):
     assert 'text' in request.forms
     title = request.forms.text.strip()
     if title == '': return 'erro: título inválido'
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE tickets
             SET title = :title
             WHERE id = :ticket_id
         ''', locals())
         populatesearch(ticket_id)
-    except:
-        getdb().rollback()
-    else:
-        getdb().commit()
-
     return redirect('/%s' % ticket_id)
 
 
@@ -628,18 +628,12 @@ def changedatedue(ticket_id):
         datedue += ' 23:59:59'
     else:
         datedue = None
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE tickets
             SET datedue = :datedue
             WHERE id = :ticket_id
         ''', locals())
-    except:
-        getdb().rollback()
-    else:
-        getdb().commit()
-
     return redirect('/%s' % ticket_id)
 
 
@@ -649,17 +643,12 @@ def changedatedue(ticket_id):
 def changeadminonly(ticket_id, toggle):
     # Tornar ticket somente visível para administradores
     assert toggle in ( '0', '1' )
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE tickets
             SET admin_only = :toggle
             WHERE id = :ticket_id
         ''', locals())
-    except:
-        getdb().rollback()
-    else:
-        getdb().commit()
     return redirect('/%s' % ticket_id)
 
 
@@ -669,8 +658,7 @@ def changetags(ticket_id):
     # Altera tags de um ticket
     assert 'text' in request.forms
     tags = list(set(request.forms.text.strip().split()))
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             DELETE FROM tags
             WHERE ticket_id = :ticket_id
@@ -680,11 +668,6 @@ def changetags(ticket_id):
                 INSERT INTO tags ( ticket_id, tag )
                 VALUES ( :ticket_id, :tag )
             ''', locals())
-    except:
-        getdb().rollback()
-    else:
-        getdb().commit()
-
     return redirect('/%s' % ticket_id)
 
 
@@ -705,15 +688,14 @@ def changedependencies(ticket_id):
         if dep == ticket_id:
             return u'ticket não pode bloquear ele mesmo'
         # Valida se ticket existe
-        c = getdb().cursor()
-        c.execute('''SELECT count(*) FROM tickets WHERE id=:dep''', locals())
-        if c.fetchone()[0] == 0:
-            return u'ticket %s não existe' % dep
+        with db_trans() as c:
+            c.execute('''SELECT count(*) FROM tickets WHERE id=:dep''', locals())
+            if c.fetchone()[0] == 0:
+                return u'ticket %s não existe' % dep
         # Valida dependência circular
         if ticket_id in ticketblocks(dep):
             return u'dependência circular: %s' % dep
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             DELETE FROM dependencies
             WHERE ticket_id = :ticket_id
@@ -723,11 +705,6 @@ def changedependencies(ticket_id):
                 INSERT INTO dependencies ( ticket_id, blocks )
                 VALUES ( :ticket_id, :dep )
             ''', locals())
-    except:
-        getdb().rollback()
-    else:
-        getdb().commit()
-
     return redirect('/%s' % ticket_id)
 
 
@@ -740,9 +717,8 @@ def registerminutes(ticket_id):
         return 'tempo inválido'
     minutes = float(request.forms.minutes)
     if minutes <= 0.0: return 'tempo inválido'
-    c = getdb().cursor()
     username = currentuser()
-    try:
+    with db_trans() as c:
         c.execute('''
             INSERT INTO timetrack (
                 ticket_id, "user", minutes )
@@ -753,12 +729,6 @@ def registerminutes(ticket_id):
             SET datemodified = datetime('now', 'localtime')
             WHERE id = :ticket_id
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-
     return redirect('/%s' % ticket_id)
 
 
@@ -777,9 +747,8 @@ def newnote(ticket_id):
             ', '.join(contacts)
         )
 
-    c = getdb().cursor()
     username = currentuser()
-    try:
+    with db_trans() as c:
         c.execute('''
             INSERT INTO comments (
                 ticket_id, "user", comment )
@@ -791,11 +760,6 @@ def newnote(ticket_id):
             WHERE id = :ticket_id
         ''', locals())
         populatesearch(ticket_id)
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
 
     user = userident(username)
 
@@ -821,24 +785,24 @@ def newnote(ticket_id):
 @requires_auth
 def reopenticket(ticket_id):
     # Reabre um ticket
-    c = getdb().cursor()
     # Verifica se existem tickets bloqueados por este ticket
     # que estão fechados.
-    c.execute('''
-        SELECT d.blocks
-        FROM dependencies AS d
-        INNER JOIN tickets AS t ON t.id = d.blocks
-        WHERE d.ticket_id = :ticket_id
-          AND t.status = 1
-    ''', locals())
-    blocks = []
-    for r in c:
-        blocks.append(r[0])
+    with db_trans() as c:
+        c.execute('''
+            SELECT d.blocks
+            FROM dependencies AS d
+            INNER JOIN tickets AS t ON t.id = d.blocks
+            WHERE d.ticket_id = :ticket_id
+              AND t.status = 1
+        ''', locals())
+        blocks = []
+        for r in c:
+            blocks.append(r[0])
     if len(blocks) > 0:
         return 'os seguintes tickets são bloqueados por este ticket e estão fechados: %s' % \
             ' '.join([str(x) for x in blocks])
     username = currentuser()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE tickets
             SET status = 0,
@@ -853,12 +817,6 @@ def reopenticket(ticket_id):
             VALUES (
                 :ticket_id, :username, 'reopen')
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-
     return redirect('/%s' % ticket_id)
 
 
@@ -869,19 +827,12 @@ def changepriority(ticket_id):
     assert 'prio' in request.forms
     assert re.match(r'^[1-5]$', request.forms.prio)
     priority = int(request.forms.prio)
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE tickets
             SET priority = :priority
             WHERE id = :ticket_id
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-
     return redirect('/%s' % ticket_id)
 
 
@@ -905,8 +856,7 @@ def uploadfile(ticket_id):
         blob += chunk
     blob = buffer(zlib.compress(blob))
     username = currentuser()
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             INSERT INTO files ( ticket_id, name, user, size, contents )
             VALUES ( :ticket_id, :filename, :username, :filesize, :blob )
@@ -916,12 +866,6 @@ def uploadfile(ticket_id):
             SET datemodified = datetime('now', 'localtime')
             WHERE id = :ticket_id
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-
     return redirect('/%s' % ticket_id)
 
 
@@ -960,19 +904,13 @@ def changepasswordsave():
     if newpasswd != newpasswd2:
         return 'confirmação de nova senha diferente de nova senha!'
     passwdsha1 = sha1(newpasswd).hexdigest()
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE users
             SET password = :passwdsha1
             WHERE username = :username
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return redirect('/')
+    return redirect('/')
 
 
 @get('/admin')
@@ -983,25 +921,25 @@ def admin():
     # Tela de administração
     username = currentuser()
     users = []
-    c = getdb().cursor()
-    c.execute('''
-        SELECT username, is_admin, name, email
-        FROM users
-        ORDER BY username
-    ''')
-    for user in c:
-        user = dict(user)
-        user['name'] = user['name'] or ''
-        user['email'] = user['email'] or ''
-        users.append(user)
+    with db_trans() as c:
+        c.execute('''
+            SELECT username, is_admin, name, email
+            FROM users
+            ORDER BY username
+        ''')
+        for user in c:
+            user = dict(user)
+            user['name'] = user['name'] or ''
+            user['email'] = user['email'] or ''
+            users.append(user)
     config = {}
-    c = getdb().cursor()
-    c.execute('''
-        SELECT key, value
-        FROM config
-    ''')
-    for k in c:
-        config[k[0]] = k[1]
+    with db_trans() as c:
+        c.execute('''
+            SELECT key, value
+            FROM config
+        ''')
+        for k in c:
+            config[k[0]] = k[1]
     return dict(version=VERSION, username=username, users=users, config=config,
         userisadmin=userisadmin(username))
 
@@ -1015,8 +953,7 @@ def saveconfig():
     for k in request.forms:
         if k in ('mail.smtp', 'file.maxsize'):
             config[k] = getattr(request.forms, k)
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         for conf in config:
             k, v = conf, config[conf]
             c.execute('''
@@ -1027,12 +964,7 @@ def saveconfig():
                 INSERT INTO config
                 VALUES (:k, :v)
             ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return redirect('/admin')
+    return redirect('/admin')
 
 
 @get('/admin/remove-user/:username')
@@ -1042,18 +974,12 @@ def removeuser(username):
     # Apaga um usuário
     if username == currentuser():
         return 'não é possível remover usuário corrente'
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             DELETE FROM users
             WHERE username = :username
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return redirect('/admin')
+    return redirect('/admin')
 
 
 @get('/admin/edit-user/:username')
@@ -1062,13 +988,13 @@ def removeuser(username):
 @requires_admin
 def edituser(username):
     # Exibe tela de edição de usuários
-    c = getdb().cursor()
-    c.execute('''
-        SELECT name, email
-        FROM users
-        WHERE username = :username
-    ''', locals())
-    r = c.fetchone()
+    with db_trans() as c:
+        c.execute('''
+            SELECT name, email
+            FROM users
+            WHERE username = :username
+        ''', locals())
+        r = c.fetchone()
     name = ''
     email = ''
     if not r:
@@ -1089,19 +1015,13 @@ def editusersave(username):
     assert 'email' in request.forms
     name = request.forms.name.strip()
     email = request.forms.email.strip()
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE users
             SET name=:name, email=:email
             WHERE username=:username
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return redirect('/admin')
+    return redirect('/admin')
 
 
 @post('/admin/save-new-user')
@@ -1115,20 +1035,14 @@ def newuser():
         return 'usuário inválido'
     password = str(int(random.random() * 999999))
     sha1password = sha1(password).hexdigest()
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             INSERT INTO users (
                 username, password, is_admin
             )
             VALUES (:username, :sha1password, 0)
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return u'usuário %s criado com senha %s' % ( username, password )
+    return u'usuário %s criado com senha %s' % ( username, password )
 
 
 @get('/admin/force-new-password/:username')
@@ -1140,19 +1054,13 @@ def forceuserpassword(username):
     sha1password = sha1(password).hexdigest()
     if username == currentuser():
         return 'não é possível forçar nova senha de usuário corrente'
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE users
             SET password = :sha1password
             WHERE username = :username
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return u'usuário %s teve nova senha forçada: %s' % ( username, password )
+    return u'usuário %s teve nova senha forçada: %s' % ( username, password )
 
 
 @get('/admin/change-user-admin-status/:username/:status')
@@ -1162,20 +1070,14 @@ def changeuseradminstatus(username, status):
     # Altera status de administrador de um usuário
     if username == currentuser():
         return 'não é possível alterar status de admin para usuário corrente'
-    c = getdb().cursor()
     assert status in ( '0', '1' )
-    try:
+    with db_trans() as c:
         c.execute('''
             UPDATE users
             SET is_admin = :status
             WHERE username = :username
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return redirect('/admin')
+    return redirect('/admin')
 
 
 @get('/admin/reindex-fts')
@@ -1183,8 +1085,7 @@ def changeuseradminstatus(username, status):
 @requires_admin
 def reindexfts():
     # Recria o índice de Full Text Search
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         print 'limpando índices'
         c.execute('''
             DELETE FROM search
@@ -1198,12 +1099,7 @@ def reindexfts():
         for r in c:
             print 'reindexando ticket #%s' % r['id']
             populatesearch(r['id'])
-    except:
-        getdb().rollback()
-        raise
-    finally:
-        getdb().commit()
-        return 'índices de full text search recriados!'
+    return 'índices de full text search recriados!'
 
 
 ########################################################################################
@@ -1214,177 +1110,168 @@ def reindexfts():
 def validateuserdb(user, passwd):
     # Valida usuário e senha no banco de dados
     passwdsha1 = sha1(passwd).hexdigest()
-    c = getdb().cursor()
-    c.execute('''
-        SELECT username
-        FROM users
-        WHERE username = :user
-            AND password = :passwdsha1
-    ''', locals())
-    r = c.fetchone()
+    with db_trans() as c:
+        c.execute('''
+            SELECT username
+            FROM users
+            WHERE username = :user
+                AND password = :passwdsha1
+        ''', locals())
+        r = c.fetchone()
     if not r: return False
     else: return True
 
 
 def validatesession(session_id):
     # Valida sessão ativa no banco de dados
-    c = getdb().cursor()
-    c.execute('''
-        SELECT session_id
-        FROM sessions
-        WHERE session_id = :session_id
-    ''', locals())
-    r = c.fetchone()
+    with db_trans() as c:
+        c.execute('''
+            SELECT session_id
+            FROM sessions
+            WHERE session_id = :session_id
+        ''', locals())
+        r = c.fetchone()
     if r: return True
     else: return False
 
 
 def userident(username):
     # Retorna nome e e-mail de usuário
-    c = getdb().cursor()
-    c.execute('''
-        SELECT name, email
-        FROM users
-        WHERE username=:username
-    ''', locals())
-    return dict(c.fetchone())
+    with db_trans() as c:
+        c.execute('''
+            SELECT name, email
+            FROM users
+            WHERE username=:username
+        ''', locals())
+        r = c.fetchone()
+    return dict(r)
 
 
 def currentuser():
     # Retorna usuário corrente
     session_id = request.get_cookie(cookie_session_name())
-    c = getdb().cursor()
-    c.execute('''
-        SELECT username
-        FROM sessions
-        WHERE session_id = :session_id
-    ''', locals())
-    r = c.fetchone()
+    with db_trans() as c:
+        c.execute('''
+            SELECT username
+            FROM sessions
+            WHERE session_id = :session_id
+        ''', locals())
+        r = c.fetchone()
     return r[0]
 
 
 def userisadmin(username):
     # Checa se usuário tem poderes administrativos
-    c = getdb().cursor()
-    c.execute('''
-        SELECT is_admin
-        FROM users
-        WHERE username = :username
-    ''', locals())
-    return c.fetchone()[0]
+    with db_trans() as c:
+        c.execute('''
+            SELECT is_admin
+            FROM users
+            WHERE username = :username
+        ''', locals())
+        r = c.fetchone()
+    return r[0]
 
 
 def removesession(session_id):
     # Remove uma sessão do banco de dados
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             DELETE FROM sessions
             WHERE session_id = :session_id
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
 
 
 def makesession(user):
     # Cria uma nova sessão no banco de dados
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         session_id = str(uuid4())
         c.execute('''
             INSERT INTO sessions (session_id, username)
             VALUES (:session_id, :user)
         ''', locals())
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
-        return session_id
+    return session_id
 
 
 def tagsdesc():
     # Retorna as descrições de tags
-    c = getdb().cursor()
-    c.execute('''
-        SELECT tag, description, bgcolor, fgcolor
-        FROM tagsdesc
-    ''')
     tagdesc = {}
-    for r in c:
-        tagdesc[r['tag']] = {
-            'description': r['description'] or '',
-            'bgcolor': r['bgcolor'] or '#00D6D6',
-            'fgcolor': r['fgcolor'] or '#4D4D4D'
-        }
+    with db_trans() as c:
+        c.execute('''
+            SELECT tag, description, bgcolor, fgcolor
+            FROM tagsdesc
+        ''')
+        for r in c:
+            tagdesc[r['tag']] = {
+                'description': r['description'] or '',
+                'bgcolor': r['bgcolor'] or '#00D6D6',
+                'fgcolor': r['fgcolor'] or '#4D4D4D'
+            }
     return tagdesc
 
 def ticketblocks(ticket_id):
     # Retorna quais ticket são bloqueados por um ticket
     deps = {}
-    c = getdb().cursor()
-    c.execute('''
-        SELECT d.blocks, t.title, t.status, t.admin_only
-        FROM dependencies AS d
-        INNER JOIN tickets AS t ON t.id = d.blocks
-        WHERE d.ticket_id = :ticket_id
-    ''', locals())
-    for r in c:
-        deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
+    with db_trans() as c:
+        c.execute('''
+            SELECT d.blocks, t.title, t.status, t.admin_only
+            FROM dependencies AS d
+            INNER JOIN tickets AS t ON t.id = d.blocks
+            WHERE d.ticket_id = :ticket_id
+        ''', locals())
+        for r in c:
+            deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
     return deps
 
 def ticketdepends(ticket_id):
     # Retorna quais ticket dependem de um ticket
     deps = {}
-    c = getdb().cursor()
-    c.execute('''
-        SELECT d.ticket_id, t.title, t.status, t.admin_only
-        FROM dependencies AS d
-        INNER JOIN tickets AS t ON t.id = d.ticket_id
-        WHERE d.blocks = :ticket_id
-    ''', locals())
-    for r in c:
-        deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
+    with db_trans() as c:
+        c.execute('''
+            SELECT d.ticket_id, t.title, t.status, t.admin_only
+            FROM dependencies AS d
+            INNER JOIN tickets AS t ON t.id = d.ticket_id
+            WHERE d.blocks = :ticket_id
+        ''', locals())
+        for r in c:
+            deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
     return deps
 
 def tickettags(ticket_id):
     # Retorna tags de um ticket
     tags = []
-    c = getdb().cursor()
-    c.execute('''
-        SELECT tag
-        FROM tags
-        WHERE ticket_id = :ticket_id
-    ''', locals())
-    for r in c:
-        tags.append(r[0])
+    with db_trans() as c:
+        c.execute('''
+            SELECT tag
+            FROM tags
+            WHERE ticket_id = :ticket_id
+        ''', locals())
+        for r in c:
+            tags.append(r[0])
     return tags
 
 
 def tickettitle(ticket_id):
     # Retorna o título de um ticket
-    c = getdb().cursor()
-    c.execute('''
-        SELECT title
-        FROM tickets
-        WHERE id = :ticket_id
-    ''', locals())
-    title = c.fetchone()[0]
+    with db_trans() as c:
+        c.execute('''
+            SELECT title
+            FROM tickets
+            WHERE id = :ticket_id
+        ''', locals())
+        title = c.fetchone()[0]
     return title
 
 
 def getconfig(key):
     # Retorna o valor de uma configuração
-    c = getdb().cursor()
-    c.execute('''
-        SELECT value
-        FROM config
-        WHERE key = :key
-    ''', locals())
-    return c.fetchone()[0]
+    with db_trans() as c:
+        c.execute('''
+            SELECT value
+            FROM config
+            WHERE key = :key
+        ''', locals())
+        r = c.fetchone()
+    return r[0]
 
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):
@@ -1416,29 +1303,29 @@ def sanitizecomment(comment):
 def populatesearch(ticket_id):
     # Popula o índice de busca full-text para um ticket
     text = ''
-    c = getdb().cursor()
-    c.execute('''
-        SELECT title
-        FROM tickets
-        WHERE id = :ticket_id
-    ''', locals())
-    r = c.fetchone()
-    text += ' ' + r['title'] + ' '
-    c.execute('''
-        SELECT comment
-        FROM comments
-        WHERE ticket_id = :ticket_id
-    ''', locals())
-    for r in c:
-        text += ' ' + r['comment'] + ' '
-    c.execute('''
-        DELETE FROM search
-        WHERE docid = :ticket_id
-    ''', locals())
-    c.execute('''
-        INSERT INTO search ( docid, text )
-        VALUES ( :ticket_id, :text )
-    ''', locals())
+    with db_trans() as c:
+        c.execute('''
+            SELECT title
+            FROM tickets
+            WHERE id = :ticket_id
+        ''', locals())
+        r = c.fetchone()
+        text += ' ' + r['title'] + ' '
+        c.execute('''
+            SELECT comment
+            FROM comments
+            WHERE ticket_id = :ticket_id
+        ''', locals())
+        for r in c:
+            text += ' ' + r['comment'] + ' '
+        c.execute('''
+            DELETE FROM search
+            WHERE docid = :ticket_id
+        ''', locals())
+        c.execute('''
+            INSERT INTO search ( docid, text )
+            VALUES ( :ticket_id, :text )
+        ''', locals())
 
 
 def createdb(dbname):
@@ -1459,17 +1346,11 @@ def createdb(dbname):
 
 def expire_old_sessions():
     # Expira sessões mais antigas que 7 dias
-    c = getdb().cursor()
-    try:
+    with db_trans() as c:
         c.execute('''
             DELETE FROM sessions
             WHERE julianday('now') - julianday(date_login) > 7
         ''')
-    except:
-        getdb().rollback()
-        raise
-    else:
-        getdb().commit()
 
 
 def cookie_session_name():
