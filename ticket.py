@@ -1303,23 +1303,23 @@ def sanitizecomment(comment):
 def populatesearch(ticket_id):
     # Popula o índice de busca full-text para um ticket
     text = ''
-    with db_trans() as c:
-        text += ' ' + tickettitle(ticket_id) + ' '
-        c.execute('''
-            SELECT comment
-            FROM comments
-            WHERE ticket_id = :ticket_id
-        ''', locals())
-        for r in c:
-            text += ' ' + r['comment'] + ' '
-        c.execute('''
-            DELETE FROM search
-            WHERE docid = :ticket_id
-        ''', locals())
-        c.execute('''
-            INSERT INTO search ( docid, text )
-            VALUES ( :ticket_id, :text )
-        ''', locals())
+    c = getdb().cursor()    # Utiliza transação do caller
+    text += ' ' + tickettitle(ticket_id) + ' '
+    c.execute('''
+        SELECT comment
+        FROM comments
+        WHERE ticket_id = :ticket_id
+    ''', locals())
+    for r in c:
+        text += ' ' + r['comment'] + ' '
+    c.execute('''
+        DELETE FROM search
+        WHERE docid = :ticket_id
+    ''', locals())
+    c.execute('''
+        INSERT INTO search ( docid, text )
+        VALUES ( :ticket_id, :text )
+    ''', locals())
 
 
 def createdb(dbname):
