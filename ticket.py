@@ -1385,6 +1385,4 @@ if __name__ == '__main__':
     if not os.path.isfile(dbname):
         createdb(dbname)
 
-    bottle.debug(debug)
-    run(host=host, port=port,
-        server='paste', reloader=debug)
+    run(host=host, port=port, debug=debug, server='paste', reloader=debug)
