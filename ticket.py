@@ -1235,7 +1235,7 @@ def ticketdepends(ticket_id):
 def tickettags(ticket_id):
     # Retorna tags de um ticket
     c = getcursor()
-    getcursor().execute('''
+    c.execute('''
         SELECT tag
         FROM tags
         WHERE ticket_id = :ticket_id
