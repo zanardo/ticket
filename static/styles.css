@@ -84,6 +84,11 @@ input, textarea, select, submit {
 }
 
 .actions {
+	padding-top: 30px;
+}
+
+.panel {
+	padding-bottom: 30px;
 }
 
 .ticket {
