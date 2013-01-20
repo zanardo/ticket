@@ -10,11 +10,18 @@ body {
 }
 
 .tab {
+	padding: 2px 5px 2px 5px;
 	color: #262626;
 	cursor: pointer;
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 8pt;
 	text-decoration: none;
+}
+
+a:hover.tab {
+	text-decoration: none;
+	background-color: gray;
+	color: #FFFFFF;
 }
 
 a:link,

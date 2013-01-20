@@ -160,34 +160,27 @@
 						<a class="tab"
 							onclick="return showPanel(this, 'note');">
 							Adicionar Nota</a>
-							 | 
 						<a class="tab" onclick="return showPanel(this, 'prio');">
 							Prioridade de Ação</a>
-							 | 
 						%end
 						<a class="tab" onclick="return showPanel(this, 'tags');">
 							Palavras-Chave</a>
-							 | 
 						<a class="tab" onclick="return showPanel(this, 'title');">
 							Título</a>
 						%if ticket['status'] == 0 or timetrack:
-							 | 
 						<a class="tab" onclick="return showPanel(this, 'minutes');">
 							Tempo</a> 
 						%end
 						%if ticket['status'] == 0:
-							| 
 						<a class="tab" onclick="return showPanel(this, 'file');">
-							Anexo</a>				| 
+							Anexo</a>
 						<a class="tab" onclick="return showPanel(this, 'datedue');">
 							Previsão</a>
 						%end
 						%if userisadmin:
-							|
 						<a class="tab" onclick="return showPanel(this, 'security');">
 							Segurança</a>
 						%end
-							|
 						<a class="tab" onclick="return showPanel(this, 'dependencies');">
 							Dependências</a>
 					</td>
