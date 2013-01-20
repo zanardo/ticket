@@ -14,4 +14,6 @@ várias instâncias do sistema ticket em portas separadas no mesmo servidor.
 
 3. Atualização da versão 1.4
 
-...
+É necessário instalar a biblioteca `waitress`:
+
+  pip install waitress
