@@ -152,178 +152,179 @@
 				%end
 			</div>
 			%end
+			<p>
+			<table class="actions" border="0">
+				<tr>
+					<td>
+						%if ticket['status'] == 0:
+						<a class="tab"
+							onclick="return showPanel(this, 'note');">
+							Adicionar Nota</a>
+							 | 
+						<a class="tab" onclick="return showPanel(this, 'prio');">
+							Prioridade de Ação</a>
+							 | 
+						%end
+						<a class="tab" onclick="return showPanel(this, 'tags');">
+							Palavras-Chave</a>
+							 | 
+						<a class="tab" onclick="return showPanel(this, 'title');">
+							Título</a>
+						%if ticket['status'] == 0 or timetrack:
+							 | 
+						<a class="tab" onclick="return showPanel(this, 'minutes');">
+							Tempo</a> 
+						%end
+						%if ticket['status'] == 0:
+							| 
+						<a class="tab" onclick="return showPanel(this, 'file');">
+							Anexo</a>				| 
+						<a class="tab" onclick="return showPanel(this, 'datedue');">
+							Previsão</a>
+						%end
+						%if userisadmin:
+							|
+						<a class="tab" onclick="return showPanel(this, 'security');">
+							Segurança</a>
+						%end
+							|
+						<a class="tab" onclick="return showPanel(this, 'dependencies');">
+							Dependências</a>
+					</td>
+				</tr>
+			</table>
+			<br>
+			<div class="panel" id="note" style="display: none">
+				<form method="post" action="/new-note/{{ticket['id']}}" enctype="multipart/form-data">
+					<textarea name="text" rows="10" cols="70" id="formnote"></textarea>
+					<p>
+					<input type="submit" name="submit" value="Adicionar nota">
+					%if user['name'] and user['email']:
+						<p><br><br>
+							<div class="deschelp">
+								Opcional: enviar esta nota para os seguintes contatos por email:
+							</div>
+						<p>
+						<textarea name="contacts" rows="2" cols="40"></textarea>
+					%end
+				</form>
+			</div>
+			<div class="panel" id="prio" style="display: none">
+				<form method="post" action="/change-priority/{{ticket['id']}}"
+						enctype="multipart/form-data">
+					<select name="prio">
+						%for prio in priodesc:
+							%if prio == ticket['priority']:
+								<option value="{{prio}}" selected="selected">{{priodesc[prio]}}</option>
+							%else:
+								<option value="{{prio}}">{{priodesc[prio]}}</option>
+							%end
+						%end
+					</select>
+					<input type="submit" name="submit" value="Mudar prioridade de ação">
+				</form>
+			</div>
+			<div class="panel" id="tags" style="display: none">
+				<form method="post" action="/change-tags/{{ticket['id']}}"
+						enctype="multipart/form-data" name="ftag">
+					<input type="text" name="text" value="{{' '.join(list(sorted(tags)))}}" size="70" id="formtags">
+					<input type="submit" name="submit" value="Salvar palavras-chave">
+					<p>
+					<div class="deschelp">
+						Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.
+					</div>
+					<p>
+					<small>
+					%for tag in sorted(tagsdesc):
+						<span
+							onclick="document.ftag.text.value+=' {{tag}}'"
+							class="tag"
+							title="{{tagsdesc[tag]['description']}}"
+							style="background-color:{{tagsdesc[tag]['bgcolor']}};color:{{tagsdesc[tag]['fgcolor']}};cursor: pointer;"
+						>{{tag}}</span>
+					%end
+					</small>
+				</form>
+			</div>
+			<div class="panel" id="title" style="display: none">
+				<form method="post" action="/change-title/{{ticket['id']}}"
+						enctype="multipart/form-data">
+					<input type="text" name="text" value="{{ticket['title']}}" size="70">
+					<input type="submit" name="submit" value="Salvar título">
+				</form>
+			</div>
+			<div class="panel" id="minutes" style="display: none">
+				%if ticket['status'] == 0:
+				<form method="post" action="/register-minutes/{{ticket['id']}}"
+						enctype="multipart/form-data" name="fminutes">
+					<input type="text" name="minutes" value="0" size="10">
+					<input type="submit" name="submit" value="Contabilizar minutos">
+					<p>
+					<input type="button" name="bstartcron" value="Iniciar Cronômetro" onclick="startCron()">
+					<input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;">
+				</form>
+				<p>
+				%end
+				%for t in timetrack:
+					%minutes = t['minutes']
+					%hours = minutes / 60
+					%minutes = minutes % 60
+					<small>
+						<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%dm" % (hours,minutes)}}</b> no total
+					</small>
+					<br>
+				%end
+			</div>
+			<div class="panel" id="file" style="display: none">
+				<form method="post" action="/upload-file/{{ticket['id']}}"
+						enctype="multipart/form-data">
+					<input type="file" name="file" size="30">
+					<p>
+					<input type="submit" name="submit" value="Enviar anexo">
+					<p>
+					<div class="deschelp">
+						É possível enviar um arquivo em anexo a este ticket, como por exemplo uma imagem, um script, etc.
+					</div>
+				</form>
+			</div>
+			<div class="panel" id="datedue" style="display: none">
+				<form method="post" action="/change-datedue/{{ticket['id']}}"
+						enctype="multipart/form-data" name="fdatedue">
+					<input type="text" name="datedue" value="{{datedue}}" size="10" id="formdatedue">
+					<input type="submit" name="submit" value="Salvar previsão">
+					<p>
+					<div class="deschelp">
+						É possível digitar uma data de previsão de resolução deste
+						chamado. Utilizar o formato YYYY-MM-DD. Exemplo: <b>2012-09-27</b>
+					</div>
+				</form>
+			</div>
+			<div class="panel" id="security" style="display: none">
+				%if ticket['admin_only'] == 1:
+					Este ticket é visível apenas para administradores.
+					<p>
+					<a href="/change-admin-only/{{ticket['id']}}/0">Tornar visível para qualquer usuário
+						autenticado</a>
+				%else:
+					Este ticket é visível para qualquer usuário autenticado.
+					<p>
+					<a href="/change-admin-only/{{ticket['id']}}/1">Tornar visível apenas para
+						administradores</a>
+				%end
+			</div>
+			<div class="panel" id="dependencies" style="display: none">
+				<form method="post" action="/change-dependencies/{{ticket['id']}}"
+						enctype="multipart/form-data" name="fdeps">
+					<input type="text" name="text" value="{{' '.join([str(x) for x in blocks.keys()])}}" size="70" id="formdeps">
+					<input type="submit" name="submit" value="Salvar dependências">
+					<p>
+					<div class="deschelp">
+						Listar os tickets que são bloqueados por este ticket, com seus números separados por espaços.
+					</div>
+					<p>
+				</form>
+			</div>
 		</td>
 	</tr>
 </table>
 <p>
-<table class="actions" border="0">
-	<tr>
-		<td>
-			%if ticket['status'] == 0:
-			<a class="tab"
-				onclick="return showPanel(this, 'note');">
-				Adicionar Nota</a>
-				 | 
-			<a class="tab" onclick="return showPanel(this, 'prio');">
-				Prioridade de Ação</a>
-				 | 
-			%end
-			<a class="tab" onclick="return showPanel(this, 'tags');">
-				Palavras-Chave</a>
-				 | 
-			<a class="tab" onclick="return showPanel(this, 'title');">
-				Título</a>
-			%if ticket['status'] == 0 or timetrack:
-				 | 
-			<a class="tab" onclick="return showPanel(this, 'minutes');">
-				Tempo</a> 
-			%end
-			%if ticket['status'] == 0:
-				| 
-			<a class="tab" onclick="return showPanel(this, 'file');">
-				Anexo</a>				| 
-			<a class="tab" onclick="return showPanel(this, 'datedue');">
-				Previsão</a>
-			%end
-			%if userisadmin:
-				|
-			<a class="tab" onclick="return showPanel(this, 'security');">
-				Segurança</a>
-			%end
-				|
-			<a class="tab" onclick="return showPanel(this, 'dependencies');">
-				Dependências</a>
-		</td>
-	</tr>
-</table>
-<br>
-<div class="panel" id="note" style="display: none">
-	<form method="post" action="/new-note/{{ticket['id']}}" enctype="multipart/form-data">
-		<textarea name="text" rows="10" cols="70" id="formnote"></textarea>
-		<p>
-		<input type="submit" name="submit" value="Adicionar nota">
-		%if user['name'] and user['email']:
-			<p><br><br>
-				<div class="deschelp">
-					Opcional: enviar esta nota para os seguintes contatos por email:
-				</div>
-			<p>
-			<textarea name="contacts" rows="2" cols="40"></textarea>
-		%end
-	</form>
-</div>
-<div class="panel" id="prio" style="display: none">
-	<form method="post" action="/change-priority/{{ticket['id']}}"
-			enctype="multipart/form-data">
-		<select name="prio">
-			%for prio in priodesc:
-				%if prio == ticket['priority']:
-					<option value="{{prio}}" selected="selected">{{priodesc[prio]}}</option>
-				%else:
-					<option value="{{prio}}">{{priodesc[prio]}}</option>
-				%end
-			%end
-		</select>
-		<input type="submit" name="submit" value="Mudar prioridade de ação">
-	</form>
-</div>
-<div class="panel" id="tags" style="display: none">
-	<form method="post" action="/change-tags/{{ticket['id']}}"
-			enctype="multipart/form-data" name="ftag">
-		<input type="text" name="text" value="{{' '.join(list(sorted(tags)))}}" size="70" id="formtags">
-		<input type="submit" name="submit" value="Salvar palavras-chave">
-		<p>
-		<div class="deschelp">
-			Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.
-		</div>
-		<p>
-		<small>
-		%for tag in sorted(tagsdesc):
-			<span
-				onclick="document.ftag.text.value+=' {{tag}}'"
-				class="tag"
-				title="{{tagsdesc[tag]['description']}}"
-				style="background-color:{{tagsdesc[tag]['bgcolor']}};color:{{tagsdesc[tag]['fgcolor']}};cursor: pointer;"
-			>{{tag}}</span>
-		%end
-		</small>
-	</form>
-</div>
-<div class="panel" id="title" style="display: none">
-	<form method="post" action="/change-title/{{ticket['id']}}"
-			enctype="multipart/form-data">
-		<input type="text" name="text" value="{{ticket['title']}}" size="70">
-		<input type="submit" name="submit" value="Salvar título">
-	</form>
-</div>
-<div class="panel" id="minutes" style="display: none">
-	%if ticket['status'] == 0:
-	<form method="post" action="/register-minutes/{{ticket['id']}}"
-			enctype="multipart/form-data" name="fminutes">
-		<input type="text" name="minutes" value="0" size="10">
-		<input type="submit" name="submit" value="Contabilizar minutos">
-		<p>
-		<input type="button" name="bstartcron" value="Iniciar Cronômetro" onclick="startCron()">
-		<input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;">
-	</form>
-	<p>
-	%end
-	%for t in timetrack:
-		%minutes = t['minutes']
-		%hours = minutes / 60
-		%minutes = minutes % 60
-		<small>
-			<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%dm" % (hours,minutes)}}</b> no total
-		</small>
-		<br>
-	%end
-</div>
-<div class="panel" id="file" style="display: none">
-	<form method="post" action="/upload-file/{{ticket['id']}}"
-			enctype="multipart/form-data">
-		<input type="file" name="file" size="30">
-		<p>
-		<input type="submit" name="submit" value="Enviar anexo">
-		<p>
-		<div class="deschelp">
-			É possível enviar um arquivo em anexo a este ticket, como por exemplo uma imagem, um script, etc.
-		</div>
-	</form>
-</div>
-<div class="panel" id="datedue" style="display: none">
-	<form method="post" action="/change-datedue/{{ticket['id']}}"
-			enctype="multipart/form-data" name="fdatedue">
-		<input type="text" name="datedue" value="{{datedue}}" size="10" id="formdatedue">
-		<input type="submit" name="submit" value="Salvar previsão">
-		<p>
-		<div class="deschelp">
-			É possível digitar uma data de previsão de resolução deste
-			chamado. Utilizar o formato YYYY-MM-DD. Exemplo: <b>2012-09-27</b>
-		</div>
-	</form>
-</div>
-<div class="panel" id="security" style="display: none">
-	%if ticket['admin_only'] == 1:
-		Este ticket é visível apenas para administradores.
-		<p>
-		<a href="/change-admin-only/{{ticket['id']}}/0">Tornar visível para qualquer usuário
-			autenticado</a>
-	%else:
-		Este ticket é visível para qualquer usuário autenticado.
-		<p>
-		<a href="/change-admin-only/{{ticket['id']}}/1">Tornar visível apenas para
-			administradores</a>
-	%end
-</div>
-<div class="panel" id="dependencies" style="display: none">
-	<form method="post" action="/change-dependencies/{{ticket['id']}}"
-			enctype="multipart/form-data" name="fdeps">
-		<input type="text" name="text" value="{{' '.join([str(x) for x in blocks.keys()])}}" size="70" id="formdeps">
-		<input type="submit" name="submit" value="Salvar dependências">
-		<p>
-		<div class="deschelp">
-			Listar os tickets que são bloqueados por este ticket, com seus números separados por espaços.
-		</div>
-		<p>
-	</form>
-</div>
