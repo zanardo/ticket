@@ -734,9 +734,14 @@ def registerminutes(ticket_id):
 def newnote(ticket_id):
     # Cria um novo comentário para um ticket
     assert 'text' in request.forms
-    assert 'contacts' in request.forms
+
+    if not 'contacts' in request.forms:
+        # Usuário não possui nome e e-mail cadastrado
+        contacts = []
+    else:
+        contacts = request.forms.contacts.strip().split()
+
     note = request.forms.text
-    contacts = request.forms.contacts.strip().split()
     if note.strip() == '': return 'nota inválida'
 
     if len(contacts) > 0:
