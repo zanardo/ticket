@@ -147,16 +147,15 @@ a.tag:hover {
 }
 
 .copyright {
-	font-family: Verdana, sans-serif;
-	font-size: 11px;
-	padding-top: 5px;
-	border-top: 1px solid #CCCCCC;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 13px;
 	color: #808080;
 	text-align: right;
-	background-color: #E2E7E9;
-	padding: 20px;
 	margin-top: 70px;
-	box-shadow: 1px 1px 1px #D4D4D4;
+	border-top: 1px solid #E6E6E6;
+	padding-top: 15px;
+	padding-right: 10px;
+	margin-bottom: 15px;
 }
 
 .deschelp {
