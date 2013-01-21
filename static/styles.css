@@ -43,8 +43,8 @@ a:hover {
 }
 
 input, textarea, select, submit {
-	background-color: #F1F3F4;
-	border: 1px solid #336699;
+	background-color: #F2F2F2;
+	border: 1px solid #000000;
 	font-family: Verdana, Arial, sans-serif;
 	font-size: 8pt;
 }
