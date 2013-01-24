@@ -175,7 +175,7 @@
 						<a class="tab" onclick="return showPanel(this, 'file');">
 							Anexo</a>
 						%end
-						%if ticket['status'] == 0:
+						%if 'datedue' in features and ticket['status'] == 0:
 						<a class="tab" onclick="return showPanel(this, 'datedue');">
 							Previsão</a>
 						%end

@@ -45,6 +45,9 @@
 	<input type="checkbox" name="features" {{ "checked=1" if "fileattach" in features else "" }} value="fileattach">Arquivos anexos
 	<br>
 	<input type="checkbox" name="features" {{ "checked=1" if "dependency" in features else "" }} value="dependency">Dependências entre tickets
+	<br>
+	<input type="checkbox" name="features" {{ "checked=1" if "datedue" in features else "" }} value="datedue">Data de previsão de solução
+
 	<p>
 
 	<input type="submit" name="submit" value="salvar funcionalidades">
