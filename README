@@ -10,11 +10,11 @@ ticket
 
 dependências
 
-  ticket precisa do Python 2.7, e das bibliotecas externas Bottle e waitress.
+  ticket precisa do Python 2.7, e das bibliotecas externas Bottle e paste.
   Para instalar as dependências:
 
     # pip install bottle
-    # pip install waitress
+    # pip install paste
 
 instalando ticket
 
