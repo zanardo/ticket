@@ -39,6 +39,8 @@
 <h2>Funcionalidades ativas</h2>
 <form method="post" action="/admin/save-features" enctype="multipart/form-data">
 	<input type="checkbox" name="features" {{ "checked=1" if "timetrack" in features else "" }} value="timetrack">Cronômetro de tempo
+	<br>
+	<input type="checkbox" name="features" {{ "checked=1" if "adminonly" in features else "" }} value="adminonly">Restrição de tickets para administradores
 	<p>
 
 	<input type="submit" name="submit" value="salvar funcionalidades">

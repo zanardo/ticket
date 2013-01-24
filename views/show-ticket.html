@@ -177,7 +177,7 @@
 						<a class="tab" onclick="return showPanel(this, 'datedue');">
 							Previsão</a>
 						%end
-						%if userisadmin:
+						%if 'adminonly' in features and userisadmin:
 						<a class="tab" onclick="return showPanel(this, 'security');">
 							Segurança</a>
 						%end
