@@ -7,13 +7,22 @@ Novo filtro "r" para restrição dos tickets:
 	r:n -> tickets exibidos para usuários normais
 	r:t -> tickets com qualquer restrição (default)
 
+Permite desativar UI das seguintes funcionalidades:
+
+    Tempo trabalhado
+    Restrição de tickets para administradores
+    Arquivos anexos
+    Dependências entre tickets
+    Data de previsão de solução
+    Envio de comentários por e-mail 
+
+
 2. Correções
 
 O cookie de sessão agora respeita a porta http, fazendo com que possa-se utilizar
 várias instâncias do sistema ticket em portas separadas no mesmo servidor.
 
+
 3. Atualização da versão 1.4
 
-É necessário instalar a biblioteca `waitress`:
-
-  pip install waitress
+Acessar a tela administrativa e ativar as funcionalidades utilizadas.
