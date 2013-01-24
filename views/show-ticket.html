@@ -157,35 +157,37 @@
 				<tr>
 					<td>
 						%if ticket['status'] == 0:
-						<a class="tab"
-							onclick="return showPanel(this, 'note');">
-							Adicionar Nota</a>
-						<a class="tab" onclick="return showPanel(this, 'prio');">
-							Prioridade de Ação</a>
+							<a class="tab"
+								onclick="return showPanel(this, 'note');">
+								Adicionar Nota</a>
+						%end
+						%if ticket['status'] == 0:
+							<a class="tab" onclick="return showPanel(this, 'prio');">
+								Prioridade de Ação</a>
 						%end
 						<a class="tab" onclick="return showPanel(this, 'tags');">
 							Palavras-Chave</a>
 						<a class="tab" onclick="return showPanel(this, 'title');">
 							Título</a>
 						%if 'timetrack' in features and ( ticket['status'] == 0 or timetrack ):
-						<a class="tab" onclick="return showPanel(this, 'minutes');">
-							Tempo</a> 
+							<a class="tab" onclick="return showPanel(this, 'minutes');">
+								Tempo</a> 
 						%end
 						%if 'fileattach' in features and ticket['status'] == 0:
-						<a class="tab" onclick="return showPanel(this, 'file');">
-							Anexo</a>
+							<a class="tab" onclick="return showPanel(this, 'file');">
+								Anexo</a>
 						%end
 						%if 'datedue' in features and ticket['status'] == 0:
-						<a class="tab" onclick="return showPanel(this, 'datedue');">
-							Previsão</a>
+							<a class="tab" onclick="return showPanel(this, 'datedue');">
+								Previsão</a>
 						%end
 						%if 'adminonly' in features and userisadmin:
-						<a class="tab" onclick="return showPanel(this, 'security');">
-							Segurança</a>
+							<a class="tab" onclick="return showPanel(this, 'security');">
+								Segurança</a>
 						%end
 						%if 'dependency' in features:
-						<a class="tab" onclick="return showPanel(this, 'dependencies');">
-							Dependências</a>
+							<a class="tab" onclick="return showPanel(this, 'dependencies');">
+								Dependências</a>
 						%end
 					</td>
 				</tr>
