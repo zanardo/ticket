@@ -523,7 +523,7 @@ def showticket(ticket_id):
         priodesc=priodesc, timetrack=timetrack, tags=tags,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
         userisadmin=userisadmin(username), user=userident(username),
-        blocks=blocks, depends=depends)
+        blocks=blocks, depends=depends, features=getfeatures())
 
 @get('/file/<id:int>/:name')
 @requires_auth
@@ -940,7 +940,7 @@ def admin():
     for k in c:
         config[k[0]] = k[1]
     return dict(version=VERSION, username=username, users=users, config=config,
-        userisadmin=userisadmin(username))
+        userisadmin=userisadmin(username), features=getfeatures())
 
 
 @post('/admin/save-config')
@@ -963,6 +963,19 @@ def saveconfig():
                 INSERT INTO config
                 VALUES (:k, :v)
             ''', locals())
+    return redirect('/admin')
+
+
+@post('/admin/save-features')
+@requires_auth
+@requires_admin
+def savefeatures():
+    # Salva as funcionalidades
+    features = request.forms.getall('features')
+    with db_trans() as c:
+        c.execute("DELETE FROM features")
+        for f in features:
+            c.execute("INSERT INTO features ( feature ) VALUES ( :f )", locals())
     return redirect('/admin')
 
 
@@ -1263,6 +1276,19 @@ def getconfig(key):
         WHERE key = :key
     ''', locals())
     return c.fetchone()['value']
+
+
+def getfeatures():
+    # Retorna as funcionalidades ativadas
+    c = getcursor()
+    c.execute('''
+        SELECT feature
+        FROM features
+    ''')
+    features = []
+    for feature in c:
+        features.append(feature['feature'])
+    return features
 
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):

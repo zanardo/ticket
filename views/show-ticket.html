@@ -167,7 +167,7 @@
 							Palavras-Chave</a>
 						<a class="tab" onclick="return showPanel(this, 'title');">
 							Título</a>
-						%if ticket['status'] == 0 or timetrack:
+						%if 'timetrack' in features and ( ticket['status'] == 0 or timetrack ):
 						<a class="tab" onclick="return showPanel(this, 'minutes');">
 							Tempo</a> 
 						%end

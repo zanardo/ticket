@@ -36,6 +36,14 @@
 	%end
 </table>
 
+<h2>Funcionalidades ativas</h2>
+<form method="post" action="/admin/save-features" enctype="multipart/form-data">
+	<input type="checkbox" name="features" {{ "checked=1" if "timetrack" in features else "" }} value="timetrack">Cronômetro de tempo
+	<p>
+
+	<input type="submit" name="submit" value="salvar funcionalidades">
+</form>
+
 <h2>Configurações</h2>
 <form method="post" action="/admin/save-config" enctype="multipart/form-data">
 	<input type="text" size="40" name="mail.smtp" value="{{ config['mail.smtp'] }}">
