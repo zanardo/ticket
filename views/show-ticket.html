@@ -181,8 +181,10 @@
 						<a class="tab" onclick="return showPanel(this, 'security');">
 							Segurança</a>
 						%end
+						%if 'dependency' in features:
 						<a class="tab" onclick="return showPanel(this, 'dependencies');">
 							Dependências</a>
+						%end
 					</td>
 				</tr>
 			</table>
