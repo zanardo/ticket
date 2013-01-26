@@ -32,7 +32,7 @@ iniciando ticket
 
   Como padrão, o servidor web escuta no host 127.0.0.1, e na porta 5000. O
   banco de dados default é no arquivo ticket.db, o qual será criado
-  automaticamente na primeira incialização.
+  automaticamente na primeira inicialização.
 
   Agora basta acessar o sistema via navegador. O usuário padrão é "admin" com
   senha "admin". Ao acessar o sistema, crie um usuário para você, dê poderes
