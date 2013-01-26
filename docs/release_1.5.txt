@@ -22,6 +22,9 @@ Permite desativar UI das seguintes funcionalidades:
 O cookie de sessão agora respeita a porta http, fazendo com que possa-se utilizar
 várias instâncias do sistema ticket em portas separadas no mesmo servidor.
 
+Não rola até o topo da página ao selecionar uma palavra-chave na edição de um
+ticket.
+
 
 3. Atualização da versão 1.4
 
