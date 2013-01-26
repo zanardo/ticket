@@ -12,7 +12,6 @@ import os
 import sys
 import zlib
 import time
-import paste
 import bottle
 import getopt
 import random
@@ -1410,4 +1409,4 @@ if __name__ == '__main__':
     if not os.path.isfile(dbname):
         createdb(dbname)
 
-    run(host=host, port=port, debug=debug, server='paste', reloader=debug)
+    run(host=host, port=port, debug=debug, server='waitress', reloader=debug)
