@@ -35,12 +35,12 @@ Criar um ambiente com virtualenv:
 $ virtualenv-2.7 --no-site-packages --distribute venv
 $ venv/bin/pip install -r requirements.txt
 
-Para iniciar o servidor web, utilizar o comando:
-
-$ venv/bin/python ticket.py
-
 Atualizar o schema do banco de dados:
 
 $ venv/bin/python upgrade/v1.4_to_v1.5.py ticket.db
+
+Para iniciar o servidor web, utilizar o comando:
+
+$ venv/bin/python ticket.py
 
 Acessar a tela administrativa e ativar as funcionalidades utilizadas.
