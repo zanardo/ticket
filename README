@@ -10,11 +10,7 @@ ticket
 
 dependências
 
-  ticket precisa do Python 2.7, e das bibliotecas externas Bottle e paste.
-  Para instalar as dependências:
-
-    # pip install bottle
-    # pip install paste
+  ticket precisa do Python 2.7 e do virtualenv.
 
 instalando ticket
 
@@ -22,15 +18,21 @@ instalando ticket
 
     $ git clone git://github.com/zanardo/ticket
 
+  Instalar as dependências:
+
+    $ cd ticket
+    $ virtualenv-2.7 --no-site-packages --distribute venv
+    $ venv/bin/pip install -r requirements.txt
+
 iniciando ticket
 
   Iniciar o servidor web:
 
-    $ ./ticket.py
+    $ venv/bin/python ticket.py
 
   Como padrão, o servidor web escuta no host 127.0.0.1, e na porta 5000. O
   banco de dados default é no arquivo ticket.db, o qual será criado
-  automaticamente na primeira incialização.
+  automaticamente na primeira inicialização.
 
   Agora basta acessar o sistema via navegador. O usuário padrão é "admin" com
   senha "admin". Ao acessar o sistema, crie um usuário para você, dê poderes

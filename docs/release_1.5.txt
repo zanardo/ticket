@@ -1,0 +1,46 @@
+Esta é a documentação de mudanças na versão 1.5 do sistema ticket.
+
+1. Funcionalidades Novas
+
+Novo filtro "r" para restrição dos tickets:
+    r:a -> tickets restritos para administradores
+    r:n -> tickets exibidos para usuários normais
+    r:t -> tickets com qualquer restrição (default)
+
+Permite desativar UI das seguintes funcionalidades:
+
+    Tempo trabalhado
+    Restrição de tickets para administradores
+    Arquivos anexos
+    Dependências entre tickets
+    Data de previsão de solução
+    Envio de comentários por e-mail 
+
+
+2. Correções
+
+O cookie de sessão agora respeita a porta http, fazendo com que possa-se utilizar
+várias instâncias do sistema ticket em portas separadas no mesmo servidor.
+
+Não rola até o topo da página ao selecionar uma palavra-chave na edição de um
+ticket.
+
+
+3. Atualização da versão 1.4
+
+ticket agora utiliza o virtualenv para ser executado.
+
+Criar um ambiente com virtualenv:
+
+$ virtualenv-2.7 --no-site-packages --distribute venv
+$ venv/bin/pip install -r requirements.txt
+
+Atualizar o schema do banco de dados:
+
+$ venv/bin/python upgrade/v1.4_to_v1.5.py ticket.db
+
+Para iniciar o servidor web, utilizar o comando:
+
+$ venv/bin/python ticket.py
+
+Acessar a tela administrativa e ativar as funcionalidades utilizadas.

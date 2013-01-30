@@ -1,4 +1,4 @@
-var panels = new Array('note', 'prio', 'tags', 'title', 'minutes', 'file', 'datedue', 'contacts', 'security', 'dependencies');
+var panels = new Array('note', 'prio', 'tags', 'title', 'minutes', 'file', 'datedue', 'security', 'dependencies');
 var selectedTab = null;
 
 function showPanel(tab, name) {
@@ -16,8 +16,6 @@ function showPanel(tab, name) {
         document.getElementById('formnote').focus();
     } else if (name == 'tags') {
         document.getElementById('formtags').focus();
-    } else if (name == 'contacts') {
-        document.getElementById('formcontacts').focus();
     } else if (name == 'datedue') {
         document.getElementById('formdatedue').focus()
     } else if (name == 'dependencies') {

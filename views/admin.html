@@ -36,6 +36,25 @@
 	%end
 </table>
 
+<h2>Funcionalidades ativas</h2>
+<form method="post" action="/admin/save-features" enctype="multipart/form-data">
+	<input type="checkbox" name="features" {{ "checked=1" if "timetrack" in features else "" }} value="timetrack">Tempo trabalhado
+	<br>
+	<input type="checkbox" name="features" {{ "checked=1" if "adminonly" in features else "" }} value="adminonly">Restrição de tickets para administradores
+	<br>
+	<input type="checkbox" name="features" {{ "checked=1" if "fileattach" in features else "" }} value="fileattach">Arquivos anexos
+	<br>
+	<input type="checkbox" name="features" {{ "checked=1" if "dependency" in features else "" }} value="dependency">Dependências entre tickets
+	<br>
+	<input type="checkbox" name="features" {{ "checked=1" if "datedue" in features else "" }} value="datedue">Data de previsão de solução
+	<br>
+	<input type="checkbox" name="features" {{ "checked=1" if "mail" in features else "" }} value="mail">Envio de comentários por e-mail
+
+	<p>
+
+	<input type="submit" name="submit" value="salvar funcionalidades">
+</form>
+
 <h2>Configurações</h2>
 <form method="post" action="/admin/save-config" enctype="multipart/form-data">
 	<input type="text" size="40" name="mail.smtp" value="{{ config['mail.smtp'] }}">
