@@ -30,7 +30,7 @@ from contextlib import contextmanager
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
-VERSION = '1.5'
+VERSION = '1.6dev'
 
 # Cores de fundo das prioridades
 priocolor = {
