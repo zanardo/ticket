@@ -64,7 +64,8 @@ weekdays = {
 def getdb():
     # Retorna um handle de conexão de banco de dados por thread
     if not hasattr(local, 'db'):
-        local.db = sqlite3.connect(dbname, detect_types=sqlite3.PARSE_DECLTYPES)
+        local.db = sqlite3.connect(dbname,
+                                   detect_types=sqlite3.PARSE_DECLTYPES)
         local.db.row_factory = sqlite3.Row
     return local.db
 
@@ -109,9 +110,9 @@ def requires_admin(f):
 
 
 
-########################################################################################
+###############################################################################
 # Roteamento de URIs
-########################################################################################
+###############################################################################
 
 
 # Listagem de tickets
@@ -213,13 +214,15 @@ def index():
                AND ( ( user = ? )
                 OR ( id IN ( SELECT ticket_id FROM comments WHERE user = ? ) )
                 OR ( id IN ( SELECT ticket_id FROM timetrack WHERE user = ? ) )
-                OR ( id IN ( SELECT ticket_id FROM statustrack WHERE user = ? ) ) )
+                OR ( id IN ( SELECT ticket_id FROM statustrack WHERE user = ? ) )
+               )
             """
             sqlparams += [u,u,u,u]
             continue
 
         # Faixa de data de criação, fechamento, modificação e previsão
-        m = re.match(r'^d([fmcv]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$', t)
+        m = re.match(r'^d([fmcv]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$',
+                     t)
         if m:
             dt = ''
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
@@ -565,8 +568,8 @@ def closeticket(ticket_id):
     ''', locals())
     blocks = [r['ticket_id'] for r in c]
     if blocks:
-        return 'os seguintes tickets bloqueiam este ticket e estão em aberto: %s' % \
-            ' '.join([str(x) for x in blocks])
+        return 'os seguintes tickets bloqueiam este ticket e ' +
+               'estão em aberto: %s' % ' '.join([str(x) for x in blocks])
 
     username = currentuser()
     with db_trans() as c:
@@ -684,7 +687,11 @@ def changedependencies(ticket_id):
             return u'ticket não pode bloquear ele mesmo'
         # Valida se ticket existe
         with db_trans() as c:
-            c.execute('''SELECT count(*) FROM tickets WHERE id=:dep''', locals())
+            c.execute('''
+                SELECT count(*)
+                FROM tickets
+                WHERE id=:dep
+            ''', locals())
             if c.fetchone()[0] == 0:
                 return u'ticket %s não existe' % dep
         # Valida dependência circular
@@ -797,8 +804,8 @@ def reopenticket(ticket_id):
     ''', locals())
     blocks = [r['blocks'] for r in c]
     if blocks:
-        return 'os seguintes tickets são bloqueados por este ticket e estão fechados: %s' % \
-            ' '.join([str(x) for x in blocks])
+        return 'os seguintes tickets são bloqueados por este ticket ' +
+               'e estão fechados: %s' % ' '.join([str(x) for x in blocks])
     username = currentuser()
     with db_trans() as c:
         c.execute('''
@@ -973,7 +980,10 @@ def savefeatures():
     with db_trans() as c:
         c.execute("DELETE FROM features")
         for f in features:
-            c.execute("INSERT INTO features ( feature ) VALUES ( :f )", locals())
+            c.execute('''
+                INSERT INTO features ( feature )
+                VALUES ( :f )
+            ''', locals())
     return redirect('/admin')
 
 
@@ -1012,8 +1022,9 @@ def edituser(username):
     else:
         name = r['name'] or ''
         email = r['email'] or ''
-        return dict(user=username, name=name, email=email, username=currentuser(),
-            version=VERSION, userisadmin=userisadmin(currentuser()))
+        return dict(user=username, name=name, email=email,
+            username=currentuser(), version=VERSION,
+            userisadmin=userisadmin(currentuser()))
 
 
 @post('/admin/edit-user/:username')
@@ -1112,9 +1123,9 @@ def reindexfts():
     return 'índices de full text search recriados!'
 
 
-########################################################################################
+###############################################################################
 # Funções auxiliares
-########################################################################################
+###############################################################################
 
 
 def validateuserdb(user, passwd):
@@ -1367,9 +1378,9 @@ def cookie_session_name():
     return 'ticket_session_%s' % port
 
 
-########################################################################################
+###############################################################################
 # Main
-########################################################################################
+###############################################################################
 
 
 if __name__ == '__main__':
