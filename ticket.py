@@ -126,11 +126,13 @@ def index():
     if 'filter' not in request.query.keys():
         return redirect('/?filter=o:p g:p')
     filter = request.query.filter
-    if filter.strip() == '': filter = u'o:p g:p'
+    if filter.strip() == '':
+        filter = u'o:p g:p'
 
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
-    if m: return redirect('/%s' % m.group(1))
+    if m:
+        return redirect('/%s' % m.group(1))
 
     # Dividindo filtro em tokens separados por espaços
     tokens = filter.strip().split()
@@ -147,9 +149,12 @@ def index():
     # F: fechados
     # A: abertos
     if re.match(r'^[TFA] ', filter):
-        if tokens[0] == 'T': status = ''
-        elif tokens[0] == 'A': status = u'AND status = 0'
-        elif tokens[0] == 'F': status = u'AND status = 1'
+        if tokens[0] == 'T':
+            status = ''
+        elif tokens[0] == 'A':
+            status = u'AND status = 0'
+        elif tokens[0] == 'F':
+            status = u'AND status = 1'
         tokens.pop(0)   # Removendo primeiro item
 
     sql = u'''
@@ -227,10 +232,14 @@ def index():
         if m:
             dt = ''
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
-            if m.group(1) == 'c': dt = 'datecreated'
-            elif m.group(1) == 'm': dt = 'datemodified'
-            elif m.group(1) == 'f': dt = 'dateclosed'
-            elif m.group(1) == 'v': dt = 'datedue'
+            if m.group(1) == 'c':
+                dt = 'datecreated'
+            elif m.group(1) == 'm':
+                dt = 'datemodified'
+            elif m.group(1) == 'f':
+                dt = 'dateclosed'
+            elif m.group(1) == 'v':
+                dt = 'datedue'
             sql += u"""
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y2, m2, d2 )
@@ -241,10 +250,14 @@ def index():
         if m:
             dt = ''
             y1, m1, d1 = m.groups()[1:]
-            if m.group(1) == 'c': dt = 'datecreated'
-            elif m.group(1) == 'm': dt = 'datemodified'
-            elif m.group(1) == 'f': dt = 'dateclosed'
-            elif m.group(1) == 'v': dt = 'datedue'
+            if m.group(1) == 'c':
+                dt = 'datecreated'
+            elif m.group(1) == 'm':
+                dt = 'datemodified'
+            elif m.group(1) == 'f':
+                dt = 'dateclosed'
+            elif m.group(1) == 'v':
+                dt = 'datedue'
             sql += u"""
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y1, m1, d1 )
@@ -600,7 +613,8 @@ def changetitle(ticket_id):
     # Altera título de um ticket
     assert 'text' in request.forms
     title = request.forms.text.strip()
-    if title == '': return 'erro: título inválido'
+    if title == '':
+        return 'erro: título inválido'
     with db_trans() as c:
         c.execute('''
             UPDATE tickets
@@ -751,7 +765,8 @@ def newnote(ticket_id):
         contacts = request.forms.contacts.strip().split()
 
     note = request.forms.text
-    if note.strip() == '': return 'nota inválida'
+    if note.strip() == '':
+        return 'nota inválida'
 
     if len(contacts) > 0:
         note += u' [Notificação enviada para: %s]' % (
