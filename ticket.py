@@ -66,11 +66,12 @@ def getdb():
     if not hasattr(local, 'db'):
         local.db = sqlite3.connect(dbname,
                                    detect_types=sqlite3.PARSE_DECLTYPES)
+        # Permite acessar resultados via dict() por nome da coluna
         local.db.row_factory = sqlite3.Row
     return local.db
 
 def getcursor():
-    # Retorna um cursor
+    # Retorna um novo cursor para acesso ao banco de dados
     return getdb().cursor()
 
 @contextmanager
@@ -80,7 +81,7 @@ def db_trans():
     dbh = getdb()
     c = dbh.cursor()
     try:
-        yield c     # Retornar cursor
+        yield c     # Retorna novo cursor
     except:
         dbh.rollback()
         raise
@@ -98,7 +99,7 @@ def requires_auth(f):
     return decorated
 
 def requires_admin(f):
-    # Decorator em router do Bottle para forçar usuário administrador
+    # Decorator em router do Bottle para certificar que usuário é administrador
     @wraps(f)
     def decorated(*args, **kwargs):
         session_id = request.get_cookie(cookie_session_name())
