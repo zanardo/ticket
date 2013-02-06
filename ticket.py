@@ -1143,10 +1143,7 @@ def validateuserdb(user, passwd):
             AND password = :passwdsha1
     ''', locals())
     r = c.fetchone()
-    if not r:
-        return False
-    else:
-        return True
+    return bool(r)
 
 
 def validatesession(session_id):
@@ -1158,10 +1155,7 @@ def validatesession(session_id):
         WHERE session_id = :session_id
     ''', locals())
     r = c.fetchone()
-    if r:
-        return True
-    else:
-        return False
+    return bool(r)
 
 
 def userident(username):
