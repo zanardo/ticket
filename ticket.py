@@ -366,7 +366,8 @@ def validatelogin():
     user = request.forms.user
     passwd = request.forms.passwd
     v = validateuserdb(user, passwd)
-    if not v: return 'usuário ou senha inválidos'
+    if not v:
+        return 'usuário ou senha inválidos'
     else:
         session_id = makesession(user)
         response.set_cookie(cookie_session_name(), session_id)
@@ -402,7 +403,8 @@ def newticketpost():
     # Salva um novo ticket
     assert 'title' in request.forms
     title = request.forms.title.strip()
-    if title == '': return 'erro: título inválido'
+    if title == '':
+        return 'erro: título inválido'
     username = currentuser()
     with db_trans() as c:
         c.execute('''
@@ -718,7 +720,8 @@ def registerminutes(ticket_id):
     if not re.match(r'^[\-0-9\.]+$', request.forms.minutes):
         return 'tempo inválido'
     minutes = float(request.forms.minutes)
-    if minutes <= 0.0: return 'tempo inválido'
+    if minutes <= 0.0:
+        return 'tempo inválido'
     username = currentuser()
     with db_trans() as c:
         c.execute('''
@@ -853,7 +856,8 @@ def uploadfile(ticket_id):
     filesize = 0
     while True:
         chunk = request.files.file.file.read(4096)
-        if not chunk: break
+        if not chunk:
+            break
         chunksize = len(chunk)
         if filesize + chunksize > maxfilesize:
             return 'erro: arquivo maior do que máximo permitido'
@@ -1139,8 +1143,10 @@ def validateuserdb(user, passwd):
             AND password = :passwdsha1
     ''', locals())
     r = c.fetchone()
-    if not r: return False
-    else: return True
+    if not r:
+        return False
+    else:
+        return True
 
 
 def validatesession(session_id):
@@ -1152,8 +1158,10 @@ def validatesession(session_id):
         WHERE session_id = :session_id
     ''', locals())
     r = c.fetchone()
-    if r: return True
-    else: return False
+    if r:
+        return True
+    else:
+        return False
 
 
 def userident(username):
@@ -1403,11 +1411,16 @@ if __name__ == '__main__':
     dbname = 'ticket.db'
 
     for o, a in opts:
-        if o == '-d': debug = True
-        elif o == '-h': host = a
-        elif o == '-p': port = a
-        elif o == '-f': dbname = a
-        else: usage()
+        if o == '-d':
+            debug = True
+        elif o == '-h':
+            host = a
+        elif o == '-p':
+            port = a
+        elif o == '-f':
+            dbname = a
+        else:
+            usage()
 
     print ';; carregando ticket'
     print ';; banco de dados = %s' % dbname
