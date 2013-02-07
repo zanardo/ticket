@@ -33,33 +33,17 @@ from bottle import route, request, run, view, response, static_file, \
 VERSION = '1.6dev'
 
 # Cores de fundo das prioridades
-priocolor = {
-    1: '#FF8D8F',
-    2: '#99CC00',
-    3: '#FF9966',
-    4: '#6DF2B2',
-    5: '#9FEFF2',
-}
+priocolor = {1: '#FF8D8F', 2: '#99CC00', 3: '#FF9966', 4: '#6DF2B2', 
+            5: '#9FEFF2'}
 
 # Descrição das prioridades
-priodesc = {
-    1: 'Ação Urgente',
-    2: 'Atenção',
-    3: 'Prioridade Normal',
-    4: 'Baixa Prioridade',
-    5: 'Baixíssima Prioridade',
-}
+priodesc = {1: 'Ação Urgente', 2: 'Atenção', 3: 'Prioridade Normal',
+            4: 'Baixa Prioridade', 5: 'Baixíssima Prioridade'}
 
 # Nome do dia da semana
-weekdays = {
-    0: 'domingo',
-    1: 'segunda-feira',
-    2: 'terça-feira',
-    3: 'quarta-feira',
-    4: 'quinta-feira',
-    5: 'sexta-feira',
-    6: 'sábado'
-}
+weekdays = {0: 'domingo', 1: 'segunda-feira', 2: 'terça-feira',
+            3: 'quarta-feira', 4: 'quinta-feira', 5: 'sexta-feira',
+            6: 'sábado'}
 
 def getdb():
     # Retorna um handle de conexão de banco de dados por thread
