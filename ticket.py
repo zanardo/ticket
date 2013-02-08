@@ -137,11 +137,7 @@ def index():
         status = tr[tokens[0]]
         tokens.pop(0)   # Removendo primeiro item
 
-    sql = u'''
-        SELECT *
-        FROM tickets
-        WHERE ( 1 = 1 )
-    '''
+    sql = u'SELECT * FROM tickets WHERE ( 1 = 1 ) '
     sqlparams = []
 
     for t in tokens:
@@ -149,15 +145,13 @@ def index():
         # Limite de resultados (l:NNN)
         m = re.match(r'^l:(\d+)$', t)
         if m:
-            limit = 'LIMIT %s' % m.group(1)
+            limit = 'LIMIT %s ' % m.group(1)
             continue
 
         # Palavra-chave (t:TAG)
         m = re.match(r'^t:(.+)$', t)
         if m:
-            sql += u'''
-                AND id IN ( SELECT ticket_id FROM tags WHERE tag  = ? )
-            '''
+            sql += u'AND id IN ( SELECT ticket_id FROM tags WHERE tag  = ? ) '
             sqlparams.append(m.group(1))
             continue
 
@@ -166,19 +160,19 @@ def index():
         if m:
             o = m.group(1)
             if o == 'c':
-                order = u'ORDER BY datecreated DESC'
+                order = u'ORDER BY datecreated DESC '
                 orderdate = 'datecreated'
             elif o == 'm':
-                order = u'ORDER BY datemodified DESC'
+                order = u'ORDER BY datemodified DESC '
                 orderdate = 'datemodified'
             elif o == 'f':
-                order = u'ORDER BY dateclosed DESC'
+                order = u'ORDER BY dateclosed DESC '
                 orderdate = 'dateclosed'
             elif o == 'v':
-                order = u'ORDER BY datedue ASC'
+                order = u'ORDER BY datedue ASC '
                 orderdate = 'datedue'
             elif o == 'p':
-                order = u'ORDER BY priority ASC, datecreated ASC'
+                order = u'ORDER BY priority ASC, datecreated ASC '
                 orderdate = ''
             continue
 
@@ -192,13 +186,11 @@ def index():
         m = re.match(r'^u:(.+)$', t)
         if m:
             u = m.group(1)
-            sql += u"""
-               AND ( ( user = ? )
+            sql += u"""AND ( ( user = ? )
                 OR ( id IN ( SELECT ticket_id FROM comments WHERE user = ? ) )
                 OR ( id IN ( SELECT ticket_id FROM timetrack WHERE user = ? ) )
                 OR ( id IN ( SELECT ticket_id FROM statustrack WHERE user = ? ) )
-               )
-            """
+               )"""
             sqlparams += [u,u,u,u]
             continue
 
@@ -210,9 +202,8 @@ def index():
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
             dt = {'c': 'datecreated', 'm': 'datemodified',
                 'f': 'dateclosed', 'v': 'datedue'}[m.group(1)]
-            sql += u"""
-                AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
-            """ % ( dt, y1, m1, d1, y2, m2, d2 )
+            sql += ( u"AND %s BETWEEN '%s-%s-%s 00:00:00' "
+                     u"AND '%s-%s-%s 23:59:59 " ) % ( dt, y1, m1, d1, y2, m2, d2 )
             continue
 
         # Data de criação, fechamento, modificação e previsão
@@ -222,36 +213,29 @@ def index():
             y1, m1, d1 = m.groups()[1:]
             dt = {'c': 'datecreated', 'm': 'datemodified',
                 'f': 'dateclosed', 'v': 'datedue'}[m.group(1)]
-            sql += u"""
-                AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
-            """ % ( dt, y1, m1, d1, y1, m1, d1 )
+            sql += ( u"AND %s BETWEEN '%s-%s-%s 00:00:00' "
+                "AND '%s-%s-%s 23:59:59' " ) % ( dt, y1, m1, d1, y1, m1, d1 )
             continue
 
         # Faixa de prioridade (p:1-2)
         m = re.match(r'^p:([1-5])-([1-5])$', t)
         if m:
             p1, p2 = m.groups()
-            sql += u"""
-                AND priority BETWEEN %s AND %s
-            """ % (p1, p2)
+            sql += u"AND priority BETWEEN %s AND %s " % (p1, p2)
             continue
 
         # Prioridade (p:1)
         m = re.match(r'^p:([1-5])$', t)
         if m:
             p1 = m.group(1)
-            sql += u"""
-                AND priority = %s
-            """ % (p1,)
+            sql += u"AND priority = %s " % (p1,)
             continue
 
         # Restrição de tickets (administrador, normal e todos)
         m = re.match(r'^r:([ant])$', t)
         if m:
             a = {'a': '1', 'n': '0', 't': 'admin_only'}[m.group(1)]
-            sql += u"""
-                AND admin_only = %s
-            """ % a
+            sql += u"AND admin_only = %s " % a
             continue
 
         # Texto para busca
@@ -267,46 +251,32 @@ def index():
     username = currentuser()
     user_is_admin = userisadmin(username)
     if not user_is_admin:
-        sql += u"""
-            AND admin_only = 0
-        """
+        sql += u"AND admin_only = 0 "
 
     searchstr = ''
     if len(search) > 0:
         s = ' '.join(search)
-        sql += u"""
-            AND id IN ( SELECT docid FROM search WHERE search MATCH ? )
-        """
+        sql += u"AND id IN ( SELECT docid FROM search WHERE search MATCH ? ) "
         sqlparams.append(s)
 
     # Caso ordenação seja por data de previsão, mostrando
     # somente tickets com date de previsão preenchida.
     if orderdate == 'datedue':
-        sql += '''
-            AND datedue IS NOT NULL
-        '''
+        sql += u'AND datedue IS NOT NULL '
 
     # Caso ordenação seja por data de fechamento, mostrando
     # somente os tickets fechados.
     if orderdate == 'dateclosed':
-        sql += '''
-            AND status = 1
-        '''
+        sql += u'AND status = 1 '
 
     if status != '':
-        sql += '''
-            %s
-        ''' % status
+        sql += u'''%s ''' % status
 
     if order != '':
-        sql += '''
-            %s
-        ''' % order
+        sql += '''%s ''' % order
 
     if limit != '':
-        sql += '''
-            %s
-        ''' % limit
+        sql += '''%s ''' % limit
 
     c = getcursor()
     c.execute(sql, sqlparams)
