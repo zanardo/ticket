@@ -208,14 +208,8 @@ def index():
         if m:
             dt = ''
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
-            if m.group(1) == 'c':
-                dt = 'datecreated'
-            elif m.group(1) == 'm':
-                dt = 'datemodified'
-            elif m.group(1) == 'f':
-                dt = 'dateclosed'
-            elif m.group(1) == 'v':
-                dt = 'datedue'
+            dt = {'c': 'datecreated', 'm': 'datemodified',
+                'f': 'dateclosed', 'v': 'datedue'}[m.group(1)]
             sql += u"""
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y2, m2, d2 )
@@ -226,14 +220,8 @@ def index():
         if m:
             dt = ''
             y1, m1, d1 = m.groups()[1:]
-            if m.group(1) == 'c':
-                dt = 'datecreated'
-            elif m.group(1) == 'm':
-                dt = 'datemodified'
-            elif m.group(1) == 'f':
-                dt = 'dateclosed'
-            elif m.group(1) == 'v':
-                dt = 'datedue'
+            dt = {'c': 'datecreated', 'm': 'datemodified',
+                'f': 'dateclosed', 'v': 'datedue'}[m.group(1)]
             sql += u"""
                 AND %s BETWEEN '%s-%s-%s 00:00:00' AND '%s-%s-%s 23:59:59'
             """ % ( dt, y1, m1, d1, y1, m1, d1 )
