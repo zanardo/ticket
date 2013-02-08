@@ -568,7 +568,7 @@ def closeticket(ticket_id):
     ''', locals())
     blocks = [r['ticket_id'] for r in c]
     if blocks:
-        return 'os seguintes tickets bloqueiam este ticket e ' +
+        return 'os seguintes tickets bloqueiam este ticket e ' + \
                'estão em aberto: %s' % ' '.join([str(x) for x in blocks])
 
     username = currentuser()
@@ -807,7 +807,7 @@ def reopenticket(ticket_id):
     ''', locals())
     blocks = [r['blocks'] for r in c]
     if blocks:
-        return 'os seguintes tickets são bloqueados por este ticket ' +
+        return 'os seguintes tickets são bloqueados por este ticket ' + \
                'e estão fechados: %s' % ' '.join([str(x) for x in blocks])
     username = currentuser()
     with db_trans() as c:
