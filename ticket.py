@@ -308,13 +308,12 @@ def validatelogin():
     assert 'passwd' in request.forms
     user = request.forms.user
     passwd = request.forms.passwd
-    v = validateuserdb(user, passwd)
-    if not v:
-        return 'usuário ou senha inválidos'
-    else:
+    if validateuserdb(user, passwd):
         session_id = makesession(user)
         response.set_cookie(cookie_session_name(), session_id)
         return redirect('/')
+    else:
+        return 'usuário ou senha inválidos'
 
 
 @get('/logout')
