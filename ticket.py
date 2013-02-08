@@ -1334,9 +1334,9 @@ if __name__ == '__main__':
 
     def usage():
         print '''
-            uso: %s -h <host> -p <port> -f <db> [ -d ]
-            exemplo: %s -h localhost -p 5000 -f /var/ticket/ticket.db
-        ''' % ( sys.argv[0], sys.argv[0] )
+            uso: {0} -h <host> -p <port> -f <db> [ -d ]
+            exemplo: {0} -h localhost -p 5000 -f /var/ticket/ticket.db
+        '''.format(sys.argv[0])
         exit(0)
 
     try:
