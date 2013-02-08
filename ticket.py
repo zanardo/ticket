@@ -185,11 +185,7 @@ def index():
         # Agrupamento (g:[dp])
         m = re.match(r'^g:([dp])$', t)
         if m:
-            g = m.group(1)
-            if g == 'p':
-                group = 'priority'
-            elif g == 'd':
-                group = 'date'
+            group = { 'p': 'priority', 'd': 'date' }[m.group(1)]
             continue
 
         # Usuário de criação, fechamento, modificação (u:USER)
