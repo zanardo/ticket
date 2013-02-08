@@ -351,9 +351,7 @@ def newticketpost():
     username = currentuser()
     with db_trans() as c:
         c.execute('''
-            INSERT INTO TICKETS (
-                title, "user"
-            )
+            INSERT INTO TICKETS (title, "user")
             VALUES ( :title, :username )
         ''', locals())
         ticket_id = c.lastrowid
@@ -526,12 +524,8 @@ def closeticket(ticket_id):
             WHERE id = :ticket_id
         ''', locals())
         c.execute('''
-            INSERT INTO statustrack (
-                ticket_id, user, status
-            )
-            VALUES (
-                :ticket_id, :username, 'close')
-        ''', locals())
+            INSERT INTO statustrack (ticket_id, user, status )
+            VALUES (:ticket_id, :username, 'close')''', locals())
 
     return redirect('/%s' % ticket_id)
 
@@ -603,10 +597,7 @@ def changetags(ticket_id):
     assert 'text' in request.forms
     tags = list(set(request.forms.text.strip().split()))
     with db_trans() as c:
-        c.execute('''
-            DELETE FROM tags
-            WHERE ticket_id = :ticket_id
-        ''', locals())
+        c.execute('DELETE FROM tags WHERE ticket_id = :ticket_id', locals())
         for tag in tags:
             c.execute('''
                 INSERT INTO tags ( ticket_id, tag )
@@ -633,11 +624,7 @@ def changedependencies(ticket_id):
             return u'ticket não pode bloquear ele mesmo'
         # Valida se ticket existe
         with db_trans() as c:
-            c.execute('''
-                SELECT count(*)
-                FROM tickets
-                WHERE id=:dep
-            ''', locals())
+            c.execute('SELECT count(*) FROM tickets WHERE id=:dep', locals())
             if c.fetchone()[0] == 0:
                 return u'ticket %s não existe' % dep
         # Valida dependência circular
@@ -764,12 +751,9 @@ def reopenticket(ticket_id):
             WHERE id = :ticket_id
         ''', locals())
         c.execute('''
-            INSERT INTO statustrack (
-                ticket_id, user, status
-            )
+            INSERT INTO statustrack (ticket_id, user, status )
             VALUES (
-                :ticket_id, :username, 'reopen')
-        ''', locals())
+                :ticket_id, :username, 'reopen')''', locals())
     return redirect('/%s' % ticket_id)
 
 
@@ -887,10 +871,7 @@ def admin():
         user['email'] = user['email'] or ''
         users.append(user)
     config = {}
-    c.execute('''
-        SELECT key, value
-        FROM config
-    ''')
+    c.execute('SELECT key, value FROM config')
     for k in c:
         config[k[0]] = k[1]
     return dict(version=VERSION, username=username, users=users, config=config,
@@ -909,14 +890,8 @@ def saveconfig():
     with db_trans() as c:
         for conf in config:
             k, v = conf, config[conf]
-            c.execute('''
-                DELETE FROM config
-                WHERE key = :k
-            ''', (conf,))
-            c.execute('''
-                INSERT INTO config
-                VALUES (:k, :v)
-            ''', locals())
+            c.execute('DELETE FROM config WHERE key = :k', (conf,))
+            c.execute('INSERT INTO config VALUES (:k, :v)', locals())
     return redirect('/admin')
 
 
@@ -929,10 +904,7 @@ def savefeatures():
     with db_trans() as c:
         c.execute("DELETE FROM features")
         for f in features:
-            c.execute('''
-                INSERT INTO features ( feature )
-                VALUES ( :f )
-            ''', locals())
+            c.execute('INSERT INTO features ( feature ) VALUES ( :f )', locals())
     return redirect('/admin')
 
 
@@ -944,10 +916,7 @@ def removeuser(username):
     if username == currentuser():
         return 'não é possível remover usuário corrente'
     with db_trans() as c:
-        c.execute('''
-            DELETE FROM users
-            WHERE username = :username
-        ''', locals())
+        c.execute('DELETE FROM users WHERE username = :username', locals())
     return redirect('/admin')
 
 
@@ -1006,12 +975,8 @@ def newuser():
     password = str(int(random.random() * 999999))
     sha1password = sha1(password).hexdigest()
     with db_trans() as c:
-        c.execute('''
-            INSERT INTO users (
-                username, password, is_admin
-            )
-            VALUES (:username, :sha1password, 0)
-        ''', locals())
+        c.execute('''INSERT INTO users (username, password, is_admin )
+            VALUES (:username, :sha1password, 0)''', locals())
     return u'usuário %s criado com senha %s' % ( username, password )
 
 
@@ -1057,15 +1022,9 @@ def reindexfts():
     # Recria o índice de Full Text Search
     with db_trans() as c:
         print 'limpando índices'
-        c.execute('''
-            DELETE FROM search
-        ''')
+        c.execute('DELETE FROM search')
         print 'iniciando recriação dos índices'
-        c.execute('''
-            SELECT id
-            FROM tickets
-            ORDER BY id
-        ''')
+        c.execute('SELECT id FROM tickets ORDER BY id')
         for r in c:
             print 'reindexando ticket #%s' % r['id']
             populatesearch(r['id'])
@@ -1161,10 +1120,7 @@ def tagsdesc():
     # Retorna as descrições de tags
     tagdesc = {}
     c = getcursor()
-    c.execute('''
-        SELECT tag, description, bgcolor, fgcolor
-        FROM tagsdesc
-    ''')
+    c.execute('SELECT tag, description, bgcolor, fgcolor FROM tagsdesc')
     for r in c:
         tagdesc[r['tag']] = {
             'description': r['description'] or '',
@@ -1204,43 +1160,28 @@ def ticketdepends(ticket_id):
 def tickettags(ticket_id):
     # Retorna tags de um ticket
     c = getcursor()
-    c.execute('''
-        SELECT tag
-        FROM tags
-        WHERE ticket_id = :ticket_id
-    ''', locals())
+    c.execute('SELECT tag FROM tags WHERE ticket_id = :ticket_id', locals())
     return [r['tag'] for r in c]
 
 
 def tickettitle(ticket_id):
     # Retorna o título de um ticket
     c = getcursor()
-    c.execute('''
-        SELECT title
-        FROM tickets
-        WHERE id = :ticket_id
-    ''', locals())
+    c.execute('SELECT title FROM tickets WHERE id = :ticket_id', locals())
     return c.fetchone()['title']
 
 
 def getconfig(key):
     # Retorna o valor de uma configuração
     c = getcursor()
-    c.execute('''
-        SELECT value
-        FROM config
-        WHERE key = :key
-    ''', locals())
+    c.execute('SELECT value FROM config WHERE key = :key', locals())
     return c.fetchone()['value']
 
 
 def getfeatures():
     # Retorna as funcionalidades ativadas
     c = getcursor()
-    c.execute('''
-        SELECT feature
-        FROM features
-    ''')
+    c.execute('SELECT feature FROM features')
     features = []
     for feature in c:
         features.append(feature['feature'])
@@ -1282,10 +1223,7 @@ def populatesearch(ticket_id):
     ''', locals())
     for r in c:
         text += ' ' + r['comment'] + ' '
-    c.execute('''
-        DELETE FROM search
-        WHERE docid = :ticket_id
-    ''', locals())
+    c.execute('DELETE FROM search WHERE docid = :ticket_id', locals())
     c.execute('''
         INSERT INTO search ( docid, text )
         VALUES ( :ticket_id, :text )
