@@ -1195,11 +1195,11 @@ def createdb(dbname):
     fp.close()
     c = db.cursor()
     c.executescript(sql)
+    db.commit()
+    db.close()
     print ';; banco de dados vazio criado com sucesso!'
     print ';; o primeiro login deverá ser feito com:'
     print ';; usuario: admin     senha: admin'
-    db.commit()
-    db.close()
 
 
 def expire_old_sessions():
