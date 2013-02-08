@@ -248,15 +248,10 @@ def index():
         # Restrição de tickets (administrador, normal e todos)
         m = re.match(r'^r:([ant])$', t)
         if m:
-            r = m.group(1)
-            if r == 'a':
-                sql += u"""
-                    AND admin_only = 1
-                """
-            elif r == 'n':
-                sql += u"""
-                    AND admin_only = 0
-                """
+            a = {'a': '1', 'n': '0', 't': 'admin_only'}[m.group(1)]
+            sql += u"""
+                AND admin_only = %s
+            """ % a
             continue
 
         # Texto para busca
