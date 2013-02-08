@@ -133,12 +133,8 @@ def index():
     # F: fechados
     # A: abertos
     if re.match(r'^[TFA] ', filter):
-        if tokens[0] == 'T':
-            status = ''
-        elif tokens[0] == 'A':
-            status = u'AND status = 0'
-        elif tokens[0] == 'F':
-            status = u'AND status = 1'
+        tr = { 'T': '', 'A': u'AND status = 0', 'F': u'AND status = 1' }
+        status = tr[tokens[0]]
         tokens.pop(0)   # Removendo primeiro item
 
     sql = u'''
