@@ -1262,14 +1262,11 @@ def sendmail(fromemail, toemail, smtpserver, subject, body):
 
 def sanitizecomment(comment):
     # Sanitiza o texto do comentário (quebras de linhas, links, etc)
-    comment = re.sub(r'\r', '', comment)
-    comment = re.sub(r'&', '&amp;', comment)
-    comment = re.sub(r'<', '&lt;', comment)
-    comment = re.sub(r'>', '&gt;', comment)
-    comment = re.sub(r'\r?\n', '<br>\r\n', comment)
-    comment = re.sub(r'\t', '&nbsp;&nbsp;&nbsp;', comment)
-    comment = re.sub(r'  ', '&nbsp;&nbsp;', comment)
-    comment = re.sub(r'#(\d+)', r'<a href="/\1">#\1</a>', comment)
+    subs = [ (r'\r', ''), (r'&', '&amp;'), (r'<', '&lt;'), (r'>', '&gt;'),
+             (r'\r?\n', '<br>\r\n'), (r'\t', '&nbsp;&nbsp;&nbsp;'),
+             (r'  ', '&nbsp;&nbsp;'), (r'#(\d+)', r'<a href="/\1">#\1</a>') ]
+    for f, t in subs:
+        comment = re.sub(f, t, comment)
     return comment
 
 
