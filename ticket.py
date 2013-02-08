@@ -351,8 +351,7 @@ def newticketpost():
     with db_trans() as c:
         c.execute('''
             INSERT INTO TICKETS (title, "user")
-            VALUES ( :title, :username )
-        ''', locals())
+            VALUES ( :title, :username )''', locals())
         ticket_id = c.lastrowid
         populatesearch(ticket_id)
 
@@ -372,15 +371,12 @@ def showticket(ticket_id):
     user_is_admin = userisadmin(username)
     sql_is_admin = ''
     if not user_is_admin:
-        sql_is_admin = '''
-            AND admin_only = 0
-        '''
+        sql_is_admin = 'AND admin_only = 0'
 
     c.execute('''
         SELECT *
         FROM tickets
-        WHERE id = :ticket_id
-    ''' + sql_is_admin, locals())
+        WHERE id = :ticket_id ''' + sql_is_admin, locals())
     ticket = c.fetchone()
 
     if not ticket:
@@ -394,8 +390,7 @@ def showticket(ticket_id):
     c.execute('''
         SELECT datecreated, user, status
         FROM statustrack
-        WHERE ticket_id = :ticket_id
-    ''', locals())
+        WHERE ticket_id = :ticket_id''', locals())
     for r in c:
         reg = dict(r)
         reg['type'] = 'statustrack'
@@ -405,8 +400,7 @@ def showticket(ticket_id):
     c.execute('''
         SELECT datecreated, user, comment
         FROM comments
-        WHERE ticket_id = :ticket_id        
-    ''', locals())
+        WHERE ticket_id = :ticket_id''', locals())
     for r in c:
         reg = dict(r)
         reg['comment'] = sanitizecomment(reg['comment'])
@@ -417,8 +411,7 @@ def showticket(ticket_id):
     c.execute('''
         SELECT datecreated, user, minutes
         FROM timetrack
-        WHERE ticket_id = :ticket_id 
-    ''', locals())
+        WHERE ticket_id = :ticket_id''', locals())
     for r in c:
         reg = dict(r)
         reg['type'] = 'timetrack'
@@ -428,8 +421,7 @@ def showticket(ticket_id):
     c.execute('''
         SELECT datecreated, user, name, id
         FROM files
-        WHERE ticket_id = :ticket_id 
-    ''', locals())
+        WHERE ticket_id = :ticket_id''', locals())
     for r in c:
         reg = dict(r)
         reg['type'] = 'files'
@@ -446,8 +438,7 @@ def showticket(ticket_id):
         FROM timetrack
         WHERE ticket_id = :ticket_id
         GROUP BY user
-        ORDER BY user
-    ''', locals())
+        ORDER BY user''', locals())
     for r in c:
         timetrack.append(dict(r))
 
@@ -483,8 +474,7 @@ def getfile(id, name):
             , tickets.admin_only AS admin_only
         FROM files
             JOIN tickets ON tickets.id = files.ticket_id
-        WHERE files.id = :id
-    ''', locals())
+        WHERE files.id = :id''', locals())
     row = c.fetchone()
     blob = zlib.decompress(row['contents'])
     if not userisadmin(currentuser()) and row['admin_only'] == 1:
@@ -506,8 +496,7 @@ def closeticket(ticket_id):
         FROM dependencies AS d
         INNER JOIN tickets AS t ON t.id = d.ticket_id
         WHERE d.blocks = :ticket_id
-          AND t.status = 0
-    ''', locals())
+          AND t.status = 0''', locals())
     blocks = [r['ticket_id'] for r in c]
     if blocks:
         return 'os seguintes tickets bloqueiam este ticket e ' + \
@@ -520,8 +509,7 @@ def closeticket(ticket_id):
             SET status = 1,
                 dateclosed = datetime('now', 'localtime'),
                 datemodified = datetime('now', 'localtime')
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
         c.execute('''
             INSERT INTO statustrack (ticket_id, user, status )
             VALUES (:ticket_id, :username, 'close')''', locals())
@@ -541,8 +529,7 @@ def changetitle(ticket_id):
         c.execute('''
             UPDATE tickets
             SET title = :title
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
         populatesearch(ticket_id)
     return redirect('/%s' % ticket_id)
 
@@ -569,8 +556,7 @@ def changedatedue(ticket_id):
         c.execute('''
             UPDATE tickets
             SET datedue = :datedue
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
     return redirect('/%s' % ticket_id)
 
 
@@ -584,8 +570,7 @@ def changeadminonly(ticket_id, toggle):
         c.execute('''
             UPDATE tickets
             SET admin_only = :toggle
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
     return redirect('/%s' % ticket_id)
 
 
@@ -600,8 +585,7 @@ def changetags(ticket_id):
         for tag in tags:
             c.execute('''
                 INSERT INTO tags ( ticket_id, tag )
-                VALUES ( :ticket_id, :tag )
-            ''', locals())
+                VALUES ( :ticket_id, :tag )''', locals())
     return redirect('/%s' % ticket_id)
 
 
@@ -632,13 +616,11 @@ def changedependencies(ticket_id):
     with db_trans() as c:
         c.execute('''
             DELETE FROM dependencies
-            WHERE ticket_id = :ticket_id
-        ''', locals())
+            WHERE ticket_id = :ticket_id''', locals())
         for dep in deps:
             c.execute('''
                 INSERT INTO dependencies ( ticket_id, blocks )
-                VALUES ( :ticket_id, :dep )
-            ''', locals())
+                VALUES ( :ticket_id, :dep )''', locals())
     return redirect('/%s' % ticket_id)
 
 
@@ -657,13 +639,11 @@ def registerminutes(ticket_id):
         c.execute('''
             INSERT INTO timetrack (
                 ticket_id, "user", minutes )
-            VALUES ( :ticket_id, :username, :minutes )
-        ''', locals())
+            VALUES ( :ticket_id, :username, :minutes )''', locals())
         c.execute('''
             UPDATE tickets
             SET datemodified = datetime('now', 'localtime')
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
     return redirect('/%s' % ticket_id)
 
 
@@ -693,13 +673,11 @@ def newnote(ticket_id):
         c.execute('''
             INSERT INTO comments (
                 ticket_id, "user", comment )
-            VALUES ( :ticket_id, :username, :note )
-        ''', locals())
+            VALUES ( :ticket_id, :username, :note )''', locals())
         c.execute('''
             UPDATE tickets
             SET datemodified = datetime('now', 'localtime')
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
         populatesearch(ticket_id)
 
     user = userident(username)
@@ -734,8 +712,7 @@ def reopenticket(ticket_id):
         FROM dependencies AS d
         INNER JOIN tickets AS t ON t.id = d.blocks
         WHERE d.ticket_id = :ticket_id
-          AND t.status = 1
-    ''', locals())
+          AND t.status = 1''', locals())
     blocks = [r['blocks'] for r in c]
     if blocks:
         return 'os seguintes tickets são bloqueados por este ticket ' + \
@@ -747,8 +724,7 @@ def reopenticket(ticket_id):
             SET status = 0,
                 dateclosed = NULL,
                 datemodified = datetime('now', 'localtime')
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
         c.execute('''
             INSERT INTO statustrack (ticket_id, user, status )
             VALUES (
@@ -767,8 +743,7 @@ def changepriority(ticket_id):
         c.execute('''
             UPDATE tickets
             SET priority = :priority
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
     return redirect('/%s' % ticket_id)
 
 
@@ -797,12 +772,11 @@ def uploadfile(ticket_id):
         c.execute('''
             INSERT INTO files ( ticket_id, name, user, size, contents )
             VALUES ( :ticket_id, :filename, :username, :filesize, :blob )
-        ''', locals())
+            ''', locals())
         c.execute('''
             UPDATE tickets
             SET datemodified = datetime('now', 'localtime')
-            WHERE id = :ticket_id
-        ''', locals())
+            WHERE id = :ticket_id''', locals())
     return redirect('/%s' % ticket_id)
 
 
@@ -845,8 +819,7 @@ def changepasswordsave():
         c.execute('''
             UPDATE users
             SET password = :passwdsha1
-            WHERE username = :username
-        ''', locals())
+            WHERE username = :username''', locals())
     return redirect('/')
 
 
@@ -862,8 +835,7 @@ def admin():
     c.execute('''
         SELECT username, is_admin, name, email
         FROM users
-        ORDER BY username
-    ''')
+        ORDER BY username''')
     for user in c:
         user = dict(user)
         user['name'] = user['name'] or ''
@@ -929,8 +901,7 @@ def edituser(username):
     c.execute('''
         SELECT name, email
         FROM users
-        WHERE username = :username
-    ''', locals())
+        WHERE username = :username''', locals())
     r = c.fetchone()
     name = ''
     email = ''
@@ -957,8 +928,7 @@ def editusersave(username):
         c.execute('''
             UPDATE users
             SET name=:name, email=:email
-            WHERE username=:username
-        ''', locals())
+            WHERE username=:username''', locals())
     return redirect('/admin')
 
 
@@ -992,8 +962,7 @@ def forceuserpassword(username):
         c.execute('''
             UPDATE users
             SET password = :sha1password
-            WHERE username = :username
-        ''', locals())
+            WHERE username = :username''', locals())
     return u'usuário %s teve nova senha forçada: %s' % ( username, password )
 
 
@@ -1009,8 +978,7 @@ def changeuseradminstatus(username, status):
         c.execute('''
             UPDATE users
             SET is_admin = :status
-            WHERE username = :username
-        ''', locals())
+            WHERE username = :username''', locals())
     return redirect('/admin')
 
 
@@ -1043,8 +1011,7 @@ def validateuserdb(user, passwd):
         SELECT username
         FROM users
         WHERE username = :user
-            AND password = :passwdsha1
-    ''', locals())
+            AND password = :passwdsha1''', locals())
     r = c.fetchone()
     return bool(r)
 
@@ -1055,8 +1022,7 @@ def validatesession(session_id):
     c.execute('''
         SELECT session_id
         FROM sessions
-        WHERE session_id = :session_id
-    ''', locals())
+        WHERE session_id = :session_id''', locals())
     r = c.fetchone()
     return bool(r)
 
@@ -1067,8 +1033,7 @@ def userident(username):
     c.execute('''
         SELECT name, email
         FROM users
-        WHERE username=:username
-    ''', locals())
+        WHERE username=:username''', locals())
     return dict(c.fetchone())
 
 
@@ -1079,8 +1044,7 @@ def currentuser():
     c.execute('''
         SELECT username
         FROM sessions
-        WHERE session_id = :session_id
-    ''', locals())
+        WHERE session_id = :session_id''', locals())
     return c.fetchone()['username']
 
 
@@ -1090,8 +1054,7 @@ def userisadmin(username):
     c.execute('''
         SELECT is_admin
         FROM users
-        WHERE username = :username
-    ''', locals())
+        WHERE username = :username''', locals())
     return c.fetchone()['is_admin']
 
 
@@ -1100,8 +1063,7 @@ def removesession(session_id):
     with db_trans() as c:
         c.execute('''
             DELETE FROM sessions
-            WHERE session_id = :session_id
-        ''', locals())
+            WHERE session_id = :session_id''', locals())
 
 
 def makesession(user):
@@ -1110,8 +1072,7 @@ def makesession(user):
         session_id = str(uuid4())
         c.execute('''
             INSERT INTO sessions (session_id, username)
-            VALUES (:session_id, :user)
-        ''', locals())
+            VALUES (:session_id, :user)''', locals())
     return session_id
 
 
@@ -1136,8 +1097,7 @@ def ticketblocks(ticket_id):
         SELECT d.blocks, t.title, t.status, t.admin_only
         FROM dependencies AS d
         INNER JOIN tickets AS t ON t.id = d.blocks
-        WHERE d.ticket_id = :ticket_id
-    ''', locals())
+        WHERE d.ticket_id = :ticket_id''', locals())
     for r in c:
         deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
     return deps
@@ -1150,8 +1110,7 @@ def ticketdepends(ticket_id):
         SELECT d.ticket_id, t.title, t.status, t.admin_only
         FROM dependencies AS d
         INNER JOIN tickets AS t ON t.id = d.ticket_id
-        WHERE d.blocks = :ticket_id
-    ''', locals())
+        WHERE d.blocks = :ticket_id''', locals())
     for r in c:
         deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
     return deps
@@ -1218,15 +1177,13 @@ def populatesearch(ticket_id):
     c.execute('''
         SELECT comment
         FROM comments
-        WHERE ticket_id = :ticket_id
-    ''', locals())
+        WHERE ticket_id = :ticket_id''', locals())
     for r in c:
         text += ' ' + r['comment'] + ' '
     c.execute('DELETE FROM search WHERE docid = :ticket_id', locals())
     c.execute('''
         INSERT INTO search ( docid, text )
-        VALUES ( :ticket_id, :text )
-    ''', locals())
+        VALUES ( :ticket_id, :text )''', locals())
 
 
 def createdb(dbname):
@@ -1250,8 +1207,7 @@ def expire_old_sessions():
     with db_trans() as c:
         c.execute('''
             DELETE FROM sessions
-            WHERE julianday('now') - julianday(date_login) > 7
-        ''')
+            WHERE julianday('now') - julianday(date_login) > 7''')
 
 
 def cookie_session_name():
