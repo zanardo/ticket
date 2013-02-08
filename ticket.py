@@ -1336,7 +1336,7 @@ if __name__ == '__main__':
         print '''
             uso: {0} -h <host> -p <port> -f <db> [ -d ]
             exemplo: {0} -h localhost -p 5000 -f /var/ticket/ticket.db
-        '''.format(sys.argv[0])
+        '''.format(sys.argv[0]).replace('  ', '')
         exit(0)
 
     try:
