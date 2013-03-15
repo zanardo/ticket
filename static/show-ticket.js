@@ -22,6 +22,8 @@ function showPanel(tab, name) {
         document.getElementById('formdeps').focus()
     }
 
+    // Rola página até o final
+    window.scroll(0,document.body.offsetHeight);
     return false;
 }
 
