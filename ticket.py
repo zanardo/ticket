@@ -268,14 +268,14 @@ def index():
     if orderdate == 'dateclosed':
         sql += u'and status = 1 '
 
-    if status != '':
-        sql += u'''%s ''' % status
+    if status:
+        sql += u"%s " % status
 
-    if order != '':
-        sql += '''%s ''' % order
+    if order:
+        sql += "%s " % order
 
-    if limit != '':
-        sql += '''%s ''' % limit
+    if limit:
+        sql += "%s " % limit
 
     c = getcursor()
     c.execute(sql, sqlparams)
