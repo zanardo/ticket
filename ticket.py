@@ -202,7 +202,7 @@ def index():
             dt = {'c': 'datecreated', 'm': 'datemodified',
                 'f': 'dateclosed', 'v': 'datedue'}[m.group(1)]
             sql += ( u"and %s between '%s-%s-%s 00:00:00' "
-                     u"and '%s-%s-%s 23:59:59 " ) % ( dt, y1, m1, d1, y2, m2, d2 )
+                     u"and '%s-%s-%s 23:59:59' " ) % ( dt, y1, m1, d1, y2, m2, d2 )
             continue
 
         # Data de criação, fechamento, modificação e previsão
