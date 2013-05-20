@@ -54,3 +54,13 @@ function doCron() {
     document.fminutes.minutes.value = minutes;
     cron = setTimeout(doCron, 1000);
 }
+
+document.onkeydown = function(evt) {
+    evt = evt || window.event;
+    if(selectedTab == null && evt.keyCode >= 65 && evt.keyCode <= 90 &&
+            evt.target instanceof HTMLBodyElement) {
+        window.scroll(0,document.body.offsetHeight);
+        showPanel(document.getElementById('notetab'), 'note');
+        document.getElementById('formnote').focus();
+    }
+}
