@@ -1,0 +1,7 @@
+Esta é a documentação de mudanças na versão 1.6 do sistema ticket.
+
+1. Funcionalidades Novas
+
+Ao iniciar a digitação em uma página de detalhes de um ticket,
+o painel de Adicionar Nota é exibido e fica com foco, simplificando
+e agilizando a criação de comentários nos tickets.
