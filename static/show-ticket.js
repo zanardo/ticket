@@ -57,10 +57,12 @@ function doCron() {
 
 document.onkeydown = function(evt) {
     evt = evt || window.event;
-    if(selectedTab == null && evt.keyCode >= 65 && evt.keyCode <= 90 &&
+    if(selectedTab == null && evt.keyCode == 78 && ! evt.shiftKey &&
+            !evt.ctrlKey && !evt.altKey && !evt.metaKey &&
             evt.target instanceof HTMLBodyElement) {
         window.scroll(0,document.body.offsetHeight);
         showPanel(document.getElementById('notetab'), 'note');
         document.getElementById('formnote').focus();
+        evt.preventDefault();
     }
 }
