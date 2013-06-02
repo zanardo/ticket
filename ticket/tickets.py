@@ -7,6 +7,8 @@
 # Para detalhes do licenciamento, ver COPYING na distribuição
 #
 
+import re
+
 import ticket.db
 import ticket.user
 
