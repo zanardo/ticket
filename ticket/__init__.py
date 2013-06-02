@@ -1064,25 +1064,3 @@ def expire_old_sessions():
 def cookie_session_name():
     # Retorna o nome do cookie para a sessão
     return 'ticket_session_%s' % config.port
-
-
-###############################################################################
-# Main
-###############################################################################
-
-
-if __name__ == '__main__':
-
-    print ';; carregando ticket'
-    print ';; banco de dados = %s' % config.dbname
-    print ';; host = %s' % config.host
-    print ';; port = %s' % config.port
-    if config.debug:
-        print ';; modo de debug ativado'
-
-    # Cria banco de dados caso arquivo não exista
-    if not os.path.isfile(config.dbname):
-        createdb(config.dbname)
-
-    run(host=config.host, port=config.port, debug=config.debug,
-        server='waitress', reloader=config.debug)
