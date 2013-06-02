@@ -16,7 +16,6 @@ import bottle
 import getopt
 import random
 import getopt
-import smtplib
 import os.path
 import sqlite3
 import datetime
@@ -592,7 +591,7 @@ def newnote(ticket_id):
 -- Este é um e-mail automático enviado pelo sistema ticket.
         ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
 
-        sendmail(user['email'], contacts,
+        ticket.mail.sendmail(user['email'], contacts,
             config.mailsmtp, subject, body)
 
     return redirect('/%s' % ticket_id)
@@ -890,19 +889,6 @@ def tickettitle(ticket_id):
     c = getcursor()
     c.execute("select title from tickets where id = :ticket_id", locals())
     return c.fetchone()['title']
-
-
-def sendmail(fromemail, toemail, smtpserver, subject, body):
-    # Envia um e-mail
-    for contact in toemail:
-        msg = MIMEText(body.encode('utf-8'))
-        msg.set_charset('utf-8')
-        msg['Subject'] = subject
-        msg['From'] = fromemail
-        msg['To'] = contact
-        s = smtplib.SMTP(smtpserver, timeout=10)
-        s.sendmail(fromemail, contact, msg.as_string())
-        s.quit()
 
 
 def sanitizecomment(comment):
