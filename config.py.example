@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+# 
+# As configurações do sistema ticket deverão ser definidas
+# neste arquivo. 
+#
+
+# Endereço onde o servidor irá ouvir as conexões
+host = '127.0.0.1'
+port = 5000
+
+# Habilitar debug - não usar em produção!
+debug = False
+
+# Arquivo do banco de dados SQLite. Será criado automaticamente
+# caso não exista.
+dbname = 'ticket.db'
