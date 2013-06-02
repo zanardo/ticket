@@ -33,6 +33,7 @@ import ticket.user
 import ticket.webadmin
 import ticket.weblogin
 import ticket.webticket
+import ticket.webstatic
 
 VERSION = '1.6dev'
 
@@ -40,11 +41,6 @@ VERSION = '1.6dev'
 # Roteamento de URIs
 ###############################################################################
 
-@route('/static/:filename')
-def static(filename):
-    # Retorna um arquivo estático em ./static
-    assert re.match(r'^[\w\d\-]+\.[\w\d\-]+$', filename)
-    return static_file('static/%s' % filename, root='.')
 
 
 @get('/change-password')
