@@ -44,3 +44,9 @@ weekdays = {
     5: 'sexta-feira',
     6: 'sábado',
 }
+
+# Tamanho máximo (em bytes) de arquivos anexados aos tickets
+filemaxsize = 128000
+
+# Servidor de e-mail para envio
+mailsmtp = '127.0.0.1'

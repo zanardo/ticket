@@ -642,7 +642,7 @@ def newnote(ticket_id):
         ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
 
         sendmail(user['email'], contacts,
-            getconfig('mail.smtp'), subject, body)
+            config.mailsmtp, subject, body)
 
     return redirect('/%s' % ticket_id)
 
@@ -691,7 +691,7 @@ def uploadfile(ticket_id):
     if not 'file' in request.files:
         return 'arquivo inválido'
     filename = request.files.file.filename.decode('utf-8')
-    maxfilesize = int(getconfig('file.maxsize'))
+    maxfilesize = config.filemaxsize
     blob = ''
     filesize = 0
     while True:
@@ -772,29 +772,8 @@ def admin():
         user['name'] = user['name'] or ''
         user['email'] = user['email'] or ''
         users.append(user)
-    config = {}
-    c.execute("select key, value from config")
-    for k in c:
-        config[k[0]] = k[1]
-    return dict(version=VERSION, username=username, users=users, config=config,
-        userisadmin=userisadmin(username), features=getfeatures())
-
-
-@post('/admin/save-config')
-@requires_auth
-@requires_admin
-def saveconfig():
-    # Salva configurações
-    config = {}
-    for k in request.forms:
-        if k in ('mail.smtp', 'file.maxsize'):
-            config[k] = getattr(request.forms, k)
-    with db_trans() as c:
-        for conf in config:
-            k, v = conf, config[conf]
-            c.execute("delete from config where key = :k", (conf,))
-            c.execute("insert into config values (:k, :v)", locals())
-    return redirect('/admin')
+    return dict(version=VERSION, username=username, users=users, 
+            userisadmin=userisadmin(username), features=getfeatures())
 
 
 @post('/admin/save-features')
@@ -1034,13 +1013,6 @@ def tickettitle(ticket_id):
     c = getcursor()
     c.execute("select title from tickets where id = :ticket_id", locals())
     return c.fetchone()['title']
-
-
-def getconfig(key):
-    # Retorna o valor de uma configuração
-    c = getcursor()
-    c.execute("select value from config where key = :key", locals())
-    return c.fetchone()['value']
 
 
 def getfeatures():
