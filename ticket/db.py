@@ -40,3 +40,38 @@ def db_trans():
         raise
     finally:
         dbh.commit()
+
+def expire_old_sessions():
+    # Expira sessões mais antigas que 7 dias
+    with db_trans() as c:
+        c.execute("delete from sessions "
+            "where julianday('now') - julianday(date_login) > 7")
+
+def createdb(dbname):
+    # Cria o banco de dados caso arquivo não exista
+    print ';; criando banco de dados %s' % dbname
+    db = sqlite3.connect(dbname)
+    fp = file('schema.sql', 'r')
+    sql = "\n".join(fp.readlines())
+    fp.close()
+    c = db.cursor()
+    c.executescript(sql)
+    db.commit()
+    db.close()
+    print ';; banco de dados vazio criado com sucesso!'
+    print ';; o primeiro login deverá ser feito com:'
+    print ';; usuario: admin     senha: admin'
+
+def populatesearch(ticket_id):
+    # Popula o índice de busca full-text para um ticket
+    text = ''
+    c = getcursor()     # Utiliza transação do caller
+    text += ' ' + tickettitle(ticket_id) + ' '
+    c.execute("select comment from comments "
+        "where ticket_id = :ticket_id", locals())
+    for r in c:
+        text += ' ' + r['comment'] + ' '
+    c.execute("delete from search where docid = :ticket_id", locals())
+    c.execute("insert into search ( docid, text ) "
+        "values ( :ticket_id, :text )", locals())
+

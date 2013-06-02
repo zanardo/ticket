@@ -9,6 +9,7 @@
 
 import config
 import ticket
+import ticket.db
 
 import os
 from bottle import run
@@ -22,7 +23,7 @@ if config.debug:
 
 # Cria banco de dados caso arquivo não exista
 if not os.path.isfile(config.dbname):
-    createdb(config.dbname)
+    ticket.db.createdb(config.dbname)
 
 run(host=config.host, port=config.port, debug=config.debug,
     server='waitress', reloader=config.debug)
