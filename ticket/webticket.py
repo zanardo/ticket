@@ -15,6 +15,7 @@ import time
 import ticket.db
 import ticket.user
 import ticket.mail
+import ticket.tickets
 
 import config
 
@@ -200,11 +201,11 @@ def index():
     tickets = []
     for t in c:
         ticketdict = dict(t)
-        ticketdict['tags'] = tickettags(t['id'])
+        ticketdict['tags'] = ticket.tickets.tickettags(t['id'])
         tickets.append(ticketdict)
 
     return dict(tickets=tickets, filter=filter, priodesc=config.priodesc, 
-        priocolor=config.priocolor, tagsdesc=tagsdesc(), version=ticket.VERSION,
+        priocolor=config.priocolor, tagsdesc=ticket.tickets.tagsdesc(), version=ticket.VERSION,
         username=username, userisadmin=user_is_admin, 
         orderdate=orderdate, weekdays=config.weekdays, group=group)
 
@@ -279,7 +280,7 @@ def showticket(ticket_id):
         "where ticket_id = :ticket_id", locals())
     for r in c:
         reg = dict(r)
-        reg['comment'] = sanitizecomment(reg['comment'])
+        reg['comment'] = ticket.tickets.sanitizecomment(reg['comment'])
         reg['type'] = 'comments'
         comments.append(reg)
 
@@ -312,11 +313,11 @@ def showticket(ticket_id):
         timetrack.append(dict(r))
 
     # Obtém palavras-chave
-    tags = tickettags(ticket_id)
+    tags = ticket.tickets.tickettags(ticket_id)
 
     # Obtém dependências
-    blocks = ticketblocks(ticket_id)
-    depends = ticketdepends(ticket_id)
+    blocks = ticket.tickets.ticketblocks(ticket_id)
+    depends = ticket.tickets.ticketdepends(ticket_id)
 
     ticket.db.getdb().commit()
 
@@ -324,7 +325,7 @@ def showticket(ticket_id):
 
     return dict(ticket=t, comments=comments, priocolor=config.priocolor,
         priodesc=config.priodesc, timetrack=timetrack, tags=tags,
-        tagsdesc=tagsdesc(), version=ticket.VERSION, username=username,
+        tagsdesc=ticket.tickets.tagsdesc(), version=ticket.VERSION, username=username,
         userisadmin=ticket.user.userisadmin(username), user=ticket.user.userident(username),
         blocks=blocks, depends=depends, features=config.features)
 
@@ -463,7 +464,7 @@ def changedependencies(ticket_id):
             if c.fetchone()[0] == 0:
                 return u'ticket %s não existe' % dep
         # Valida dependência circular
-        if ticket_id in ticketblocks(dep):
+        if ticket_id in ticket.tickets.ticketblocks(dep):
             return u'dependência circular: %s' % dep
     with ticket.db.db_trans() as c:
         c.execute("delete from dependencies where ticket_id = :ticket_id",
@@ -525,7 +526,7 @@ def newnote(ticket_id):
     user = ticket.user.userident(username)
 
     if len(contacts) > 0 and user['name'] and user['email']:
-        title = tickettitle(ticket_id)
+        title = ticket.tickets.tickettitle(ticket_id)
         subject = u'#%s - %s' % (ticket_id, title)
         body = u'''
 [%s] (%s):
@@ -608,61 +609,3 @@ def uploadfile(ticket_id):
             "set datemodified = datetime('now', 'localtime') "
             "where id = :ticket_id", locals())
     return redirect('/%s' % ticket_id)
-
-def tagsdesc():
-    # Retorna as descrições de tags
-    tagdesc = {}
-    c = ticket.db.getcursor()
-    c.execute("select tag, description, bgcolor, fgcolor from tagsdesc")
-    for r in c:
-        tagdesc[r['tag']] = {
-            'description': r['description'] or '',
-            'bgcolor': r['bgcolor'] or '#00D6D6',
-            'fgcolor': r['fgcolor'] or '#4D4D4D'
-        }
-    return tagdesc
-
-def ticketblocks(ticket_id):
-    # Retorna quais ticket são bloqueados por um ticket
-    deps = {}
-    c = ticket.db.getcursor()
-    c.execute("select d.blocks, t.title, t.status, t.admin_only "
-        "from dependencies as d inner join tickets as t on t.id = d.blocks "
-        "where d.ticket_id = :ticket_id", locals())
-    for r in c:
-        deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
-    return deps
-
-def ticketdepends(ticket_id):
-    # Retorna quais ticket dependem de um ticket
-    deps = {}
-    c = ticket.db.getcursor()
-    c.execute("select d.ticket_id, t.title, t.status, t.admin_only "
-        "from dependencies as d inner join tickets as t on t.id = d.ticket_id "
-        "where d.blocks = :ticket_id", locals())
-    for r in c:
-        deps[r[0]] = { 'title': r[1], 'status': r[2], 'admin_only': r[3] }
-    return deps
-
-def tickettags(ticket_id):
-    # Retorna tags de um ticket
-    c = ticket.db.getcursor()
-    c.execute("select tag from tags where ticket_id = :ticket_id", locals())
-    return [r['tag'] for r in c]
-
-
-def tickettitle(ticket_id):
-    # Retorna o título de um ticket
-    c = ticket.db.getcursor()
-    c.execute("select title from tickets where id = :ticket_id", locals())
-    return c.fetchone()['title']
-
-
-def sanitizecomment(comment):
-    # Sanitiza o texto do comentário (quebras de linhas, links, etc)
-    subs = [ (r'\r', ''), (r'&', '&amp;'), (r'<', '&lt;'), (r'>', '&gt;'),
-             (r'\r?\n', '<br>\r\n'), (r'\t', '&nbsp;&nbsp;&nbsp;'),
-             (r'  ', '&nbsp;&nbsp;'), (r'#(\d+)', r'<a href="/\1">#\1</a>') ]
-    for f, t in subs:
-        comment = re.sub(f, t, comment)
-    return comment
