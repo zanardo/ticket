@@ -35,7 +35,7 @@ def index():
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
     if m:
-        return redirect('/%s' % m.group(1))
+        return redirect('/ticket/%s' % m.group(1))
 
     # Dividindo filtro em tokens separados por espaços
     tokens = filter.strip().split()
@@ -238,12 +238,12 @@ def newticketpost():
         ticket_id = c.lastrowid
         ticket.db.populatesearch(ticket_id)
 
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 # Exibe os detalhes de um ticket
-@get('/<ticket_id:int>')
-@view('show-ticket')
+@get('/ticket/<ticket_id:int>')
+@view('ticket')
 @ticket.user.requires_auth
 def showticket(ticket_id):
     # Exibe detalhes de um ticket
@@ -374,7 +374,7 @@ def closeticket(ticket_id):
         c.execute("insert into statustrack (ticket_id, user, status ) "
             "values (:ticket_id, :username, 'close')", locals())
 
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/change-title/<ticket_id:int>')
@@ -389,7 +389,7 @@ def changetitle(ticket_id):
         c.execute("update tickets set title = :title where id = :ticket_id",
             locals())
         ticket.db.populatesearch(ticket_id)
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/change-datedue/<ticket_id:int>')
@@ -413,7 +413,7 @@ def changedatedue(ticket_id):
     with ticket.db.db_trans() as c:
         c.execute("update tickets set datedue = :datedue "
             "where id = :ticket_id", locals())
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @get('/change-admin-only/<ticket_id:int>/:toggle')
@@ -425,7 +425,7 @@ def changeadminonly(ticket_id, toggle):
     with ticket.db.db_trans() as c:
         c.execute("update tickets set admin_only = :toggle "
             "where id = :ticket_id", locals())
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/change-tags/<ticket_id:int>')
@@ -439,7 +439,7 @@ def changetags(ticket_id):
         for tag in tags:
             c.execute("insert into tags ( ticket_id, tag ) "
                 "values ( :ticket_id, :tag )", locals())
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/change-dependencies/<ticket_id:int>')
@@ -472,7 +472,7 @@ def changedependencies(ticket_id):
         for dep in deps:
             c.execute("insert into dependencies ( ticket_id, blocks ) "
                 "values ( :ticket_id, :dep )", locals())
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/register-minutes/<ticket_id:int>')
@@ -492,7 +492,7 @@ def registerminutes(ticket_id):
         c.execute("update tickets "
             "set datemodified = datetime('now', 'localtime') "
             "where id = :ticket_id", locals())
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/new-note/<ticket_id:int>')
@@ -540,7 +540,7 @@ def newnote(ticket_id):
         ticket.mail.sendmail(user['email'], contacts,
             config.mailsmtp, subject, body)
 
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/reopen-ticket/<ticket_id:int>')
@@ -564,7 +564,7 @@ def reopenticket(ticket_id):
             "where id = :ticket_id", locals())
         c.execute("insert into statustrack (ticket_id, user, status ) "
             "values (:ticket_id, :username, 'reopen')", locals())
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/change-priority/<ticket_id:int>')
@@ -577,7 +577,7 @@ def changepriority(ticket_id):
     with ticket.db.db_trans() as c:
         c.execute("update tickets set priority = :priority "
             "where id = :ticket_id", locals())
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/upload-file/<ticket_id:int>')
@@ -608,4 +608,4 @@ def uploadfile(ticket_id):
         c.execute("update tickets "
             "set datemodified = datetime('now', 'localtime') "
             "where id = :ticket_id", locals())
-    return redirect('/%s' % ticket_id)
+    return redirect('/ticket/%s' % ticket_id)
