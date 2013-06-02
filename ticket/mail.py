@@ -8,6 +8,7 @@
 #
 
 import smtplib
+from email.mime.text import MIMEText
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):
     # Envia um e-mail
