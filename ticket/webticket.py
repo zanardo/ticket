@@ -329,7 +329,7 @@ def showticket(ticket_id):
         userisadmin=ticket.user.userisadmin(username), user=ticket.user.userident(username),
         blocks=blocks, depends=depends, features=config.features)
 
-@get('/file/<id:int>/:name')
+@get('/ticket/file/<id:int>/:name')
 @ticket.user.requires_auth
 def getfile(id, name):
     # Retorna um arquivo em anexo
@@ -350,7 +350,7 @@ def getfile(id, name):
         return blob
 
 
-@post('/close-ticket/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/close')
 @ticket.user.requires_auth
 def closeticket(ticket_id):
     # Fecha um ticket
@@ -377,7 +377,7 @@ def closeticket(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/change-title/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/title')
 @ticket.user.requires_auth
 def changetitle(ticket_id):
     # Altera título de um ticket
@@ -392,7 +392,7 @@ def changetitle(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/change-datedue/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/datedue')
 @ticket.user.requires_auth
 def changedatedue(ticket_id):
     # Altera data de previsão de solução de um ticket
@@ -416,7 +416,7 @@ def changedatedue(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@get('/change-admin-only/<ticket_id:int>/:toggle')
+@get('/ticket/<ticket_id:int>/admin-only/:toggle')
 @ticket.user.requires_auth
 @ticket.user.requires_admin
 def changeadminonly(ticket_id, toggle):
@@ -428,7 +428,7 @@ def changeadminonly(ticket_id, toggle):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/change-tags/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/tags')
 @ticket.user.requires_auth
 def changetags(ticket_id):
     # Altera tags de um ticket
@@ -442,7 +442,7 @@ def changetags(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/change-dependencies/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/dependencies')
 @ticket.user.requires_auth
 def changedependencies(ticket_id):
     # Altera dependências de um ticket
@@ -475,7 +475,7 @@ def changedependencies(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/register-minutes/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/minutes')
 @ticket.user.requires_auth
 def registerminutes(ticket_id):
     # Registra tempo trabalhado em um ticket
@@ -495,7 +495,7 @@ def registerminutes(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/new-note/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/note')
 @ticket.user.requires_auth
 def newnote(ticket_id):
     # Cria um novo comentário para um ticket
@@ -543,7 +543,7 @@ def newnote(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/reopen-ticket/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/reopen')
 @ticket.user.requires_auth
 def reopenticket(ticket_id):
     # Reabre um ticket
@@ -567,7 +567,7 @@ def reopenticket(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/change-priority/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/priority')
 @ticket.user.requires_auth
 def changepriority(ticket_id):
     # Altera a prioridade de um ticket
@@ -580,7 +580,7 @@ def changepriority(ticket_id):
     return redirect('/ticket/%s' % ticket_id)
 
 
-@post('/upload-file/<ticket_id:int>')
+@post('/ticket/<ticket_id:int>/upload')
 @ticket.user.requires_auth
 def uploadfile(ticket_id):
     # Anexa um arquivo ao ticket
