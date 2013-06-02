@@ -50,3 +50,12 @@ filemaxsize = 128000
 
 # Servidor de e-mail para envio
 mailsmtp = '127.0.0.1'
+
+# Funcionalidades ativas. Comentar a linha para desativar a funcionalidade.
+features = []
+features.append('timetrack')	# Tempo trabalhado
+features.append('adminonly')	# Restrição de tickets para administradores
+features.append('fileattach')	# Arquivos anexos
+features.append('dependency')	# Dependências entre tickets
+features.append('datedue')		# Data de previsão de solução
+features.append('mail')			# Envio de comentários por e-mail

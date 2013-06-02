@@ -431,7 +431,7 @@ def showticket(ticket_id):
         priodesc=config.priodesc, timetrack=timetrack, tags=tags,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
         userisadmin=userisadmin(username), user=userident(username),
-        blocks=blocks, depends=depends, features=getfeatures())
+        blocks=blocks, depends=depends, features=config.features)
 
 @get('/file/<id:int>/:name')
 @requires_auth
@@ -773,21 +773,7 @@ def admin():
         user['email'] = user['email'] or ''
         users.append(user)
     return dict(version=VERSION, username=username, users=users, 
-            userisadmin=userisadmin(username), features=getfeatures())
-
-
-@post('/admin/save-features')
-@requires_auth
-@requires_admin
-def savefeatures():
-    # Salva as funcionalidades
-    features = request.forms.getall('features')
-    with db_trans() as c:
-        c.execute("delete from features")
-        for f in features:
-            c.execute("insert into features ( feature ) values ( :f )",
-                locals())
-    return redirect('/admin')
+            userisadmin=userisadmin(username), features=config.features)
 
 
 @get('/admin/remove-user/:username')
@@ -1013,16 +999,6 @@ def tickettitle(ticket_id):
     c = getcursor()
     c.execute("select title from tickets where id = :ticket_id", locals())
     return c.fetchone()['title']
-
-
-def getfeatures():
-    # Retorna as funcionalidades ativadas
-    c = getcursor()
-    c.execute('SELECT feature FROM features')
-    features = []
-    for feature in c:
-        features.append(feature['feature'])
-    return features
 
 
 def sendmail(fromemail, toemail, smtpserver, subject, body):

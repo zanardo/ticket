@@ -86,10 +86,6 @@ CREATE TABLE dependencies (
 	PRIMARY KEY(ticket_id, blocks)
 );
 
-CREATE TABLE features (
-	feature text NOT NULL PRIMARY KEY
-);
-
 CREATE VIRTUAL TABLE search USING fts3 ( text );
 
 INSERT INTO users ( username, password, is_admin )
