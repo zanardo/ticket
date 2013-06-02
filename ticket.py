@@ -30,6 +30,8 @@ from contextlib import contextmanager
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
+import config
+
 VERSION = '1.6dev'
 
 # Cores de fundo das prioridades
@@ -48,7 +50,7 @@ weekdays = {0: 'domingo', 1: 'segunda-feira', 2: 'terça-feira',
 def getdb():
     # Retorna um handle de conexão de banco de dados por thread
     if not hasattr(local, 'db'):
-        local.db = sqlite3.connect(dbname,
+        local.db = sqlite3.connect(config.dbname,
                                    detect_types=sqlite3.PARSE_DECLTYPES)
         # Permite acessar resultados via dict() por nome da coluna
         local.db.row_factory = sqlite3.Row
@@ -1126,7 +1128,7 @@ def expire_old_sessions():
 
 def cookie_session_name():
     # Retorna o nome do cookie para a sessão
-    return 'ticket_session_%s' % port
+    return 'ticket_session_%s' % config.port
 
 
 ###############################################################################
@@ -1136,44 +1138,16 @@ def cookie_session_name():
 
 if __name__ == '__main__':
 
-    def usage():
-        print '''
-            uso: {0} -h <host> -p <port> -f <db> [ -d ]
-            exemplo: {0} -h localhost -p 5000 -f /var/ticket/ticket.db
-        '''.format(sys.argv[0]).replace('  ', '')
-        exit(0)
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'h:p:f:d')
-    except getopt.GetoptError, err:
-        usage()
-
-    host = '127.0.0.1'
-    port = 5000
-    debug = False
-    dbname = 'ticket.db'
-
-    for o, a in opts:
-        if o == '-d':
-            debug = True
-        elif o == '-h':
-            host = a
-        elif o == '-p':
-            port = a
-        elif o == '-f':
-            dbname = a
-        else:
-            usage()
-
     print ';; carregando ticket'
-    print ';; banco de dados = %s' % dbname
-    print ';; host = %s' % host
-    print ';; port = %s' % port
-    if debug:
+    print ';; banco de dados = %s' % config.dbname
+    print ';; host = %s' % config.host
+    print ';; port = %s' % config.port
+    if config.debug:
         print ';; modo de debug ativado'
 
     # Cria banco de dados caso arquivo não exista
-    if not os.path.isfile(dbname):
-        createdb(dbname)
+    if not os.path.isfile(config.dbname):
+        createdb(config.dbname)
 
-    run(host=host, port=port, debug=debug, server='waitress', reloader=debug)
+    run(host=config.host, port=config.port, debug=config.debug,
+        server='waitress', reloader=config.debug)
