@@ -26,40 +26,13 @@ from uuid import uuid4
 from hashlib import sha1
 from functools import wraps
 from email.mime.text import MIMEText
-from contextlib import contextmanager
 from bottle import route, request, run, view, response, static_file, \
     redirect, local, get, post
 
 import config
+import ticket.db
 
 VERSION = '1.6dev'
-
-def getdb():
-    # Retorna um handle de conexão de banco de dados por thread
-    if not hasattr(local, 'db'):
-        local.db = sqlite3.connect(config.dbname,
-                                   detect_types=sqlite3.PARSE_DECLTYPES)
-        # Permite acessar resultados via dict() por nome da coluna
-        local.db.row_factory = sqlite3.Row
-    return local.db
-
-def getcursor():
-    # Retorna um novo cursor para acesso ao banco de dados
-    return getdb().cursor()
-
-@contextmanager
-def db_trans():
-    # Abre uma transação no banco de dados e faz o commit ao
-    # finalizar o contexto, ou rollback caso algo falhe.
-    dbh = getdb()
-    c = dbh.cursor()
-    try:
-        yield c     # Retorna novo cursor
-    except:
-        dbh.rollback()
-        raise
-    finally:
-        dbh.commit()
 
 def requires_auth(f):
     # Decorator em router do Bottle para forçar autenticação do usuário
@@ -81,8 +54,6 @@ def requires_admin(f):
             return 'não autorizado'
         return f(*args, **kwargs)
     return decorated
-
-
 
 ###############################################################################
 # Roteamento de URIs
@@ -266,12 +237,12 @@ def index():
     if limit:
         sql += "%s " % limit
 
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute(sql, sqlparams)
     tickets = []
-    for ticket in c:
-        ticketdict = dict(ticket)
-        ticketdict['tags'] = tickettags(ticket['id'])
+    for t in c:
+        ticketdict = dict(t)
+        ticketdict['tags'] = tickettags(t['id'])
         tickets.append(ticketdict)
 
     return dict(tickets=tickets, filter=filter, priodesc=config.priodesc, 
@@ -351,7 +322,7 @@ def newticketpost():
 @requires_auth
 def showticket(ticket_id):
     # Exibe detalhes de um ticket
-    c = getcursor()
+    c = ticket.db.getcursor()
     # Obtém dados do ticket
 
     username = currentuser()
@@ -362,9 +333,9 @@ def showticket(ticket_id):
 
     c.execute("select * from tickets where id = :ticket_id " + sql_is_admin,
         locals())
-    ticket = c.fetchone()
+    t = c.fetchone()
 
-    if not ticket:
+    if not t:
         return 'ticket inexistente!'
 
     # Obtém notas, mudanças de status e registro de tempo
@@ -423,11 +394,11 @@ def showticket(ticket_id):
     blocks = ticketblocks(ticket_id)
     depends = ticketdepends(ticket_id)
 
-    getdb().commit()
+    ticket.db.getdb().commit()
 
     # Renderiza template
 
-    return dict(ticket=ticket, comments=comments, priocolor=config.priocolor,
+    return dict(ticket=t, comments=comments, priocolor=config.priocolor,
         priodesc=config.priodesc, timetrack=timetrack, tags=tags,
         tagsdesc=tagsdesc(), version=VERSION, username=username,
         userisadmin=userisadmin(username), user=userident(username),
@@ -440,7 +411,7 @@ def getfile(id, name):
     mime = mimetypes.guess_type(name)[0]
     if mime is None:
         mime = 'application/octet-stream'
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select files.ticket_id as ticket_id, files.size as size "
         ", files.contents as contents, tickets.admin_only as admin_only "
         "from files join tickets on tickets.id = files.ticket_id "
@@ -460,7 +431,7 @@ def closeticket(ticket_id):
     # Fecha um ticket
     # Verifica se existem tickets que bloqueiam este
     # ticket que ainda estão abertos.
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select d.ticket_id as ticket_id from dependencies as d "
         "inner join tickets as t on t.id = d.ticket_id "
         "where d.blocks = :ticket_id and t.status = 0", locals())
@@ -653,7 +624,7 @@ def reopenticket(ticket_id):
     # Reabre um ticket
     # Verifica se existem tickets bloqueados por este ticket
     # que estão fechados.
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select d.blocks as blocks from dependencies as d "
         "inner join tickets as t on t.id = d.blocks "
         "where d.ticket_id = :ticket_id and t.status = 1", locals())
@@ -764,7 +735,7 @@ def admin():
     # Tela de administração
     username = currentuser()
     users = []
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select username, is_admin, name, email from users "
         "order by username")
     for user in c:
@@ -895,7 +866,7 @@ def reindexfts():
 def validateuserdb(user, passwd):
     # Valida usuário e senha no banco de dados
     passwdsha1 = sha1(passwd).hexdigest()
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select username from users where username = :user "
         "and password = :passwdsha1", locals())
     r = c.fetchone()
@@ -904,7 +875,7 @@ def validateuserdb(user, passwd):
 
 def validatesession(session_id):
     # Valida sessão ativa no banco de dados
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select session_id from sessions where session_id = :session_id",
         locals())
     r = c.fetchone()
@@ -913,7 +884,7 @@ def validatesession(session_id):
 
 def userident(username):
     # Retorna nome e e-mail de usuário
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select name, email from users where username=:username",
         locals())
     return dict(c.fetchone())
@@ -922,7 +893,7 @@ def userident(username):
 def currentuser():
     # Retorna usuário corrente
     session_id = request.get_cookie(cookie_session_name())
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select username from sessions "
         "where session_id = :session_id", locals())
     return c.fetchone()['username']
@@ -930,7 +901,7 @@ def currentuser():
 
 def userisadmin(username):
     # Checa se usuário tem poderes administrativos
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select is_admin from users where username = :username",
         locals())
     return c.fetchone()['is_admin']
@@ -955,7 +926,7 @@ def makesession(user):
 def tagsdesc():
     # Retorna as descrições de tags
     tagdesc = {}
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select tag, description, bgcolor, fgcolor from tagsdesc")
     for r in c:
         tagdesc[r['tag']] = {
@@ -968,7 +939,7 @@ def tagsdesc():
 def ticketblocks(ticket_id):
     # Retorna quais ticket são bloqueados por um ticket
     deps = {}
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select d.blocks, t.title, t.status, t.admin_only "
         "from dependencies as d inner join tickets as t on t.id = d.blocks "
         "where d.ticket_id = :ticket_id", locals())
@@ -979,7 +950,7 @@ def ticketblocks(ticket_id):
 def ticketdepends(ticket_id):
     # Retorna quais ticket dependem de um ticket
     deps = {}
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select d.ticket_id, t.title, t.status, t.admin_only "
         "from dependencies as d inner join tickets as t on t.id = d.ticket_id "
         "where d.blocks = :ticket_id", locals())
@@ -989,7 +960,7 @@ def ticketdepends(ticket_id):
 
 def tickettags(ticket_id):
     # Retorna tags de um ticket
-    c = getcursor()
+    c = ticket.db.getcursor()
     c.execute("select tag from tags where ticket_id = :ticket_id", locals())
     return [r['tag'] for r in c]
 
