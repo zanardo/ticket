@@ -9,10 +9,11 @@
 
 from bottle import local
 from contextlib import contextmanager
+import sqlite3
+
+import ticket.webticket
 
 import config
-
-import sqlite3
 
 def getdb():
     # Retorna um handle de conexão de banco de dados por thread
@@ -66,7 +67,7 @@ def populatesearch(ticket_id):
     # Popula o índice de busca full-text para um ticket
     text = ''
     c = getcursor()     # Utiliza transação do caller
-    text += ' ' + tickettitle(ticket_id) + ' '
+    text += ' ' + ticket.webticket.tickettitle(ticket_id) + ' '
     c.execute("select comment from comments "
         "where ticket_id = :ticket_id", locals())
     for r in c:
