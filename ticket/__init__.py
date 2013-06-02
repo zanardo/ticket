@@ -307,7 +307,7 @@ def newticketpost():
     if title == '':
         return 'erro: título inválido'
     username = currentuser()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("insert into tickets (title, user) "
             "values ( :title, :username )", locals())
         ticket_id = c.lastrowid
@@ -441,7 +441,7 @@ def closeticket(ticket_id):
                'estão em aberto: %s' % ' '.join([str(x) for x in blocks])
 
     username = currentuser()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update tickets set status = 1, "
             "dateclosed = datetime('now', 'localtime'), "
             "datemodified = datetime('now', 'localtime') "
@@ -460,7 +460,7 @@ def changetitle(ticket_id):
     title = request.forms.text.strip()
     if title == '':
         return 'erro: título inválido'
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update tickets set title = :title where id = :ticket_id",
             locals())
         ticket.db.ticket.db.populatesearch(ticket_id)
@@ -485,7 +485,7 @@ def changedatedue(ticket_id):
         datedue += ' 23:59:59'
     else:
         datedue = None
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update tickets set datedue = :datedue "
             "where id = :ticket_id", locals())
     return redirect('/%s' % ticket_id)
@@ -497,7 +497,7 @@ def changedatedue(ticket_id):
 def changeadminonly(ticket_id, toggle):
     # Tornar ticket somente visível para administradores
     assert toggle in ( '0', '1' )
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update tickets set admin_only = :toggle "
             "where id = :ticket_id", locals())
     return redirect('/%s' % ticket_id)
@@ -509,7 +509,7 @@ def changetags(ticket_id):
     # Altera tags de um ticket
     assert 'text' in request.forms
     tags = list(set(request.forms.text.strip().split()))
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("delete from tags where ticket_id = :ticket_id", locals())
         for tag in tags:
             c.execute("insert into tags ( ticket_id, tag ) "
@@ -534,14 +534,14 @@ def changedependencies(ticket_id):
         if dep == ticket_id:
             return u'ticket não pode bloquear ele mesmo'
         # Valida se ticket existe
-        with db_trans() as c:
+        with ticket.db.db_trans() as c:
             c.execute('SELECT count(*) FROM tickets WHERE id=:dep', locals())
             if c.fetchone()[0] == 0:
                 return u'ticket %s não existe' % dep
         # Valida dependência circular
         if ticket_id in ticketblocks(dep):
             return u'dependência circular: %s' % dep
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("delete from dependencies where ticket_id = :ticket_id",
             locals())
         for dep in deps:
@@ -561,7 +561,7 @@ def registerminutes(ticket_id):
     if minutes <= 0.0:
         return 'tempo inválido'
     username = currentuser()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("insert into timetrack (ticket_id, user, minutes ) "
             "values ( :ticket_id, :username, :minutes )", locals())
         c.execute("update tickets "
@@ -590,7 +590,7 @@ def newnote(ticket_id):
         )
 
     username = currentuser()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("insert into comments ( ticket_id, user, comment ) "
             "values ( :ticket_id, :username, :note )", locals())
         c.execute("update tickets "
@@ -633,7 +633,7 @@ def reopenticket(ticket_id):
         return 'os seguintes tickets são bloqueados por este ticket ' + \
                'e estão fechados: %s' % ' '.join([str(x) for x in blocks])
     username = currentuser()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update tickets set status = 0, dateclosed = null, "
             "datemodified = datetime('now', 'localtime') "
             "where id = :ticket_id", locals())
@@ -649,7 +649,7 @@ def changepriority(ticket_id):
     assert 'prio' in request.forms
     assert re.match(r'^[1-5]$', request.forms.prio)
     priority = int(request.forms.prio)
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update tickets set priority = :priority "
             "where id = :ticket_id", locals())
     return redirect('/%s' % ticket_id)
@@ -676,7 +676,7 @@ def uploadfile(ticket_id):
         blob += chunk
     blob = buffer(zlib.compress(blob))
     username = currentuser()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("insert into files ( ticket_id, name, user, size, contents ) "
             "values ( :ticket_id, :filename, :username, :filesize, :blob ) ",
                 locals())
@@ -721,7 +721,7 @@ def changepasswordsave():
     if newpasswd != newpasswd2:
         return 'confirmação de nova senha diferente de nova senha!'
     passwdsha1 = sha1(newpasswd).hexdigest()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update users set password = :passwdsha1 "
             "where username = :username", locals())
     return redirect('/')
@@ -754,7 +754,7 @@ def removeuser(username):
     # Apaga um usuário
     if username == currentuser():
         return 'não é possível remover usuário corrente'
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("delete from users where username = :username", locals())
     return redirect('/admin')
 
@@ -790,7 +790,7 @@ def editusersave(username):
     assert 'email' in request.forms
     name = request.forms.name.strip()
     email = request.forms.email.strip()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update users set name=:name, email=:email "
             "where username=:username", locals())
     return redirect('/admin')
@@ -807,7 +807,7 @@ def newuser():
         return 'usuário inválido'
     password = str(int(random.random() * 999999))
     sha1password = sha1(password).hexdigest()
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("insert into users (username, password, is_admin ) "
             "values (:username, :sha1password, 0)", locals())
     return u'usuário %s criado com senha %s' % ( username, password )
@@ -822,7 +822,7 @@ def forceuserpassword(username):
     sha1password = sha1(password).hexdigest()
     if username == currentuser():
         return 'não é possível forçar nova senha de usuário corrente'
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update users set password = :sha1password "
             "where username = :username", locals())
     return u'usuário %s teve nova senha forçada: %s' % ( username, password )
@@ -836,7 +836,7 @@ def changeuseradminstatus(username, status):
     if username == currentuser():
         return 'não é possível alterar status de admin para usuário corrente'
     assert status in ( '0', '1' )
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("update users set is_admin = :status "
             "where username = :username", locals())
     return redirect('/admin')
@@ -847,7 +847,7 @@ def changeuseradminstatus(username, status):
 @requires_admin
 def reindexfts():
     # Recria o índice de Full Text Search
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         print 'limpando índices'
         c.execute("delete from search")
         print 'iniciando recriação dos índices'
@@ -909,14 +909,14 @@ def userisadmin(username):
 
 def removesession(session_id):
     # Remove uma sessão do banco de dados
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         c.execute("delete from sessions where session_id = :session_id", 
             locals())
 
 
 def makesession(user):
     # Cria uma nova sessão no banco de dados
-    with db_trans() as c:
+    with ticket.db.db_trans() as c:
         session_id = str(uuid4())
         c.execute("insert into sessions (session_id, username) "
             "values (:session_id, :user)", locals())
