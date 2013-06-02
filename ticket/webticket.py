@@ -212,8 +212,8 @@ def index():
 
 
 # Tela de novo ticket
-@get('/new-ticket')
-@view('new-ticket')
+@get('/ticket/new')
+@view('ticket-new')
 @ticket.user.requires_auth
 def newticket():
     # Tela de novo ticket
@@ -223,7 +223,7 @@ def newticket():
 
 
 # Salva novo ticket
-@post('/new-ticket')
+@post('/ticket/new')
 @ticket.user.requires_auth
 def newticketpost():
     # Salva um novo ticket
