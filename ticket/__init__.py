@@ -31,6 +31,7 @@ import config
 import ticket.db
 import ticket.user
 import ticket.webadmin
+import ticket.weblogin
 
 VERSION = '1.6dev'
 
@@ -230,40 +231,6 @@ def index():
         username=username, userisadmin=user_is_admin, 
         orderdate=orderdate, weekdays=config.weekdays, group=group)
 
-
-# Tela de login
-@get('/login')
-@view('login')
-def login():
-    # Retorna tela de login
-    return dict(version=VERSION)
-
-
-# Valida login
-@post('/login')
-def validatelogin():
-    # Valida login do usuário
-    assert 'user' in request.forms
-    assert 'passwd' in request.forms
-    user = request.forms.user
-    passwd = request.forms.passwd
-    if ticket.user.validateuserdb(user, passwd):
-        session_id = ticket.user.makesession(user)
-        response.set_cookie(ticket.user.cookie_session_name(), session_id)
-        return redirect('/')
-    else:
-        return 'usuário ou senha inválidos'
-
-
-@get('/logout')
-def logout():
-    # Logout do usuário - remove sessão ativa
-    session_id = request.get_cookie(ticket.user.cookie_session_name())
-    if session_id:
-        ticket.user.removesession(session_id)
-        response.delete_cookie(ticket.user.cookie_session_name())
-        ticket.db.expire_old_sessions()
-    return redirect('/login')
 
 
 # Tela de novo ticket

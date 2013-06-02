@@ -13,6 +13,8 @@ import ticket.db
 
 from bottle import request
 from functools import wraps
+from hashlib import sha1
+from uuid import uuid4
 
 def requires_auth(f):
     # Decorator em router do Bottle para forçar autenticação do usuário
