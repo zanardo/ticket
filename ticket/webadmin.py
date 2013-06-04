@@ -23,8 +23,8 @@ import config
 @ticket.user.requires_admin
 def admin():
     # Tela de administração
-    username = ticket.user.currentuser()
-    users = []
+    ctx = ticket.context()
+    ctx.users = []
     c = ticket.db.getcursor()
     c.execute("select username, is_admin, name, email from users "
         "order by username")
@@ -32,9 +32,8 @@ def admin():
         user = dict(user)
         user['name'] = user['name'] or ''
         user['email'] = user['email'] or ''
-        users.append(user)
-    return dict(version=ticket.VERSION, username=username, users=users, 
-            userisadmin=ticket.user.userisadmin(username), features=config.features)
+        ctx.users.append(user)
+    return dict(ctx=ctx)
 
 @get('/admin/remove-user/:username')
 @ticket.user.requires_auth
@@ -54,20 +53,20 @@ def removeuser(username):
 @ticket.user.requires_admin
 def edituser(username):
     # Exibe tela de edição de usuários
+    ctx = ticket.context()
+    ctx.user = username
     c = ticket.db.getcursor()
     c.execute("select name, email from users where username = :username",
         locals())
     r = c.fetchone()
-    name = ''
-    email = ''
+    ctx.name = ''
+    ctx.email = ''
     if not r:
         return 'usuário %s não encontrado!' % username
     else:
-        name = r['name'] or ''
-        email = r['email'] or ''
-        return dict(user=username, name=name, email=email,
-            username=ticket.user.currentuser(), version=ticket.VERSION,
-            userisadmin=ticket.user.userisadmin(ticket.user.currentuser()))
+        ctx.name = r['name'] or ''
+        ctx.email = r['email'] or ''
+        return dict(ctx=ctx)
 
 
 @post('/admin/edit-user/:username')
