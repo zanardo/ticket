@@ -53,9 +53,7 @@ def logout():
 @view('change-password')
 def changepassword():
     # Tela de alteração de senha do usuário
-    username = ticket.user.currentuser()
-    return dict(username=username, version=ticket.VERSION,
-        userisadmin=ticket.user.userisadmin(username))
+    return dict(ctx=ticket.context())
 
 
 @post('/change-password')
