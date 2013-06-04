@@ -17,3 +17,13 @@ import ticket.webticket
 import ticket.webstatic
 
 VERSION = '1.6dev'
+
+class context(object):
+    def __init__(self):
+        self.version = VERSION
+        self.config = config
+        self.username = ticket.user.currentuser()
+        if self.username is not None:
+            self.user_is_admin = ticket.user.userisadmin(self.username)
+        else:
+            self.user_is_admin = 0

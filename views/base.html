@@ -7,9 +7,9 @@
 </head>
 <body>
 	<div id="topusermenu">
-		<b>olá {{username}}!</b> • 
+		<b>olá {{ctx.username}}!</b> • 
 		<a href="/change-password">trocar senha</a> • 
-		%if userisadmin:
+		%if ctx.user_is_admin:
 			<a href="/admin">admin</a> • 
 		%end
 		<a href="/logout">sair</a>
@@ -43,7 +43,7 @@
 		</table>
 	</div>
 	<div class="copyright">
-		sistema <a href="https://github.com/zanardo/ticket">ticket</a> • versão {{version}}
+		sistema <a href="https://github.com/zanardo/ticket">ticket</a> • versão {{ctx.version}}
 	</div>
 </body>
 </html>

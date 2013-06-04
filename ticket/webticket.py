@@ -12,6 +12,7 @@ from bottle import route, view, get, post, redirect, response, request
 import re
 import time
 
+import ticket
 import ticket.db
 import ticket.user
 import ticket.mail
@@ -164,11 +165,11 @@ def index():
                 or ( orderdate != '' and group == 'priority' ):
         return 'agrupamento inválido!'
 
+    ctx = ticket.context()
+
     # Caso usuário não seja administrador, vamos filtrar os
     # tickets que ele não tem acesso.
-    username = ticket.user.currentuser()
-    user_is_admin = ticket.user.userisadmin(username)
-    if not user_is_admin:
+    if not ctx.user_is_admin:
         sql += u"and admin_only = 0 "
 
     searchstr = ''
@@ -204,10 +205,13 @@ def index():
         ticketdict['tags'] = ticket.tickets.tickettags(t['id'])
         tickets.append(ticketdict)
 
-    return dict(tickets=tickets, filter=filter, priodesc=config.priodesc, 
-        priocolor=config.priocolor, tagsdesc=ticket.tickets.tagsdesc(), version=ticket.VERSION,
-        username=username, userisadmin=user_is_admin, 
-        orderdate=orderdate, weekdays=config.weekdays, group=group)
+    ctx.tickets = tickets
+    ctx.filter = filter
+    ctx.orderdate = orderdate
+    ctx.group = group
+    ctx.tagsdesc = ticket.tickets.tagsdesc()
+
+    return dict(ctx=ctx)
 
 
 

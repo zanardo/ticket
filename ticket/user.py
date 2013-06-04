@@ -11,7 +11,7 @@ import config
 
 import ticket.db
 
-from bottle import request
+from bottle import request, redirect
 from functools import wraps
 from hashlib import sha1
 from uuid import uuid4

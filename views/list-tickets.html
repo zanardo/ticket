@@ -1,10 +1,10 @@
-%rebase base title="Tickets", title2="Tickets", filter=filter, username=username, userisadmin=userisadmin, version=version
+%rebase base title="Tickets", title2="Tickets", ctx=ctx
 
 %import urllib
 %data1 = ''
 %prio1 = ''
-%for tk in tickets:
-	%if group == 'date':
+%for tk in ctx.tickets:
+	%if ctx.group == 'date':
 		%weekday = weekdays[int(tk[orderdate].strftime("%w"))]
 		%data = tk[orderdate].strftime("%Y-%m-%d") + ' (' + weekday + ')'
 		%rotulo = ''
@@ -21,20 +21,20 @@
 			<div class="orderdate">{{rotulo}}: {{data}}</div>
 		%end
 		%data1 = data
-	%elif group == 'priority':
-		%prio = priodesc[tk['priority']]
+	%elif ctx.group == 'priority':
+		%prio = ctx.config.priodesc[tk['priority']]
 		%if prio1 != prio:
 			<div class="orderdate">Prioridade: {{prio}}</div>
 		%end
 		%prio1 = prio
 	%end
-	%priobgcolor = priocolor[tk['priority']]
+	%priobgcolor = ctx.config.priocolor[tk['priority']]
 	<table class="ticket" width="100%" border="0">
 	<tr>
 		<td width="80px" valign="top" align="right" class="ticketlabel">
 			#{{tk['id']}}
 		</td>
-		<td width="5px" title="{{priodesc[tk['priority']]}}"
+		<td width="5px" title="{{ctx.config.priodesc[tk['priority']]}}"
 			bgcolor="{{priobgcolor}}">&nbsp;
 		</td>
 		<td valign="top" align="left">
@@ -55,10 +55,10 @@
 		</td>
 		<td valign="top" align="right">
 			%for tag in sorted(tk['tags']):
-				%if tag in tagsdesc:
-					%description = tagsdesc[tag]['description']
-					%bgcolor = tagsdesc[tag]['bgcolor']
-					%fgcolor = tagsdesc[tag]['fgcolor']
+				%if tag in ctx.tagsdesc:
+					%description = ctx.tagsdesc[tag]['description']
+					%bgcolor = ctx.tagsdesc[tag]['bgcolor']
+					%fgcolor = ctx.tagsdesc[tag]['fgcolor']
 				%else:
 					%description = ''
 					%bgcolor = '#00D6D6'
@@ -77,11 +77,11 @@
 <p>
 
 <div class="ticketsfiltrados">
-	%if len(tickets) == 0:
+	%if len(ctx.tickets) == 0:
 		nenhum ticket encontrado com o filtro especificado
-	%elif len(tickets) == 1:
+	%elif len(ctx.tickets) == 1:
 		1 ticket filtrado
 	%else:
-		{{ len(tickets) }} tickets filtrados
+		{{ len(ctx.tickets) }} tickets filtrados
 	%end
 </div>

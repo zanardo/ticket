@@ -1,17 +1,17 @@
-%rebase base title="#%s - %s" % (ticket['id'], ticket['title']), title2="Ticket #%s" % ticket['id'], filter="#%s" % ticket['id'], username=username, userisadmin=userisadmin, version=version
+%rebase base title="#%s - %s" % (ctx.ticket['id'], ctx.ticket['title']), title2="Ticket #%s" % ctx.ticket['id'], filter="#%s" % ticket['id'], ctx=ctx
 
 <script type="text/javascript" src="/static/show-ticket.js"></script>
 
 %import urllib
 
-%datedue = ticket['datedue']
+%datedue = ctx.ticket['datedue']
 %if datedue is None:
 	%datedue = ''
 %else:
 	%datedue = datedue.strftime('%Y-%m-%d')
 %end
 
-%if ticket['status'] == 0:
+%if ctx.ticket['status'] == 0:
 <table class="ticket" width="100%" border="0" bgcolor="">
 %else:
 <table class="ticket" width="100%" border="0" bgcolor="#e1e1e1">
@@ -19,20 +19,20 @@
 	<tr>
 		<td width="140px" valign="top" class="tkmetadata">
 			Criado: <span title="{{ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
-				{{ticket['datecreated'].strftime("%Y-%m-%d")}}
+				{{ctx.ticket['datecreated'].strftime("%Y-%m-%d")}}
 			</span>
 			<br>
 			Modificado: <span title="{{ticket['datemodified'].strftime("%Y-%m-%d %H:%M:%S")}}">
-				{{ticket['datemodified'].strftime("%Y-%m-%d")}}
+				{{ctx.ticket['datemodified'].strftime("%Y-%m-%d")}}
 			</span>
 			<br>
-			%if ticket['status'] == 0 and ticket['datedue']:
+			%if ctx.ticket['status'] == 0 and ctx.ticket['datedue']:
 				Previsão: <span title="{{datedue}}">
 					{{datedue}}
 				</span>
 				<br>
 			%end
-			%if ticket['status'] == 1:
+			%if ctx.ticket['status'] == 1:
 			Fechado: <span title="{{ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
 				{{ticket['dateclosed'].strftime("%Y-%m-%d")}}
 			</span>
