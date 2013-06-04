@@ -221,9 +221,7 @@ def index():
 @ticket.user.requires_auth
 def newticket():
     # Tela de novo ticket
-    username = ticket.user.currentuser()
-    return dict(version=ticket.VERSION, username=username,
-        userisadmin=ticket.user.userisadmin(username))
+    return dict(ctx=ticket.context())
 
 
 # Salva novo ticket
