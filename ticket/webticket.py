@@ -254,22 +254,22 @@ def showticket(ticket_id):
     c = ticket.db.getcursor()
     # Obtém dados do ticket
 
-    username = ticket.user.currentuser()
-    user_is_admin = ticket.user.userisadmin(username)
+    ctx = ticket.context()
+
     sql_is_admin = ''
-    if not user_is_admin:
+    if not ctx.user_is_admin:
         sql_is_admin = 'and admin_only = 0'
 
     c.execute("select * from tickets where id = :ticket_id " + sql_is_admin,
         locals())
-    t = c.fetchone()
+    ctx.ticket = c.fetchone()
 
-    if not t:
+    if not ctx.ticket:
         return 'ticket inexistente!'
 
     # Obtém notas, mudanças de status e registro de tempo
 
-    comments = []
+    ctx.comments = []
 
     # Mudanças de status
     c.execute("select datecreated, user, status from statustrack "
@@ -277,7 +277,7 @@ def showticket(ticket_id):
     for r in c:
         reg = dict(r)
         reg['type'] = 'statustrack'
-        comments.append(reg)
+        ctx.comments.append(reg)
 
     # Comentários
     c.execute("select datecreated, user, comment from comments "
@@ -305,33 +305,31 @@ def showticket(ticket_id):
         comments.append(reg)
 
     # Ordenando comentários por data
-    comments = sorted(comments, key=lambda comments: comments['datecreated'])
+    ctx.comments = sorted(ctx.comments,
+        key=lambda comments: ctx.comments['datecreated'])
 
     # Obtém resumo de tempo trabalhado
 
-    timetrack = []
+    ctx.timetrack = []
     c.execute("select user, sum(minutes) as minutes from timetrack "
         "where ticket_id = :ticket_id group by user order by user",
             locals())
     for r in c:
-        timetrack.append(dict(r))
+        ctx.timetrack.append(dict(r))
 
     # Obtém palavras-chave
-    tags = ticket.tickets.tickettags(ticket_id)
+    ctx.tags = ticket.tickets.tickettags(ticket_id)
 
     # Obtém dependências
-    blocks = ticket.tickets.ticketblocks(ticket_id)
-    depends = ticket.tickets.ticketdepends(ticket_id)
+    ctx.blocks = ticket.tickets.ticketblocks(ticket_id)
+    ctx.depends = ticket.tickets.ticketdepends(ticket_id)
+
+    ctx.user = ticket.user.userident(ctx.username)
 
     ticket.db.getdb().commit()
 
     # Renderiza template
-
-    return dict(ticket=t, comments=comments, priocolor=config.priocolor,
-        priodesc=config.priodesc, timetrack=timetrack, tags=tags,
-        tagsdesc=ticket.tickets.tagsdesc(), version=ticket.VERSION, username=username,
-        userisadmin=ticket.user.userisadmin(username), user=ticket.user.userident(username),
-        blocks=blocks, depends=depends, features=config.features)
+    return dict(ctx=ctx)
 
 @get('/ticket/file/<id:int>/:name')
 @ticket.user.requires_auth

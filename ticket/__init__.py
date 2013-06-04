@@ -27,3 +27,5 @@ class context(object):
             self.user_is_admin = ticket.user.userisadmin(self.username)
         else:
             self.user_is_admin = 0
+        self.features = config.features
+        self.tagsdesc = ticket.tickets.tagsdesc()
