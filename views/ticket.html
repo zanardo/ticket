@@ -43,10 +43,10 @@
 			{{ctx.config.priodesc[ctx.ticket['priority']]}}
 			<p>
 			%for tag in sorted(ctx.tags):
-				%if tag in ctx.config.tagsdesc:
-					%description = ctx.config.tagsdesc[tag]['description']
-					%bgcolor = ctx.config.tagsdesc[tag]['bgcolor']
-					%fgcolor = ctx.config.tagsdesc[tag]['fgcolor']
+				%if tag in ctx.tagsdesc:
+					%description = ctx.tagsdesc[tag]['description']
+					%bgcolor = ctx.tagsdesc[tag]['bgcolor']
+					%fgcolor = ctx.tagsdesc[tag]['fgcolor']
 				%else:
 					%description = ''
 					%bgcolor = '#00D6D6'
