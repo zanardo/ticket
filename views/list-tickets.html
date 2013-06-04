@@ -5,16 +5,16 @@
 %prio1 = ''
 %for tk in ctx.tickets:
 	%if ctx.group == 'date':
-		%weekday = weekdays[int(tk[orderdate].strftime("%w"))]
-		%data = tk[orderdate].strftime("%Y-%m-%d") + ' (' + weekday + ')'
+		%weekday = ctx.config.weekdays[int(tk[ctx.orderdate].strftime("%w"))]
+		%data = tk[ctx.orderdate].strftime("%Y-%m-%d") + ' (' + weekday + ')'
 		%rotulo = ''
-		%if orderdate == 'datecreated':
+		%if ctx.orderdate == 'datecreated':
 			%rotulo = 'Criação'
-		%elif orderdate == 'datemodified':
+		%elif ctx.orderdate == 'datemodified':
 			%rotulo = 'Última Modificação'
-		%elif orderdate == 'dateclosed':
+		%elif ctx.orderdate == 'dateclosed':
 			%rotulo = 'Fechamento'
-		%elif orderdate == 'datedue':
+		%elif ctx.orderdate == 'datedue':
 			%rotulo = 'Previsão de Solução'
 		%end
 		%if data1 != data:

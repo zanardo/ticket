@@ -286,7 +286,7 @@ def showticket(ticket_id):
         reg = dict(r)
         reg['comment'] = ticket.tickets.sanitizecomment(reg['comment'])
         reg['type'] = 'comments'
-        comments.append(reg)
+        ctx.comments.append(reg)
 
     # Registro de tempo
     c.execute("select datecreated, user, minutes from timetrack "
@@ -294,7 +294,7 @@ def showticket(ticket_id):
     for r in c:
         reg = dict(r)
         reg['type'] = 'timetrack'
-        comments.append(reg)
+        ctx.comments.append(reg)
 
     # Arquivos anexos
     c.execute("select datecreated, user, name, id from files "
@@ -302,11 +302,11 @@ def showticket(ticket_id):
     for r in c:
         reg = dict(r)
         reg['type'] = 'files'
-        comments.append(reg)
+        ctx.comments.append(reg)
 
     # Ordenando comentários por data
     ctx.comments = sorted(ctx.comments,
-        key=lambda comments: ctx.comments['datecreated'])
+        key=lambda comments: comments['datecreated'])
 
     # Obtém resumo de tempo trabalhado
 
