@@ -165,7 +165,7 @@ def index():
                 or ( orderdate != '' and group == 'priority' ):
         return 'agrupamento inválido!'
 
-    ctx = ticket.context()
+    ctx = ticket.TemplateContext()
 
     # Caso usuário não seja administrador, vamos filtrar os
     # tickets que ele não tem acesso.
@@ -221,7 +221,7 @@ def index():
 @ticket.user.requires_auth
 def newticket():
     # Tela de novo ticket
-    return dict(ctx=ticket.context())
+    return dict(ctx=ticket.TemplateContext())
 
 
 # Salva novo ticket
@@ -252,7 +252,7 @@ def showticket(ticket_id):
     c = ticket.db.getcursor()
     # Obtém dados do ticket
 
-    ctx = ticket.context()
+    ctx = ticket.TemplateContext()
 
     sql_is_admin = ''
     if not ctx.user_is_admin:

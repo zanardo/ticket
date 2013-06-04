@@ -18,7 +18,8 @@ import ticket.webstatic
 
 VERSION = '1.6dev'
 
-class context(object):
+class TemplateContext(object):
+    """ Objeto para simplificar passagem de dados para templates """
     def __init__(self):
         self.version = VERSION
         self.config = config

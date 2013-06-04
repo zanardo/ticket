@@ -53,7 +53,7 @@ def logout():
 @view('change-password')
 def changepassword():
     # Tela de alteração de senha do usuário
-    return dict(ctx=ticket.context())
+    return dict(ctx=ticket.TemplateContext())
 
 
 @post('/change-password')

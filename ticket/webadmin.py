@@ -23,7 +23,7 @@ import config
 @ticket.user.requires_admin
 def admin():
     # Tela de administração
-    ctx = ticket.context()
+    ctx = ticket.TemplateContext()
     ctx.users = []
     c = ticket.db.getcursor()
     c.execute("select username, is_admin, name, email from users "
@@ -53,7 +53,7 @@ def removeuser(username):
 @ticket.user.requires_admin
 def edituser(username):
     # Exibe tela de edição de usuários
-    ctx = ticket.context()
+    ctx = ticket.TemplateContext()
     ctx.user = username
     c = ticket.db.getcursor()
     c.execute("select name, email from users where username = :username",
