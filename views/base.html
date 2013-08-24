@@ -6,16 +6,21 @@
 	<meta charset="utf-8">
 </head>
 <body>
-	<div id="topusermenu">
-		<b>olá {{ctx.username}}!</b> • 
-		<a href="/change-password">trocar senha</a> • 
-		%if ctx.user_is_admin:
-			<a href="/admin">admin</a> • 
-		%end
-		<a href="/logout">sair</a>
+	<div id="top">
+		<div id="toplogo"><a href="/">ticket</a></div>
+		<div id="topusermenu">
+			<a title="logado como {{ctx.username}}" href="#">
+			<img src="/static/user-icon.png"></a> 
+			<a title="trocar senha" href="/change-password"><img src="/static/password-icon.png"></a> 
+			%if ctx.user_is_admin:
+				<a title="administrar" href="/admin"><img src="/static/admin-icon.png"></a> 
+			%end
+			<a title="sair" href="/logout"><img src="/static/logout-icon.png"></a>
+		</div>
 	</div>
+	<div class="clear"></div>
 	<div id="content">
-		<table border="0" align="right">
+		<table border="0" align="right" class="topbox">
 			<tr>
 			<td class="topmenu" align="right">
 				<a href='/ticket/new' accesskey='N' title='novo ticket (alt-shift-n)'><b>criar novo</b></a>

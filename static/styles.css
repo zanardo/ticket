@@ -1,7 +1,7 @@
 body {
 	background-color: #F1F3F4;
 	font-family: Verdana, Arial, sans-serif;
-	font-size: 9pt;
+	font-size: 11px;
 	margin: 0;
 }
 
@@ -13,8 +13,8 @@ body {
 	padding: 2px 5px 2px 5px;
 	color: #262626;
 	cursor: pointer;
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 8pt;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
 	text-decoration: none;
 }
 
@@ -54,21 +54,60 @@ input, textarea, select, submit {
 	font-size: 9pt;
 }
 
-#topusermenu {
-	font-family: Verdana, sans-serif;
-	font-size: 11px;
-	text-align: right;
-	padding: 4px;
-	color: #808080;
-	border-bottom: 1px solid #CCCCCC;
-	background-color: #E2E7E9;
+.topbox {
+	padding: 5px;
+	margin-bottom: 20px;
+}
+
+#top {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	padding: 2px;
+	color: rgb(200,198,193);
+	background-color: #3F464E;
 	margin-bottom: 5px;
+	height: 40px;
+	border-bottom: 2px solid #292E33;
+}
+
+#toplogo {
+	float: left;
+	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
+	font-size: 24pt;
+	font-weight: normal;
+	margin-left: 10px;
+	color: #E6E6E6;
+}
+
+#toplogo a:link,
+#toplogo a:visited {
+	color: #E6E6E6;
+}
+
+#toplogo a:hover {
+	color: #E6E6E6;
+	text-decoration: none;
+}
+
+.clear {
+	clear: both;
+}
+
+#topusermenu {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	text-align: right;
+	float: right;
+	padding: 2px;
+	color: rgb(200,198,193);
+	margin-top: 5px;
+	margin-right: 5px;
 }
 
 #topusermenu a:link, 
 #topusermenu a:visited,
 #topusermenu a:active {
-	color: #808080;
+	color: rgb(200,198,193);
 	text-decoration: none;
 }
 
@@ -80,12 +119,12 @@ input, textarea, select, submit {
 	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
 	font-size: 24pt;
 	font-weight: normal;
-	text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.2);
+	/*text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.2);*/
 }
 
 .tags {
 	border: 1px dotted #336699;
-	font-family: Verdana, Arial, sans-serif;
+	font-family: Arial, sans-serif;
 	font-size: 8pt;
 }
 
@@ -128,7 +167,7 @@ a.tag:hover {
 }
 
 .tktitle {
-	font-family: Verdana, sans-serif;
+	font-family: Arial, sans-serif;
 	font-size: 12px;
 	font-weight: bold;
 	padding-left: 10px;
@@ -139,7 +178,7 @@ a.tag:hover {
 }
 
 .tktitleclosed a {
-	font-family: Verdana, sans-serif;
+	font-family: Arial, sans-serif;
 	font-size: 12px;
 	font-weight: bold;
 	padding-left: 10px;
@@ -147,7 +186,7 @@ a.tag:hover {
 }
 
 .copyright {
-	font-family: Helvetica, Arial, sans-serif;
+	font-family: Arial, sans-serif;
 	font-size: 13px;
 	color: #808080;
 	text-align: right;
@@ -159,13 +198,13 @@ a.tag:hover {
 }
 
 .deschelp {
-	font-family: Verdana, Arial, sans-serif;
+	font-family: Arial, sans-serif;
 	font-size: 10px;
 	color: #a5a5a5;
 }
 
 .orderdate {
-	font-family: Verdana, sans-serif;
+	font-family: Arial, sans-serif;
 	font-size: 12px;
 	font-weight: normal;
 	padding: 10px;
@@ -196,8 +235,8 @@ a.tag:hover {
 }
 
 .commentheader {
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 11px;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
 	font-weight: bold;
 }
 
@@ -210,8 +249,8 @@ a.tag:hover {
 }
 
 .commenttext {
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 10px;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
 	max-width: 780px;
 	margin-top: 3px;
 	padding: 5px;
@@ -220,5 +259,5 @@ a.tag:hover {
 
 .commentevent {
 	font-weight: bold;
-	font-size: 10px;
+	font-size: 11px;
 }
