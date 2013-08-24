@@ -15,6 +15,9 @@ debug = False
 # caso não exista.
 dbname = 'ticket.db'
 
+# Título das páginas.
+title = 'ticket'
+
 # Descrição das prioridades. É possível adicionar mais prioridades
 # caso seja necessário.
 priodesc = {
