@@ -115,6 +115,27 @@ input, textarea, select, submit {
 	text-decoration: underline;
 }
 
+#topsearch {
+	float: left;
+	margin-left: 200px;
+	margin-top: 10px;
+}
+
+.searchform {
+	font-family: Arial, sans-serif;
+	font-size: 14px;
+	border: none medium;
+	border-radius: 3px 3px 3px 3px;
+	padding: 2px;
+	padding-left: 25px;
+	height: 20px;
+	width: 300px;
+	background-color: #F2F2F2;
+	background-image: url("/static/search-icon.png");
+	background-repeat: no-repeat;
+	background-position: -3px -3px;
+}
+
 .title {
 	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
 	font-size: 24pt;

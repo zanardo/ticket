@@ -8,6 +8,11 @@
 <body>
 	<div id="top">
 		<div id="toplogo"><a href="/">{{ctx.config.title}}</a></div>
+		<div id="topsearch">
+			<form method="get" action="/" enctype="multipart/form-data">
+				<input type="text" name="filter" size="25" accesskey='S' value="{{filter}}" title="alt-shift-s" class="searchform">
+			</form>
+		</div>
 		<div id="topusermenu">
 			<a title="logado como {{ctx.username}}" href="#">
 			<img src="/static/user-icon.png"></a> 
@@ -30,14 +35,7 @@
 				- <a href='/?filter=F o:f l:100 g:d' title="por data de fechamento">fechados</a>
 				- <a href='/?filter=o:v l:100 g:d' title="por data de previsão de solução">agendados</a>
 			</td> 
-			<tr>
-			</tr>
-			<td align=right>
-			<form method="get" action="/" enctype="multipart/form-data">
-				<input type="text" name="filter" size="25" accesskey='S' value="{{filter}}" title="alt-shift-s">
-				<input type="submit" name="submit" value="filtrar" />
-			</form>
-			</td></tr></table>
+			</table>
 			<span class="title">{{ title2 }}</span>
 			<p>
 
