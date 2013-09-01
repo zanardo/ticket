@@ -49,9 +49,11 @@ input, textarea, select, submit {
 	font-size: 8pt;
 }
 
-.topmenu {
+#topmenu {
 	font-family: Arial, sans-serif;
-	font-size: 9pt;
+	font-size: 12px;
+	text-align: right;
+	padding: 2px;
 }
 
 .topbox {
