@@ -3,41 +3,18 @@
 %import urllib
 %data1 = ''
 %prio1 = ''
+<table class="tickets" width="100%">
+	<th>Código</th><th></th><th>Título</th><th>Últ. Mod.</th><th>Palavras-Chave</th>
 %for tk in ctx.tickets:
-	%if ctx.group == 'date':
-		%weekday = ctx.config.weekdays[int(tk[ctx.orderdate].strftime("%w"))]
-		%data = tk[ctx.orderdate].strftime("%Y-%m-%d") + ' (' + weekday + ')'
-		%rotulo = ''
-		%if ctx.orderdate == 'datecreated':
-			%rotulo = 'Criação'
-		%elif ctx.orderdate == 'datemodified':
-			%rotulo = 'Última Modificação'
-		%elif ctx.orderdate == 'dateclosed':
-			%rotulo = 'Fechamento'
-		%elif ctx.orderdate == 'datedue':
-			%rotulo = 'Previsão de Solução'
-		%end
-		%if data1 != data:
-			<div class="orderdate">{{rotulo}}: {{data}}</div>
-		%end
-		%data1 = data
-	%elif ctx.group == 'priority':
-		%prio = ctx.config.priodesc[tk['priority']]
-		%if prio1 != prio:
-			<div class="orderdate">Prioridade: {{prio}}</div>
-		%end
-		%prio1 = prio
-	%end
 	%priobgcolor = ctx.config.priocolor[tk['priority']]
-	<table class="ticket" width="100%" border="0">
-	<tr>
-		<td width="80px" valign="top" align="right" class="ticketlabel">
+	<tr class="ticketsrow">
+		<td valign="middle" align="right" class="ticketlabel">
 			#{{tk['id']}}
 		</td>
-		<td width="5px" title="{{ctx.config.priodesc[tk['priority']]}}"
-			bgcolor="{{priobgcolor}}">&nbsp;
+		<td title="{{ctx.config.priodesc[tk['priority']]}}" width="10px">
+			<div class="squareprio" style="background-color:{{priobgcolor}}">&nbsp;</div>
 		</td>
-		<td valign="top" align="left">
+		<td valign="middle" align="left">
 			%class1 = ''
 			%if tk['status'] == 0:
 				%class1 = 'tktitle'
@@ -53,7 +30,10 @@
 				{{!admin}}
 			</span>
 		</td>
-		<td valign="top" align="right">
+		<td valign="middle" align="center">
+			{{tk['datemodified']}}
+		</td>
+		<td valign="middle" align="left">
 			%for tag in sorted(tk['tags']):
 				%if tag in ctx.tagsdesc:
 					%description = ctx.tagsdesc[tag]['description']
@@ -72,8 +52,8 @@
 			%end
 		</td>
 	</tr>
-	</table>
 %end
+</table>
 <p>
 
 <div class="ticketsfiltrados">
