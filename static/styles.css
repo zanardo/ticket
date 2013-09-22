@@ -1,6 +1,6 @@
 body {
 	background-color: #F1F3F4;
-	font-family: Verdana, Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 11px;
 	margin: 0;
 	background-color: #ffffff;
@@ -14,7 +14,7 @@ body {
 	padding: 2px 5px 2px 5px;
 	color: #262626;
 	cursor: pointer;
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 11px;
 	text-decoration: none;
 }
@@ -37,7 +37,7 @@ a:hover {
 }
 
 .ticketsfiltrados {
-	font-family: Verdana, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 10px;
 	text-align: right;
 	margin-top: 30px;
@@ -46,12 +46,12 @@ a:hover {
 input, textarea, select, submit {
 	background-color: #F2F2F2;
 	border: 1px solid #969696;
-	font-family: Verdana, Arial, sans-serif;
+	font-family: Verdana, "Open Sans", sans-serif;
 	font-size: 8pt;
 }
 
 #topmenu {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 12px;
 	text-align: right;
 	padding: 2px;
@@ -63,7 +63,7 @@ input, textarea, select, submit {
 }
 
 #top {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 12px;
 	padding: 2px;
 	color: rgb(200,198,193);
@@ -97,7 +97,7 @@ input, textarea, select, submit {
 }
 
 #topusermenu {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 12px;
 	text-align: right;
 	float: right;
@@ -125,7 +125,7 @@ input, textarea, select, submit {
 }
 
 .searchform {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 14px;
 	border: none medium;
 	padding: 2px;
@@ -147,7 +147,7 @@ input, textarea, select, submit {
 
 .tags {
 	border: 1px dotted #336699;
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 8pt;
 }
 
@@ -162,7 +162,7 @@ input, textarea, select, submit {
 
 .tickets {
 	padding: 1px;
-	font-family: Verdana, Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 10px;
 	border-collapse: collapse;
 	background-color: #ffffff;
@@ -170,13 +170,13 @@ input, textarea, select, submit {
 }
 
 th {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-weight: 100%;
 	font-size: 12px;
 	text-align: center;
 	color: #000000;
 	padding: 5px;
-	background: #ffd65e;
+	/*background: #ffd65e;*/
 	background: linear-gradient(to bottom, rgb(255, 255, 255) 0%, rgb(229, 229, 229) 100%) repeat scroll 0% 0% transparent;
 }
 
@@ -185,7 +185,7 @@ th {
 }
 
 .ticketlabel {
-	font-family: Verdana, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 12px;
 	color: #808080;
 	padding-right: 10px;
@@ -215,9 +215,9 @@ a.tag:hover {
 }
 
 .tktitle {
-	font-family: Arial, sans-serif;
-	font-size: 12px;
-	font-weight: bold;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 13px;
+	font-weight: 600;
 	padding-left: 10px;
 }
 
@@ -226,15 +226,15 @@ a.tag:hover {
 }
 
 .tktitleclosed a {
-	font-family: Arial, sans-serif;
-	font-size: 12px;
-	font-weight: bold;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 13px;
+	font-weight: 6100;
 	padding-left: 10px;
 	color: #999999;
 }
 
 .copyright {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 13px;
 	color: #808080;
 	text-align: right;
@@ -246,13 +246,13 @@ a.tag:hover {
 }
 
 .deschelp {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 10px;
 	color: #a5a5a5;
 }
 
 .orderdate {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 12px;
 	font-weight: normal;
 	padding: 10px;
@@ -283,7 +283,7 @@ a.tag:hover {
 }
 
 .commentheader {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 12px;
 	font-weight: bold;
 }
@@ -297,7 +297,7 @@ a.tag:hover {
 }
 
 .commenttext {
-	font-family: Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 11px;
 	max-width: 780px;
 	margin-top: 3px;
