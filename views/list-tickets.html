@@ -31,7 +31,7 @@
 			</span>
 		</td>
 		<td valign="middle" align="center">
-			{{tk['datemodified']}}
+			{{str(tk['datemodified'])[:10]}}
 		</td>
 		<td valign="middle" align="left">
 			%for tag in sorted(tk['tags']):
