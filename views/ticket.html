@@ -83,7 +83,7 @@
 						%if ctx.ticket['admin_only'] == 1:
 							%admin = '<img src="/static/key-icon.png" class="icon" title="somente administradores">'
 						%end
-						<span class="tktitle">{{ctx.ticket['title']}} {{!admin}}</span>
+						<span class="tktitle">#{{ctx.ticket['id']}} - {{ctx.ticket['title']}} {{!admin}}</span>
 					</td>
 				</tr>
 			</table>
