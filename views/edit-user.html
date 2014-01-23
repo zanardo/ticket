@@ -1,4 +1,4 @@
-%rebase base title="Editar Usuário: " + ctx.user, title2="Editar Usuário: " + ctx.user, filter="", ctx=ctx
+%rebase base title="Editar Usuário: " + ctx.user, filter="", ctx=ctx
 
 <form method="post" action="/admin/edit-user/{{ ctx.user }}" enctype="multipart/form-data">
 	<input type="text" name="name" value="{{ ctx.name }}" size="30"> (Nome)
