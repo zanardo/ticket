@@ -166,7 +166,6 @@ input, textarea, select, submit {
 	font-size: 10px;
 	border-collapse: collapse;
 	background-color: #ffffff;
-	box-shadow: 2px 2px 2px #DBDCCB;
 }
 
 th {
@@ -176,8 +175,6 @@ th {
 	text-align: center;
 	color: #000000;
 	padding: 5px;
-	/*background: #ffd65e;*/
-	background: linear-gradient(to bottom, rgb(255, 255, 255) 0%, rgb(229, 229, 229) 100%) repeat scroll 0% 0% transparent;
 }
 
 .ticketsrow:nth-child(even) {
