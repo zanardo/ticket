@@ -15,29 +15,29 @@
 	<div class="tkmetadata">
 		<div class="tkidlarge">#{{ctx.ticket['id']}}</div>
 
-		Criado: <span title="{{ctx.ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
+		<b>Criado:</b> <span title="{{ctx.ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
 			{{ctx.ticket['datecreated'].strftime("%Y-%m-%d")}}
 		</span>
 		<br>
-		Modificado: <span title="{{ctx.ticket['datemodified'].strftime("%Y-%m-%d %H:%M:%S")}}">
+		<b>Modificado:</b> <span title="{{ctx.ticket['datemodified'].strftime("%Y-%m-%d %H:%M:%S")}}">
 			{{ctx.ticket['datemodified'].strftime("%Y-%m-%d")}}
 		</span>
 		<br>
 		%if ctx.ticket['status'] == 0 and ctx.ticket['datedue']:
-			Previsão: <span title="{{datedue}}">
+			<b>Previsão:</b> <span title="{{datedue}}">
 				{{datedue}}
 			</span>
 			<br>
 		%end
 		%if ctx.ticket['status'] == 1:
-		Fechado: <span title="{{ctx.ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
+		<b>Fechado:</b> <span title="{{ctx.ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
 			{{ctx.ticket['dateclosed'].strftime("%Y-%m-%d")}}
 		</span>
 		<br>
 		%end
-		Autor: {{ctx.ticket['user']}}
+		<b>Autor:</b> {{ctx.ticket['user']}}
 		<br>
-		{{ctx.config.priodesc[ctx.ticket['priority']]}}
+		<b>Prioridade:</b> {{ctx.config.priodesc[ctx.ticket['priority']]}}
 		<p>
 		%for tag in sorted(ctx.tags):
 			%if tag in ctx.tagsdesc:
