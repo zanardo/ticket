@@ -170,7 +170,6 @@ input, textarea, select, submit {
 
 th {
 	font-family: "Open Sans", Verdana, sans-serif;
-	font-weight: 100%;
 	font-size: 12px;
 	text-align: center;
 	color: #000000;
@@ -225,7 +224,7 @@ a.tag:hover {
 .tktitleclosed a {
 	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 13px;
-	font-weight: 6100;
+	font-weight: 600;
 	padding-left: 10px;
 	color: #999999;
 }
