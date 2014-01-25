@@ -16,8 +16,8 @@
 			</form>
 		</div>
 		<div id="topusermenu">
-			<a title="logado como {{ctx.username}}" href="#">
-			<img src="/static/user-icon.png"></a> 
+			<span title="logado como {{ctx.username}}">
+			<img src="/static/user-icon.png"></span> 
 			<a title="trocar senha" href="/change-password"><img src="/static/password-icon.png"></a> 
 			%if ctx.user_is_admin:
 				<a title="administrar" href="/admin"><img src="/static/admin-icon.png"></a> 
