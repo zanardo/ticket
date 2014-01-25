@@ -55,6 +55,7 @@ input, textarea, select, submit {
 	font-size: 12px;
 	text-align: right;
 	padding: 2px;
+	padding-right: 10px;
 }
 
 .topbox {
