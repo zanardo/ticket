@@ -11,319 +11,312 @@
 	%datedue = datedue.strftime('%Y-%m-%d')
 %end
 
-%if ctx.ticket['status'] == 0:
-<table class="ticket" width="100%" border="0" bgcolor="">
-%else:
-<table class="ticket" width="100%" border="0" bgcolor="#e1e1e1">
-%end
-	<tr>
-		<td width="140px" valign="top" class="tkmetadata">
-			Criado: <span title="{{ctx.ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
-				{{ctx.ticket['datecreated'].strftime("%Y-%m-%d")}}
+<div class="ticket">
+	<div class="tkmetadata">
+		<div class="tkidlarge">#{{ctx.ticket['id']}}</div>
+
+		Criado: <span title="{{ctx.ticket['datecreated'].strftime("%Y-%m-%d %H:%M:%S")}}">
+			{{ctx.ticket['datecreated'].strftime("%Y-%m-%d")}}
+		</span>
+		<br>
+		Modificado: <span title="{{ctx.ticket['datemodified'].strftime("%Y-%m-%d %H:%M:%S")}}">
+			{{ctx.ticket['datemodified'].strftime("%Y-%m-%d")}}
+		</span>
+		<br>
+		%if ctx.ticket['status'] == 0 and ctx.ticket['datedue']:
+			Previsão: <span title="{{datedue}}">
+				{{datedue}}
 			</span>
 			<br>
-			Modificado: <span title="{{ctx.ticket['datemodified'].strftime("%Y-%m-%d %H:%M:%S")}}">
-				{{ctx.ticket['datemodified'].strftime("%Y-%m-%d")}}
-			</span>
-			<br>
-			%if ctx.ticket['status'] == 0 and ctx.ticket['datedue']:
-				Previsão: <span title="{{datedue}}">
-					{{datedue}}
-				</span>
+		%end
+		%if ctx.ticket['status'] == 1:
+		Fechado: <span title="{{ctx.ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
+			{{ctx.ticket['dateclosed'].strftime("%Y-%m-%d")}}
+		</span>
+		<br>
+		%end
+		Autor: {{ctx.ticket['user']}}
+		<br>
+		{{ctx.config.priodesc[ctx.ticket['priority']]}}
+		<p>
+		%for tag in sorted(ctx.tags):
+			%if tag in ctx.tagsdesc:
+				%description = ctx.tagsdesc[tag]['description']
+				%bgcolor = ctx.tagsdesc[tag]['bgcolor']
+				%fgcolor = ctx.tagsdesc[tag]['fgcolor']
+			%else:
+				%description = ''
+				%bgcolor = '#00D6D6'
+				%fgcolor = '#4D4D4D'
+			%end
+			<a href="/?filter=t:{{urllib.quote(tag.encode('utf8'), '')}} o:p g:p"
+				class="tag"
+				title="{{description}}"
+				style="background-color:{{bgcolor}};color:{{fgcolor}};"
+			>{{tag}}</a> 
+		%end
+		<p>
+		%if ctx.ticket['status'] == 0:
+		<form method="post" action="/ticket/{{ctx.ticket['id']}}/close"
+			enctype="multipart/form-data">
+			<input type="submit" name="submit" value="fechar">
+		</form>
+		%elif ctx.ticket['status'] == 1:
+		<form method="post" action="/ticket/{{ctx.ticket['id']}}/reopen"
+			enctype="multipart/form-data">
+			<input type="submit" name="submit" value="reabrir">
+		</form>
+		%end
+	</div>
+
+	%if ctx.ticket['status'] == 0:
+	<div class="tkevents">
+	%else:
+	<div class="tkevents" style='background-color: #e1e1e1;'>
+	%end
+		<div class="tktitle2">
+			%admin = ''
+			%if ctx.ticket['admin_only'] == 1:
+				%admin = '<img src="/static/key-icon.png" class="icon" title="somente administradores">'
+			%end
+			<span class="tktitle">{{ctx.ticket['title']}} {{!admin}}</span>
+		</div>
+		%if ctx.blocks:
+			<blockquote>
+			%for blocked in sorted(ctx.blocks):
+				%if not ctx.user_is_admin and ctx.blocks[blocked]['admin_only']:
+				%	ctx.blocks[blocked]['title'] = "(acesso restrito)"
+				%end
+				Bloqueia: #{{ blocked }} <a style="{{ ctx.blocks[blocked]['status'] == 1 and 'text-decoration:line-through;' }}" href="/ticket/{{blocked}}">{{ ctx.blocks[blocked]['title'] }}</a>
 				<br>
 			%end
-			%if ctx.ticket['status'] == 1:
-			Fechado: <span title="{{ctx.ticket['dateclosed'].strftime("%Y-%m-%d %H:%M:%S")}}">
-				{{ctx.ticket['dateclosed'].strftime("%Y-%m-%d")}}
-			</span>
-			<br>
-			%end
-			Autor: {{ctx.ticket['user']}}
-			<br>
-			{{ctx.config.priodesc[ctx.ticket['priority']]}}
+			</blockquote>
 			<p>
-			%for tag in sorted(ctx.tags):
-				%if tag in ctx.tagsdesc:
-					%description = ctx.tagsdesc[tag]['description']
-					%bgcolor = ctx.tagsdesc[tag]['bgcolor']
-					%fgcolor = ctx.tagsdesc[tag]['fgcolor']
-				%else:
-					%description = ''
-					%bgcolor = '#00D6D6'
-					%fgcolor = '#4D4D4D'
+		%end
+
+		%if ctx.depends:
+			<blockquote>
+			%for dep in sorted(ctx.depends):
+				%if not ctx.user_is_admin and ctx.depends[dep]['admin_only']:
+				%	ctx.depends[dep]['title'] = "(acesso restrito)"
 				%end
-				<a href="/?filter=t:{{urllib.quote(tag.encode('utf8'), '')}} o:p g:p"
-					class="tag"
-					title="{{description}}"
-					style="background-color:{{bgcolor}};color:{{fgcolor}};"
-				>{{tag}}</a> 
+				Depende de: #{{ dep }} <a style="{{ ctx.depends[dep]['status'] == 1 and 'text-decoration:line-through;' }}" href="/ticket/{{dep}}">{{ ctx.depends[dep]['title'] }}</a>
+				<br>
 			%end
+			</blockquote>
 			<p>
+		%end
+		%for comment in ctx.comments:
+		<div class="comment">
+			%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
+			%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
+			<table border="0">
+				<tr class="commentheader">
+					<td class="commentdate" title="{{datelong}}">
+						{{ dateshort }}
+					</td>
+					<td class="commentuser">
+						{{ comment['user']}}
+					</td>
+					<td class="commentevent">
+						%if comment['type'] == 'timetrack':
+							%minutes = comment['minutes']
+							%hours = minutes / 60
+							%minutes = minutes % 60
+							%comment['comment'] = "%dh%dm trabalhados" % ( hours, minutes )
+							<img src="/static/clock-icon.png" class="icon" title="tempo trabalhado">
+							{{ comment['comment'] }}
+						%elif comment['type'] == 'statustrack':
+							%if comment['status'] == 'close':
+								fechado
+							%elif comment['status'] == 'reopen':
+								reaberto
+							%end
+						%elif comment['type'] == 'files':
+							<img src="/static/attach-icon.png" class="icon" title="arquivo anexado">
+							anexado <a href="/ticket/file/{{comment['id']}}/{{ comment['name'] }}">{{ comment['name'] }}</a>
+						%end
+					</td>
+				</tr>
+			</table>
+			%if comment['type'] == 'comments':
+				<div class="commenttext">
+					{{! comment['comment'] }}
+				</div>
+			%end
+		</div>
+		%end
+		<p>
+		<table class="actions" border="0">
+			<tr>
+				<td>
+					%if ctx.ticket['status'] == 0:
+						<a class="tab" id="notetab"
+							onclick="return showPanel(this, 'note');">
+							Adicionar Nota</a>
+					%end
+					%if ctx.ticket['status'] == 0:
+						<a class="tab" onclick="return showPanel(this, 'prio');">
+							Prioridade de Ação</a>
+					%end
+					<a class="tab" onclick="return showPanel(this, 'tags');">
+						Palavras-Chave</a>
+					<a class="tab" onclick="return showPanel(this, 'title');">
+						Título</a>
+					%if 'timetrack' in ctx.config.features and ( ctx.ticket['status'] == 0 or ctx.timetrack ):
+						<a class="tab" onclick="return showPanel(this, 'minutes');">
+							Tempo</a> 
+					%end
+					%if 'fileattach' in ctx.config.features and ctx.ticket['status'] == 0:
+						<a class="tab" onclick="return showPanel(this, 'file');">
+							Anexo</a>
+					%end
+					%if 'datedue' in ctx.config.features and ctx.ticket['status'] == 0:
+						<a class="tab" onclick="return showPanel(this, 'datedue');">
+							Previsão</a>
+					%end
+					%if 'adminonly' in ctx.config.features and ctx.user_is_admin:
+						<a class="tab" onclick="return showPanel(this, 'security');">
+							Segurança</a>
+					%end
+					%if 'dependency' in ctx.config.features:
+						<a class="tab" onclick="return showPanel(this, 'dependencies');">
+							Dependências</a>
+					%end
+				</td>
+			</tr>
+		</table>
+		<br>
+		<div class="panel" id="note" style="display: none">
+			<form method="post" action="/ticket/{{ctx.ticket['id']}}/note" enctype="multipart/form-data">
+				<textarea name="text" rows="10" cols="70" id="formnote"></textarea>
+				<p>
+				<input type="submit" name="submit" value="Adicionar nota">
+				%if 'mail' in ctx.config.features and ctx.user['name'] and ctx.user['email']:
+					<p><br><br>
+						<div class="deschelp">
+							Opcional: enviar esta nota para os seguintes contatos por email:
+						</div>
+					<p>
+					<textarea name="contacts" rows="2" cols="40"></textarea>
+				%end
+			</form>
+		</div>
+		<div class="panel" id="prio" style="display: none">
+			<form method="post" action="/ticket/{{ctx.ticket['id']}}/priority"
+					enctype="multipart/form-data">
+				<select name="prio">
+					%for prio in ctx.config.priodesc:
+						%if prio == ctx.ticket['priority']:
+							<option value="{{prio}}" selected="selected">{{ctx.config.priodesc[prio]}}</option>
+						%else:
+							<option value="{{prio}}">{{ctx.config.priodesc[prio]}}</option>
+						%end
+					%end
+				</select>
+				<input type="submit" name="submit" value="Mudar prioridade de ação">
+			</form>
+		</div>
+		<div class="panel" id="tags" style="display: none">
+			<form method="post" action="/ticket/{{ctx.ticket['id']}}/tags"
+					enctype="multipart/form-data" name="ftag">
+				<input type="text" name="text" value="{{' '.join(list(sorted(ctx.tags)))}}" size="70" id="formtags">
+				<input type="submit" name="submit" value="Salvar palavras-chave">
+				<p>
+				<div class="deschelp">
+					Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.
+				</div>
+				<p>
+				<small>
+				%for tag in sorted(ctx.tagsdesc):
+					<span
+						onclick="document.ftag.text.value+=' {{tag}}'"
+						class="tag"
+						title="{{ctx.tagsdesc[tag]['description']}}"
+						style="background-color:{{ctx.tagsdesc[tag]['bgcolor']}};color:{{ctx.tagsdesc[tag]['fgcolor']}};cursor: pointer;"
+					>{{tag}}</span>
+				%end
+				</small>
+			</form>
+		</div>
+		<div class="panel" id="title" style="display: none">
+			<form method="post" action="/ticket/{{ctx.ticket['id']}}/title"
+					enctype="multipart/form-data">
+				<input type="text" name="text" value="{{ctx.ticket['title']}}" size="70">
+				<input type="submit" name="submit" value="Salvar título">
+			</form>
+		</div>
+		<div class="panel" id="minutes" style="display: none">
 			%if ctx.ticket['status'] == 0:
-			<form method="post" action="/ticket/{{ctx.ticket['id']}}/close"
-				enctype="multipart/form-data">
-				<input type="submit" name="submit" value="fechar">
-			</form>
-			%elif ctx.ticket['status'] == 1:
-			<form method="post" action="/ticket/{{ctx.ticket['id']}}/reopen"
-				enctype="multipart/form-data">
-				<input type="submit" name="submit" value="reabrir">
-			</form>
-
-			%end
-		</td>
-		<td valign="top" class="tkevents">
-			<table border="0" class="tktitle2">
-				<tr>
-					<td width="5px" title="{{ctx.config.priodesc[ctx.ticket['priority']]}}"
-						bgcolor="{{ctx.config.priocolor[ctx.ticket['priority']]}}">&nbsp;
-					</td>
-					<td>
-						%admin = ''
-						%if ctx.ticket['admin_only'] == 1:
-							%admin = '<img src="/static/key-icon.png" class="icon" title="somente administradores">'
-						%end
-						<span class="tktitle">#{{ctx.ticket['id']}} - {{ctx.ticket['title']}} {{!admin}}</span>
-					</td>
-				</tr>
-			</table>
-			%if ctx.blocks:
-				<blockquote>
-				%for blocked in sorted(ctx.blocks):
-					%if not ctx.user_is_admin and ctx.blocks[blocked]['admin_only']:
-					%	ctx.blocks[blocked]['title'] = "(acesso restrito)"
-					%end
-					Bloqueia: #{{ blocked }} <a style="{{ ctx.blocks[blocked]['status'] == 1 and 'text-decoration:line-through;' }}" href="/ticket/{{blocked}}">{{ ctx.blocks[blocked]['title'] }}</a>
-					<br>
-				%end
-				</blockquote>
+			<form method="post" action="/ticket/{{ctx.ticket['id']}}/minutes"
+					enctype="multipart/form-data" name="fminutes">
+				<input type="text" name="minutes" value="0" size="10">
+				<input type="submit" name="submit" value="Contabilizar minutos">
 				<p>
-			%end
-
-			%if ctx.depends:
-				<blockquote>
-				%for dep in sorted(ctx.depends):
-					%if not ctx.user_is_admin and ctx.depends[dep]['admin_only']:
-					%	ctx.depends[dep]['title'] = "(acesso restrito)"
-					%end
-					Depende de: #{{ dep }} <a style="{{ ctx.depends[dep]['status'] == 1 and 'text-decoration:line-through;' }}" href="/ticket/{{dep}}">{{ ctx.depends[dep]['title'] }}</a>
-					<br>
-				%end
-				</blockquote>
-				<p>
-			%end
-			%for comment in ctx.comments:
-			<div class="comment">
-				%dateshort = comment['datecreated'].strftime("%Y-%m-%d")
-				%datelong = comment['datecreated'].strftime("%Y-%m-%d %H:%M:%S")
-				<table border="0">
-					<tr class="commentheader">
-						<td class="commentdate" title="{{datelong}}">
-							{{ dateshort }}
-						</td>
-						<td class="commentuser">
-							{{ comment['user']}}
-						</td>
-						<td class="commentevent">
-							%if comment['type'] == 'timetrack':
-								%minutes = comment['minutes']
-								%hours = minutes / 60
-								%minutes = minutes % 60
-								%comment['comment'] = "%dh%dm trabalhados" % ( hours, minutes )
-								<img src="/static/clock-icon.png" class="icon" title="tempo trabalhado">
-								{{ comment['comment'] }}
-							%elif comment['type'] == 'statustrack':
-								%if comment['status'] == 'close':
-									fechado
-								%elif comment['status'] == 'reopen':
-									reaberto
-								%end
-							%elif comment['type'] == 'files':
-								<img src="/static/attach-icon.png" class="icon" title="arquivo anexado">
-								anexado <a href="/ticket/file/{{comment['id']}}/{{ comment['name'] }}">{{ comment['name'] }}</a>
-							%end
-						</td>
-					</tr>
-				</table>
-				%if comment['type'] == 'comments':
-					<div class="commenttext">
-						{{! comment['comment'] }}
-					</div>
-				%end
-			</div>
-			%end
+				<input type="button" name="bstartcron" value="Iniciar Cronômetro" onclick="startCron()">
+				<input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;">
+			</form>
 			<p>
-			<table class="actions" border="0">
-				<tr>
-					<td>
-						%if ctx.ticket['status'] == 0:
-							<a class="tab" id="notetab"
-								onclick="return showPanel(this, 'note');">
-								Adicionar Nota</a>
-						%end
-						%if ctx.ticket['status'] == 0:
-							<a class="tab" onclick="return showPanel(this, 'prio');">
-								Prioridade de Ação</a>
-						%end
-						<a class="tab" onclick="return showPanel(this, 'tags');">
-							Palavras-Chave</a>
-						<a class="tab" onclick="return showPanel(this, 'title');">
-							Título</a>
-						%if 'timetrack' in ctx.config.features and ( ctx.ticket['status'] == 0 or ctx.timetrack ):
-							<a class="tab" onclick="return showPanel(this, 'minutes');">
-								Tempo</a> 
-						%end
-						%if 'fileattach' in ctx.config.features and ctx.ticket['status'] == 0:
-							<a class="tab" onclick="return showPanel(this, 'file');">
-								Anexo</a>
-						%end
-						%if 'datedue' in ctx.config.features and ctx.ticket['status'] == 0:
-							<a class="tab" onclick="return showPanel(this, 'datedue');">
-								Previsão</a>
-						%end
-						%if 'adminonly' in ctx.config.features and ctx.user_is_admin:
-							<a class="tab" onclick="return showPanel(this, 'security');">
-								Segurança</a>
-						%end
-						%if 'dependency' in ctx.config.features:
-							<a class="tab" onclick="return showPanel(this, 'dependencies');">
-								Dependências</a>
-						%end
-					</td>
-				</tr>
-			</table>
-			<br>
-			<div class="panel" id="note" style="display: none">
-				<form method="post" action="/ticket/{{ctx.ticket['id']}}/note" enctype="multipart/form-data">
-					<textarea name="text" rows="10" cols="70" id="formnote"></textarea>
-					<p>
-					<input type="submit" name="submit" value="Adicionar nota">
-					%if 'mail' in ctx.config.features and ctx.user['name'] and ctx.user['email']:
-						<p><br><br>
-							<div class="deschelp">
-								Opcional: enviar esta nota para os seguintes contatos por email:
-							</div>
-						<p>
-						<textarea name="contacts" rows="2" cols="40"></textarea>
-					%end
-				</form>
-			</div>
-			<div class="panel" id="prio" style="display: none">
-				<form method="post" action="/ticket/{{ctx.ticket['id']}}/priority"
-						enctype="multipart/form-data">
-					<select name="prio">
-						%for prio in ctx.config.priodesc:
-							%if prio == ctx.ticket['priority']:
-								<option value="{{prio}}" selected="selected">{{ctx.config.priodesc[prio]}}</option>
-							%else:
-								<option value="{{prio}}">{{ctx.config.priodesc[prio]}}</option>
-							%end
-						%end
-					</select>
-					<input type="submit" name="submit" value="Mudar prioridade de ação">
-				</form>
-			</div>
-			<div class="panel" id="tags" style="display: none">
-				<form method="post" action="/ticket/{{ctx.ticket['id']}}/tags"
-						enctype="multipart/form-data" name="ftag">
-					<input type="text" name="text" value="{{' '.join(list(sorted(ctx.tags)))}}" size="70" id="formtags">
-					<input type="submit" name="submit" value="Salvar palavras-chave">
-					<p>
-					<div class="deschelp">
-						Palavras-chave podem ser utilizadas para classificar os Tickets.  Separar as palavras-chave por espaços.
-					</div>
-					<p>
-					<small>
-					%for tag in sorted(ctx.tagsdesc):
-						<span
-							onclick="document.ftag.text.value+=' {{tag}}'"
-							class="tag"
-							title="{{ctx.tagsdesc[tag]['description']}}"
-							style="background-color:{{ctx.tagsdesc[tag]['bgcolor']}};color:{{ctx.tagsdesc[tag]['fgcolor']}};cursor: pointer;"
-						>{{tag}}</span>
-					%end
-					</small>
-				</form>
-			</div>
-			<div class="panel" id="title" style="display: none">
-				<form method="post" action="/ticket/{{ctx.ticket['id']}}/title"
-						enctype="multipart/form-data">
-					<input type="text" name="text" value="{{ctx.ticket['title']}}" size="70">
-					<input type="submit" name="submit" value="Salvar título">
-				</form>
-			</div>
-			<div class="panel" id="minutes" style="display: none">
-				%if ctx.ticket['status'] == 0:
-				<form method="post" action="/ticket/{{ctx.ticket['id']}}/minutes"
-						enctype="multipart/form-data" name="fminutes">
-					<input type="text" name="minutes" value="0" size="10">
-					<input type="submit" name="submit" value="Contabilizar minutos">
-					<p>
-					<input type="button" name="bstartcron" value="Iniciar Cronômetro" onclick="startCron()">
-					<input type="button"  name="bstopcron" value="Parar Cronômetro" onclick="stopCron()" style="visibility:hidden;">
-				</form>
+			%end
+			%for t in ctx.timetrack:
+				%minutes = t['minutes']
+				%hours = minutes / 60
+				%minutes = minutes % 60
+				<small>
+					<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%dm" % (hours,minutes)}}</b> no total
+				</small>
+				<br>
+			%end
+		</div>
+		<div class="panel" id="file" style="display: none">
+			<form method="post" action="/ticket/{{ctx.ticket['id']}}/upload"
+					enctype="multipart/form-data">
+				<input type="file" name="file" size="30">
 				<p>
-				%end
-				%for t in ctx.timetrack:
-					%minutes = t['minutes']
-					%hours = minutes / 60
-					%minutes = minutes % 60
-					<small>
-						<b>{{ t['user'] }}</b> contabilizou <b>{{"%dh%dm" % (hours,minutes)}}</b> no total
-					</small>
-					<br>
-				%end
-			</div>
-			<div class="panel" id="file" style="display: none">
-				<form method="post" action="/ticket/{{ctx.ticket['id']}}/upload"
-						enctype="multipart/form-data">
-					<input type="file" name="file" size="30">
-					<p>
-					<input type="submit" name="submit" value="Enviar anexo">
-					<p>
-					<div class="deschelp">
-						É possível enviar um arquivo em anexo a este ticket, como por exemplo uma imagem, um script, etc.
-					</div>
-				</form>
-			</div>
-			<div class="panel" id="datedue" style="display: none">
-				<form method="post" action="/ticket/{{ctx.ticket['id']}}/datedue"
-						enctype="multipart/form-data" name="fdatedue">
-					<input type="text" name="datedue" value="{{datedue}}" size="10" id="formdatedue">
-					<input type="submit" name="submit" value="Salvar previsão">
-					<p>
-					<div class="deschelp">
-						É possível digitar uma data de previsão de resolução deste
-						chamado. Utilizar o formato YYYY-MM-DD. Exemplo: <b>2012-09-27</b>
-					</div>
-				</form>
-			</div>
-			<div class="panel" id="security" style="display: none">
-				%if ctx.ticket['admin_only'] == 1:
-					Este ticket é visível apenas para administradores.
-					<p>
-					<a href="/ticket/{{ctx.ticket['id']}}/admin-only/0">Tornar visível para qualquer usuário
-						autenticado</a>
-				%else:
-					Este ticket é visível para qualquer usuário autenticado.
-					<p>
-					<a href="/ticket/{{ctx.ticket['id']}}/admin-only/1">Tornar visível apenas para
-						administradores</a>
-				%end
-			</div>
-			<div class="panel" id="dependencies" style="display: none">
-				<form method="post" action="/ticket/{{ctx.ticket['id']}}/dependencies"
-						enctype="multipart/form-data" name="fdeps">
-					<input type="text" name="text" value="{{' '.join([str(x) for x in ctx.blocks.keys()])}}" size="70" id="formdeps">
-					<input type="submit" name="submit" value="Salvar dependências">
-					<p>
-					<div class="deschelp">
-						Listar os tickets que são bloqueados por este ticket, com seus números separados por espaços.
-					</div>
-					<p>
-				</form>
-			</div>
-		</td>
-	</tr>
-</table>
+				<input type="submit" name="submit" value="Enviar anexo">
+				<p>
+				<div class="deschelp">
+					É possível enviar um arquivo em anexo a este ticket, como por exemplo uma imagem, um script, etc.
+				</div>
+			</form>
+		</div>
+		<div class="panel" id="datedue" style="display: none">
+			<form method="post" action="/ticket/{{ctx.ticket['id']}}/datedue"
+					enctype="multipart/form-data" name="fdatedue">
+				<input type="text" name="datedue" value="{{datedue}}" size="10" id="formdatedue">
+				<input type="submit" name="submit" value="Salvar previsão">
+				<p>
+				<div class="deschelp">
+					É possível digitar uma data de previsão de resolução deste
+					chamado. Utilizar o formato YYYY-MM-DD. Exemplo: <b>2012-09-27</b>
+				</div>
+			</form>
+		</div>
+		<div class="panel" id="security" style="display: none">
+			%if ctx.ticket['admin_only'] == 1:
+				Este ticket é visível apenas para administradores.
+				<p>
+				<a href="/ticket/{{ctx.ticket['id']}}/admin-only/0">Tornar visível para qualquer usuário
+					autenticado</a>
+			%else:
+				Este ticket é visível para qualquer usuário autenticado.
+				<p>
+				<a href="/ticket/{{ctx.ticket['id']}}/admin-only/1">Tornar visível apenas para
+					administradores</a>
+			%end
+		</div>
+		<div class="panel" id="dependencies" style="display: none">
+			<form method="post" action="/ticket/{{ctx.ticket['id']}}/dependencies"
+					enctype="multipart/form-data" name="fdeps">
+				<input type="text" name="text" value="{{' '.join([str(x) for x in ctx.blocks.keys()])}}" size="70" id="formdeps">
+				<input type="submit" name="submit" value="Salvar dependências">
+				<p>
+				<div class="deschelp">
+					Listar os tickets que são bloqueados por este ticket, com seus números separados por espaços.
+				</div>
+				<p>
+			</form>
+		</div>
+	</div>
+</div>
 <p>

@@ -25,6 +25,11 @@ a:hover.tab {
 	color: #FFFFFF;
 }
 
+.ticket {
+	min-width: 900px;
+	max-width: 1000px;
+}
+
 a:link,
 a:visited,
 a:active {
@@ -211,6 +216,13 @@ a.tag:hover {
 	padding-bottom: 2px;
 }
 
+.tkidlarge {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 28px;
+	font-weight: 600;
+	padding-bottom: 20px;
+}
+
 .tktitle {
 	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 13px;
@@ -240,6 +252,7 @@ a.tag:hover {
 	padding-top: 15px;
 	padding-right: 10px;
 	margin-bottom: 15px;
+	clear: both;
 }
 
 .deschelp {
@@ -272,10 +285,15 @@ a.tag:hover {
 }
 
 .tkmetadata {
-	padding: 10px;
+	background-color: #ECECEE;
+	padding: 15px;
+	float: left;
+	width: 140px;
+	border: 2px solid #C1C1B9;
 }
 
 .tkevents {
+	margin-left: 180px;
 	padding-left: 20px;
 }
 
