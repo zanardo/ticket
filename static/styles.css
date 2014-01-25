@@ -295,6 +295,8 @@ a.tag:hover {
 .tkevents {
 	margin-left: 180px;
 	padding-left: 20px;
+	padding-right: 20px;
+	padding-top: 10px;
 }
 
 .commentheader {
