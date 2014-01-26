@@ -21,11 +21,11 @@ title = 'ticket'
 # Descrição das prioridades. É possível adicionar mais prioridades
 # caso seja necessário.
 priodesc = {
-	1: 'Ação Urgente',
+	1: 'Urgente',
 	2: 'Atenção',
-	3: 'Prioridade Normal',
-    4: 'Baixa Prioridade',
-    5: 'Baixíssima Prioridade',
+	3: 'Normal',
+	4: 'Baixa',
+	5: 'Baixíssima',
 }
 
 # Cores das prioridades.
