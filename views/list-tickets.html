@@ -4,7 +4,6 @@
 %data1 = ''
 %prio1 = ''
 <table class="tickets" width="100%">
-	<th>Código</th><th></th><th>Título</th><th>Últ. Mod.</th><th>Palavras-Chave</th>
 %for tk in ctx.tickets:
 	%priobgcolor = ctx.config.priocolor[tk['priority']]
 	<tr class="ticketsrow">
@@ -30,10 +29,7 @@
 				{{!admin}}
 			</span>
 		</td>
-		<td valign="middle" align="center">
-			{{str(tk['datemodified'])[:10]}}
-		</td>
-		<td valign="middle" align="left">
+		<td valign="middle" align="right">
 			%for tag in sorted(tk['tags']):
 				%if tag in ctx.tagsdesc:
 					%description = ctx.tagsdesc[tag]['description']
