@@ -85,6 +85,8 @@ textarea {
 	width: 100%;
 	height: 75px;
 	background-color: #FFFFFF;
+	transition-property: box-shadow;
+	transition-duration: 0.2s;
 }
 
 #top {
