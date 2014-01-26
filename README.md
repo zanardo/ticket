@@ -21,14 +21,13 @@ A última versão estável do sistema ticket pode ser obtida utilizando o Git:
 Instalar as dependências:
 
     $ cd ticket
-    $ virtualenv-2.7 --no-site-packages --distribute venv
-    $ venv/bin/pip install -r requirements.txt
+    $ make
 
 ## iniciando ticket
 
 Iniciar o servidor web:
 
-    $ venv/bin/python server.py
+    $ make run-server
 
 Como padrão, o servidor web escuta no host ``127.0.0.1``, e na porta ``5000``.
 O banco de dados default é no arquivo ``ticket.db``, o qual será criado

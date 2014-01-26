@@ -1,4 +1,4 @@
 **.db
 **.pyc
-venv/
+.venv/
 config.py
