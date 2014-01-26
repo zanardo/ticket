@@ -264,14 +264,14 @@ a.tag:hover {
 
 .copyright {
 	font-family: "Open Sans", Verdana, sans-serif;
-	font-size: 13px;
+	font-size: 11px;
 	color: #808080;
 	text-align: right;
 	margin-top: 70px;
 	border-top: 1px solid #E6E6E6;
-	padding-top: 15px;
-	padding-right: 10px;
-	margin-bottom: 15px;
+	padding-top: 5px;
+	padding-right: 15px;
+	margin-bottom: 10px;
 	clear: both;
 }
 
