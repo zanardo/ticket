@@ -305,12 +305,9 @@ a.tag:hover {
 }
 
 .tkmetadata {
-	background-color: #ECECEE;
-	margin-left: 5px;
-	padding: 15px;
+	margin-left: 15px;
 	position: fixed;
 	width: 140px;
-	border: 2px solid #C1C1B9;
 }
 
 .tkevents {
