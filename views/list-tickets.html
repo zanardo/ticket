@@ -7,6 +7,9 @@
 	<th>Código</th><th></th><th>Título</th><th>Últ. Mod.</th><th>Palavras-Chave</th>
 %for tk in ctx.tickets:
 	%priobgcolor = ctx.config.priocolor[tk['priority']]
+	%if tk['status'] == 1:
+		%priobgcolor = ''
+	%end
 	<tr class="ticketsrow">
 		<td valign="middle" align="right" class="ticketlabel">
 			#{{tk['id']}}
