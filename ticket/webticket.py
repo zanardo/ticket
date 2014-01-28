@@ -30,10 +30,10 @@ def index():
     # Lista tickets utilizando critérios de um filtro
     # A página padrão exibe os tickets ordenados por prioridade
     if 'filter' not in request.query.keys():
-        return redirect('/?filter=o:p g:p')
+        return redirect('/?filter=o:p')
     filter = request.query.filter
     if filter.strip() == '':
-        filter = u'o:p g:p'
+        filter = u'o:p'
 
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
@@ -48,7 +48,6 @@ def index():
     status = u'and status = 0'
     order = u'order by datemodified desc'
     orderdate = 'datemodified'
-    group = ''
 
     # Abrangência dos filtros (status)
     # T: todos
@@ -96,12 +95,6 @@ def index():
             elif o == 'p':
                 order = u'order by priority asc, datecreated asc '
                 orderdate = ''
-            continue
-
-        # Agrupamento (g:[dp])
-        m = re.match(r'^g:([dp])$', t)
-        if m:
-            group = { 'p': 'priority', 'd': 'date' }[m.group(1)]
             continue
 
         # Usuário de criação, fechamento, modificação (u:USER)
@@ -162,11 +155,6 @@ def index():
         # Texto para busca
         search.append(t)
 
-    # Validando agrupamentos
-    if ( orderdate == '' and group == 'date' ) \
-                or ( orderdate != '' and group == 'priority' ):
-        return 'agrupamento inválido!'
-
     ctx = ticket.TemplateContext()
 
     # Caso usuário não seja administrador, vamos filtrar os
@@ -210,11 +198,9 @@ def index():
     ctx.tickets = tickets
     ctx.filter = filter
     ctx.orderdate = orderdate
-    ctx.group = group
     ctx.tagsdesc = ticket.tickets.tagsdesc()
 
     return dict(ctx=ctx)
-
 
 
 # Tela de novo ticket
