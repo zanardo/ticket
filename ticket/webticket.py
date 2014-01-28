@@ -11,6 +11,8 @@ from bottle import route, view, get, post, redirect, response, request
 
 import re
 import time
+import zlib
+import mimetypes
 
 import ticket
 import ticket.db
