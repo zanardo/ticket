@@ -16,7 +16,7 @@ import ticket.weblogin
 import ticket.webticket
 import ticket.webstatic
 
-VERSION = '1.6dev'
+VERSION = '1.6'
 
 class TemplateContext(object):
     """ Objeto para simplificar passagem de dados para templates """
