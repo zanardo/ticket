@@ -34,7 +34,7 @@ priocolor = {
 	2: '#99CC00',
 	3: '#FF9966',
 	4: '#6DF2B2',
-    5: '#9FEFF2',
+	5: '#9FEFF2',
 }
 
 # Tamanho máximo (em bytes) de arquivos anexados aos tickets
