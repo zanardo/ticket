@@ -1,11 +1,18 @@
 body {
 	background-color: #F1F3F4;
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 9pt;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 11px;
 	margin: 0;
+	background-color: #ffffff;
 }
 
 #content {
+	margin-top: 80px;
+	margin-right: 10px;
+	margin-left: 10px;
+}
+
+#contentlogin {
 	margin: 10px;
 }
 
@@ -13,8 +20,8 @@ body {
 	padding: 2px 5px 2px 5px;
 	color: #262626;
 	cursor: pointer;
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 8pt;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 11px;
 	text-decoration: none;
 }
 
@@ -22,6 +29,11 @@ a:hover.tab {
 	text-decoration: none;
 	background-color: gray;
 	color: #FFFFFF;
+}
+
+.ticket {
+	min-width: 900px;
+	max-width: 1000px;
 }
 
 a:link,
@@ -36,7 +48,7 @@ a:hover {
 }
 
 .ticketsfiltrados {
-	font-family: Verdana, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 10px;
 	text-align: right;
 	margin-top: 30px;
@@ -45,30 +57,88 @@ a:hover {
 input, textarea, select, submit {
 	background-color: #F2F2F2;
 	border: 1px solid #969696;
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 8pt;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 11px;
 }
 
-.topmenu {
-	font-family: Arial, sans-serif;
-	font-size: 9pt;
+textarea {
+	padding: 2px;
+}
+
+#topmenu {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 12px;
+	text-align: right;
+	padding: 2px;
+	margin-right: 10px;
+	right: 20px;
+}
+
+.topbox {
+	padding: 5px;
+	margin-bottom: 20px;
+}
+
+#topfixedblock {
+	position: fixed;
+	top: 0px;
+	width: 100%;
+	height: 75px;
+	background-color: #FFFFFF;
+	transition-property: box-shadow;
+	transition-duration: 0.2s;
+}
+
+#top {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 12px;
+	padding: 2px;
+	color: rgb(200,198,193);
+	background-color: #3F464E;
+	margin-bottom: 5px;
+	height: 40px;
+	border-bottom: 2px solid #292E33;
+	width: 100%;
+}
+
+#toplogo {
+	float: left;
+	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
+	font-size: 24pt;
+	font-weight: normal;
+	margin-left: 10px;
+	color: #E6E6E6;
+}
+
+#toplogo a:link,
+#toplogo a:visited {
+	color: #E6E6E6;
+}
+
+#toplogo a:hover {
+	color: #E6E6E6;
+	text-decoration: none;
+}
+
+.clear {
+	clear: both;
 }
 
 #topusermenu {
-	font-family: Verdana, sans-serif;
-	font-size: 11px;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 12px;
 	text-align: right;
-	padding: 4px;
-	color: #808080;
-	border-bottom: 1px solid #CCCCCC;
-	background-color: #E2E7E9;
-	margin-bottom: 5px;
+	float: right;
+	padding: 2px;
+	color: rgb(200,198,193);
+	margin-top: 7px;
+	margin-right: 5px;
 }
 
 #topusermenu a:link, 
 #topusermenu a:visited,
 #topusermenu a:active {
-	color: #808080;
+	color: rgb(200,198,193);
 	text-decoration: none;
 }
 
@@ -76,16 +146,36 @@ input, textarea, select, submit {
 	text-decoration: underline;
 }
 
+#topsearch {
+	float: left;
+	margin-left: 200px;
+	margin-top: 10px;
+}
+
+.searchform {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 14px;
+	border: none medium;
+	padding: 2px;
+	padding-left: 25px;
+	height: 20px;
+	width: 300px;
+	background-color: #D9D9D9;
+	background-image: url("/static/search-icon.png");
+	background-repeat: no-repeat;
+	background-position: -3px -3px;
+}
+
 .title {
 	font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
 	font-size: 24pt;
 	font-weight: normal;
-	text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.2);
+	/*text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.2);*/
 }
 
 .tags {
 	border: 1px dotted #336699;
-	font-family: Verdana, Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 8pt;
 }
 
@@ -98,17 +188,38 @@ input, textarea, select, submit {
 	padding-left: 5px;
 }
 
-.ticket {
+.tickets {
 	padding: 1px;
-	font-family: Verdana, Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 10px;
+	border-collapse: collapse;
+	background-color: #ffffff;
+}
+
+th {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 12px;
+	text-align: center;
+	color: #000000;
+	padding: 5px;
+}
+
+.ticketsrow:nth-child(even) {
+	background-color: #F6F6F6;
 }
 
 .ticketlabel {
-	font-family: Verdana, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 12px;
 	color: #808080;
 	padding-right: 10px;
+	padding-bottom: 4px;
+	padding-top: 4px;
+}
+
+.squareprio {
+	margin: 3px;
+	padding: 2px;
 }
 
 a.tag {
@@ -127,10 +238,17 @@ a.tag:hover {
 	padding-bottom: 2px;
 }
 
+.tkidlarge {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 28px;
+	font-weight: 600;
+	padding-bottom: 10px;
+}
+
 .tktitle {
-	font-family: Verdana, sans-serif;
-	font-size: 12px;
-	font-weight: bold;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 13px;
+	font-weight: 600;
 	padding-left: 10px;
 }
 
@@ -139,33 +257,34 @@ a.tag:hover {
 }
 
 .tktitleclosed a {
-	font-family: Verdana, sans-serif;
-	font-size: 12px;
-	font-weight: bold;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 13px;
+	font-weight: 600;
 	padding-left: 10px;
 	color: #999999;
 }
 
 .copyright {
-	font-family: Helvetica, Arial, sans-serif;
-	font-size: 13px;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 11px;
 	color: #808080;
 	text-align: right;
 	margin-top: 70px;
 	border-top: 1px solid #E6E6E6;
-	padding-top: 15px;
-	padding-right: 10px;
-	margin-bottom: 15px;
+	padding-top: 5px;
+	padding-right: 15px;
+	margin-bottom: 10px;
+	clear: both;
 }
 
 .deschelp {
-	font-family: Verdana, Arial, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 10px;
 	color: #a5a5a5;
 }
 
 .orderdate {
-	font-family: Verdana, sans-serif;
+	font-family: "Open Sans", Verdana, sans-serif;
 	font-size: 12px;
 	font-weight: normal;
 	padding: 10px;
@@ -188,16 +307,21 @@ a.tag:hover {
 }
 
 .tkmetadata {
-	padding: 10px;
+	margin-left: 15px;
+	position: fixed;
+	width: 140px;
 }
 
 .tkevents {
+	margin-left: 190px;
 	padding-left: 20px;
+	padding-right: 20px;
+	padding-top: 10px;
 }
 
 .commentheader {
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 11px;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 12px;
 	font-weight: bold;
 }
 
@@ -210,8 +334,8 @@ a.tag:hover {
 }
 
 .commenttext {
-	font-family: Verdana, Arial, sans-serif;
-	font-size: 10px;
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 11px;
 	max-width: 780px;
 	margin-top: 3px;
 	padding: 5px;
@@ -220,5 +344,5 @@ a.tag:hover {
 
 .commentevent {
 	font-weight: bold;
-	font-size: 10px;
+	font-size: 11px;
 }

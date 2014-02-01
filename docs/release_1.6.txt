@@ -1,0 +1,25 @@
+Esta é a documentação de mudanças na versão 1.6 do sistema ticket.
+
+1. Funcionalidades Novas
+
+Novo tema.
+
+Exibição da Data de Última Modificação do ticket na lista de tickets.
+
+Ao pressionar "n" em uma página de detalhes de um ticket,
+o painel de Adicionar Nota é exibido e fica com foco, simplificando
+e agilizando a criação de comentários nos tickets.
+
+
+2. Atualização da versão 1.5.
+
+Algumas configurações foram movidas da página administrativa para o arquivo
+config.py.
+
+- Copiar o arquivo config.py.example:
+
+$ cp config.py.example config.py
+
+- Editar o arquivo config.py de acordo com as configurações desejadas.
+
+- Reiniciar o sistema ticket.

@@ -22,6 +22,8 @@ function showPanel(tab, name) {
         document.getElementById('formdeps').focus()
     }
 
+    // Rola página até o final
+    window.scroll(0,document.body.offsetHeight);
     return false;
 }
 
@@ -51,4 +53,16 @@ function doCron() {
     document.title = '[' + minutes + '\'' + '] ' + title;
     document.fminutes.minutes.value = minutes;
     cron = setTimeout(doCron, 1000);
+}
+
+document.onkeydown = function(evt) {
+    evt = evt || window.event;
+    if(selectedTab == null && evt.keyCode == 78 && ! evt.shiftKey &&
+            !evt.ctrlKey && !evt.altKey && !evt.metaKey &&
+            evt.target instanceof HTMLBodyElement) {
+        window.scroll(0,document.body.offsetHeight);
+        showPanel(document.getElementById('notetab'), 'note');
+        document.getElementById('formnote').focus();
+        evt.preventDefault();
+    }
 }

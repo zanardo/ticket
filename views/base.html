@@ -4,36 +4,41 @@
 	<title>{{ title }}</title>
 	<link rel="stylesheet" type="text/css" href="/static/styles.css">
 	<meta charset="utf-8">
+	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700' rel='stylesheet' type='text/css'>
+	<link href='http://fonts.googleapis.com/css?family=Ubuntu:400,500' rel='stylesheet' type='text/css'>
+	<script type="text/javascript" src="/static/list-tickets.js"></script>
 </head>
 <body>
-	<div id="topusermenu">
-		<b>olá {{username}}!</b> • 
-		<a href="/change-password">trocar senha</a> • 
-		%if userisadmin:
-			<a href="/admin">admin</a> • 
-		%end
-		<a href="/logout">sair</a>
+	<div id="topfixedblock">
+	<div id="top">
+		<div id="toplogo"><a href="/">{{ctx.config.title}}</a></div>
+		<div id="topsearch">
+			<form method="get" action="/" enctype="multipart/form-data">
+				<input type="text" name="filter" size="25" accesskey='S' value="{{filter}}" title="alt-shift-s" class="searchform">
+			</form>
+		</div>
+		<div id="topusermenu">
+			<span title="logado como {{ctx.username}}">
+			<img src="/static/user-icon.png"></span> 
+			<a title="trocar senha" href="/change-password"><img src="/static/password-icon.png"></a> 
+			%if ctx.user_is_admin:
+				<a title="administrar" href="/admin"><img src="/static/admin-icon.png"></a> 
+			%end
+			<a title="sair" href="/logout"><img src="/static/logout-icon.png"></a>
+		</div>
+	</div>
+	<div class="clear"></div>
+	<div id="topmenu">
+				<a href='/ticket/new' accesskey='N' title='novo ticket (alt-shift-n)'><b>criar novo</b></a>
+				| <a href='/?filter=o:p' title="todos em aberto">em aberto</a>
+				| <a href='/?filter=T o:c l:100' title="por data de criação">criados</a>
+				- <a href='/?filter=T o:m l:100' title="por data de última modificação">modificados</a>
+				- <a href='/?filter=F o:f l:100' title="por data de fechamento">fechados</a>
+				- <a href='/?filter=o:v l:100' title="por data de previsão de solução">agendados</a>
+
+	</div>
 	</div>
 	<div id="content">
-		<table border="0" align="right">
-			<tr>
-			<td class="topmenu" align="right">
-				<a href='/new-ticket' accesskey='N' title='novo ticket (alt-shift-n)'><b>criar novo</b></a>
-				| <a href='/?filter=o:p g:p' title="todos em aberto">em aberto</a>
-				| <a href='/?filter=T o:c l:100 g:d' title="por data de criação">criados</a>
-				- <a href='/?filter=T o:m l:100 g:d' title="por data de última modificação">modificados</a>
-				- <a href='/?filter=F o:f l:100 g:d' title="por data de fechamento">fechados</a>
-				- <a href='/?filter=o:v l:100 g:d' title="por data de previsão de solução">agendados</a>
-			</td> 
-			<tr>
-			</tr>
-			<td align=right>
-			<form method="get" action="/" enctype="multipart/form-data">
-				<input type="text" name="filter" size="25" accesskey='S' value="{{filter}}" title="alt-shift-s">
-				<input type="submit" name="submit" value="filtrar" />
-			</form>
-			</td></tr></table>
-			<span class="title">{{ title }}</span>
 			<p>
 
 			%include
@@ -43,7 +48,7 @@
 		</table>
 	</div>
 	<div class="copyright">
-		sistema <a href="https://github.com/zanardo/ticket">ticket</a> • versão {{version}}
+		sistema <a href="https://github.com/zanardo/ticket">ticket</a> • versão {{ctx.version}}
 	</div>
 </body>
 </html>

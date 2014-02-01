@@ -1,4 +1,4 @@
-%rebase base title="Administrar", filter="", username=username, userisadmin=userisadmin, version=version
+%rebase base title="Administrar", filter="", ctx=ctx
 
 <h2>Usuários</h2>
 <form method="post" action="/admin/save-new-user" enctype="multipart/form-data">
@@ -8,7 +8,7 @@
 <p>
 <table>
 	<th>usuário</th><th>nome</th><th>e-mail</th><th>administrador</th><th>ações</th>
-	%for user in users:
+	%for user in ctx.users:
 		<tr>
 			<td> {{user['username']}} </td>
 			<td> {{user['name']}} </td>
@@ -22,7 +22,7 @@
 			</td>
 			<td>
 				<a href="/admin/edit-user/{{user['username']}}">editar</a> 
-				%if username != user['username']:
+				%if ctx.username != user['username']:
 					<a href="/admin/remove-user/{{user['username']}}">excluir</a>
 					<a href="/admin/force-new-password/{{user['username']}}">forçar nova senha</a>
 					%if user['is_admin']:
@@ -35,38 +35,6 @@
 		</tr>
 	%end
 </table>
-
-<h2>Funcionalidades ativas</h2>
-<form method="post" action="/admin/save-features" enctype="multipart/form-data">
-	<input type="checkbox" name="features" {{ "checked=1" if "timetrack" in features else "" }} value="timetrack">Tempo trabalhado
-	<br>
-	<input type="checkbox" name="features" {{ "checked=1" if "adminonly" in features else "" }} value="adminonly">Restrição de tickets para administradores
-	<br>
-	<input type="checkbox" name="features" {{ "checked=1" if "fileattach" in features else "" }} value="fileattach">Arquivos anexos
-	<br>
-	<input type="checkbox" name="features" {{ "checked=1" if "dependency" in features else "" }} value="dependency">Dependências entre tickets
-	<br>
-	<input type="checkbox" name="features" {{ "checked=1" if "datedue" in features else "" }} value="datedue">Data de previsão de solução
-	<br>
-	<input type="checkbox" name="features" {{ "checked=1" if "mail" in features else "" }} value="mail">Envio de comentários por e-mail
-
-	<p>
-
-	<input type="submit" name="submit" value="salvar funcionalidades">
-</form>
-
-<h2>Configurações</h2>
-<form method="post" action="/admin/save-config" enctype="multipart/form-data">
-	<input type="text" size="40" name="mail.smtp" value="{{ config['mail.smtp'] }}">
-	<tt>mail.smtp</tt> (Servidor SMTP para envio de e-mail)
-	<p>
-
-	<input type="text" size="40" name="file.maxsize" value="{{ config['file.maxsize'] }}">
-	<tt>file.maxsize</tt> (Tamanho máximo em bytes de arquivos anexos)
-	<p>
-
-	<input type="submit" name="submit" value="salvar configurações">
-</form>
 
 <h2>Manutenção</h2>
 <a href="/admin/reindex-fts">Recria índices de busca</a>: Utilizar
