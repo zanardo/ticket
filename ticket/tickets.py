@@ -67,7 +67,7 @@ def sanitizecomment(comment):
     # Sanitiza o texto do comentário (quebras de linhas, links, etc)
     subs = [ (r'\r', ''), (r'&', '&amp;'), (r'<', '&lt;'), (r'>', '&gt;'),
              (r'\r?\n', '<br>\r\n'), (r'\t', '&nbsp;&nbsp;&nbsp;'),
-             (r'  ', '&nbsp;&nbsp;'), (r'#(\d+)', r'<a href="/\1">#\1</a>') ]
+             (r'  ', '&nbsp;&nbsp;'), (r'#(\d+)', r'<a href="/ticket/\1">#\1</a>') ]
     for f, t in subs:
         comment = re.sub(f, t, comment)
     return comment
