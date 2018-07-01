@@ -22,14 +22,4 @@ test: .venv
 run: .venv
 	while :; do TICKET_SETTINGS=`pwd`/ticket.conf .venv/bin/python -m ticket ; sleep 1 ; done
 
-run-gunicorn: .venv
-	.venv/bin/gunicorn \
-		--bind 127.0.0.1:5000 \
-		--workers 2 \
-		--error-logfile - \
-		--name ticket \
-		--pid /tmp/ticket.pid \
-		--env TICKET_SETTINGS=`pwd`/ticket.conf \
-		ticket.app:app
-
-.PHONY: all data clean test run run-gunicorn
+.PHONY: all data clean test run
