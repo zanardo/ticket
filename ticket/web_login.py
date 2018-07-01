@@ -23,7 +23,7 @@ def validatelogin():
     user = request.forms.get("user")
     passwd = request.forms.get("passwd")
     if ticket.user.validate_user_db(user, passwd):
-        session_id = ticket.user.makesession(user)
+        session_id = ticket.user.make_session(user)
         response.set_cookie(ticket.user.cookie_session_name(), session_id)
         return redirect('/')
     else:

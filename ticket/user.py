@@ -124,7 +124,7 @@ def removesession(session_id):
         """, locals())
 
 
-def makesession(user):
+def make_session(user):
     """
     Cria uma nova sessão no banco de dados.
     """
