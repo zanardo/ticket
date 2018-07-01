@@ -21,7 +21,7 @@ def get_db():
     return local.db
 
 
-def getcursor():
+def get_cursor():
     """
     Retorna um novo cursor para acesso ao banco de dados.
     """
@@ -61,7 +61,7 @@ def populatesearch(ticket_id):
     Popula o índice de busca full-text para um ticket.
     """
     text = ""
-    c = getcursor()     # Utiliza transação do caller
+    c = get_cursor()     # Utiliza transação do caller
     text += " " + ticket.tickets.tickettitle(ticket_id) + " "
     c.execute("""
         select comment

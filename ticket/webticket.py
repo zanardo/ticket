@@ -179,7 +179,7 @@ def index():
     if limit:
         sql += "%s " % limit
 
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute(sql, sqlparams)
     tickets = []
     for t in c:
@@ -229,7 +229,7 @@ def newticketpost():
 @ticket.user.requires_auth
 def showticket(ticket_id):
     # Exibe detalhes de um ticket
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     # Obtém dados do ticket
 
     ctx = TemplateContext()
@@ -316,7 +316,7 @@ def getfile(id, name):
     mime = mimetypes.guess_type(name)[0]
     if mime is None:
         mime = 'application/octet-stream'
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select files.ticket_id as ticket_id, files.size as size "
         ", files.contents as contents, tickets.admin_only as admin_only "
         "from files join tickets on tickets.id = files.ticket_id "
@@ -336,7 +336,7 @@ def closeticket(ticket_id):
     # Fecha um ticket
     # Verifica se existem tickets que bloqueiam este
     # ticket que ainda estão abertos.
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select d.ticket_id as ticket_id from dependencies as d "
         "inner join tickets as t on t.id = d.ticket_id "
         "where d.blocks = :ticket_id and t.status = 0", locals())
@@ -529,7 +529,7 @@ def reopenticket(ticket_id):
     # Reabre um ticket
     # Verifica se existem tickets bloqueados por este ticket
     # que estão fechados.
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select d.blocks as blocks from dependencies as d "
         "inner join tickets as t on t.id = d.blocks "
         "where d.ticket_id = :ticket_id and t.status = 1", locals())

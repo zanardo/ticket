@@ -6,7 +6,7 @@ import ticket.user
 def tagsdesc():
     # Retorna as descrições de tags
     tagdesc = {}
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select tag, description, bgcolor, fgcolor from tagsdesc")
     for r in c:
         tagdesc[r['tag']] = {
@@ -19,7 +19,7 @@ def tagsdesc():
 def ticketblocks(ticket_id):
     # Retorna quais ticket são bloqueados por um ticket
     deps = {}
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select d.blocks, t.title, t.status, t.admin_only "
         "from dependencies as d inner join tickets as t on t.id = d.blocks "
         "where d.ticket_id = :ticket_id", locals())
@@ -30,7 +30,7 @@ def ticketblocks(ticket_id):
 def ticketdepends(ticket_id):
     # Retorna quais ticket dependem de um ticket
     deps = {}
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select d.ticket_id, t.title, t.status, t.admin_only "
         "from dependencies as d inner join tickets as t on t.id = d.ticket_id "
         "where d.blocks = :ticket_id", locals())
@@ -40,14 +40,14 @@ def ticketdepends(ticket_id):
 
 def tickettags(ticket_id):
     # Retorna tags de um ticket
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select tag from tags where ticket_id = :ticket_id", locals())
     return [r['tag'] for r in c]
 
 
 def tickettitle(ticket_id):
     # Retorna o título de um ticket
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select title from tickets where id = :ticket_id", locals())
     return c.fetchone()['title']
 

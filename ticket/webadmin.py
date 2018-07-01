@@ -16,7 +16,7 @@ def admin():
     # Tela de administração
     ctx = TemplateContext()
     ctx.users = []
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select username, is_admin, name, email from users "
         "order by username")
     for user in c:
@@ -46,7 +46,7 @@ def edituser(username):
     # Exibe tela de edição de usuários
     ctx = TemplateContext()
     ctx.user = username
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select name, email from users where username = :username",
         locals())
     r = c.fetchone()

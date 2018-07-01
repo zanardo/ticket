@@ -35,7 +35,7 @@ def cookie_session_name():
 def validateuserdb(user, passwd):
     # Valida usuário e senha no banco de dados
     passwdsha1 = sha1(passwd.encode("UTF-8")).hexdigest()
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select username from users where username = :user "
         "and password = :passwdsha1", locals())
     r = c.fetchone()
@@ -44,7 +44,7 @@ def validateuserdb(user, passwd):
 
 def validatesession(session_id):
     # Valida sessão ativa no banco de dados
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select session_id from sessions where session_id = :session_id",
         locals())
     r = c.fetchone()
@@ -53,7 +53,7 @@ def validatesession(session_id):
 
 def userident(username):
     # Retorna nome e e-mail de usuário
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select name, email from users where username=:username",
         locals())
     return dict(c.fetchone())
@@ -62,7 +62,7 @@ def userident(username):
 def currentuser():
     # Retorna usuário corrente
     session_id = request.get_cookie(ticket.user.cookie_session_name())
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select username from sessions "
         "where session_id = :session_id", locals())
     return c.fetchone()['username']
@@ -70,7 +70,7 @@ def currentuser():
 
 def userisadmin(username):
     # Checa se usuário tem poderes administrativos
-    c = ticket.db.getcursor()
+    c = ticket.db.get_cursor()
     c.execute("select is_admin from users where username = :username",
         locals())
     return c.fetchone()['is_admin']
