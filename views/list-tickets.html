@@ -38,10 +38,10 @@
 		</td>
 		<td valign="middle" align="left">
 			%for tag in sorted(tk['tags']):
-				%if tag in ctx.tagsdesc:
-					%description = ctx.tagsdesc[tag]['description']
-					%bgcolor = ctx.tagsdesc[tag]['bgcolor']
-					%fgcolor = ctx.tagsdesc[tag]['fgcolor']
+				%if tag in ctx.tags_desc:
+					%description = ctx.tags_desc[tag]['description']
+					%bgcolor = ctx.tags_desc[tag]['bgcolor']
+					%fgcolor = ctx.tags_desc[tag]['fgcolor']
 				%else:
 					%description = ''
 					%bgcolor = '#00D6D6'

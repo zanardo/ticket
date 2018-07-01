@@ -4,7 +4,7 @@ from ticket.user import (
     user_admin
 )
 from ticket.config import config
-from ticket.tickets import tagsdesc
+from ticket.tickets import tags_desc
 
 
 class TemplateContext(object):
@@ -19,4 +19,4 @@ class TemplateContext(object):
         else:
             self.user_is_admin = 0
         self.config = config
-        self.tagsdesc = tagsdesc()
+        self.tags_desc = tags_desc()

@@ -40,10 +40,10 @@
 		<b>Prioridade:</b> {{ctx.config("priodesc")[ctx.ticket['priority']]}}
 		<p>
 		%for tag in sorted(ctx.tags):
-			%if tag in ctx.tagsdesc:
-				%description = ctx.tagsdesc[tag]['description']
-				%bgcolor = ctx.tagsdesc[tag]['bgcolor']
-				%fgcolor = ctx.tagsdesc[tag]['fgcolor']
+			%if tag in ctx.tags_desc:
+				%description = ctx.tags_desc[tag]['description']
+				%bgcolor = ctx.tags_desc[tag]['bgcolor']
+				%fgcolor = ctx.tags_desc[tag]['fgcolor']
 			%else:
 				%description = ''
 				%bgcolor = '#00D6D6'
@@ -53,7 +53,7 @@
 				class="tag"
 				title="{{description}}"
 				style="background-color:{{bgcolor}};color:{{fgcolor}};"
-			>{{tag}}</a> 
+			>{{tag}}</a>
 		%end
 		<p>
 		%if ctx.ticket['status'] == 0:
@@ -165,7 +165,7 @@
 						Título</a>
 					%if 'timetrack' in ctx.config("features") and ( ctx.ticket['status'] == 0 or ctx.timetrack ):
 						<a class="tab" onclick="return showPanel(this, 'minutes');">
-							Tempo</a> 
+							Tempo</a>
 					%end
 					%if 'fileattach' in ctx.config("features") and ctx.ticket['status'] == 0:
 						<a class="tab" onclick="return showPanel(this, 'file');">
@@ -228,12 +228,12 @@
 				</div>
 				<p>
 				<small>
-				%for tag in sorted(ctx.tagsdesc):
+				%for tag in sorted(ctx.tags_desc):
 					<span
 						onclick="document.ftag.text.value+=' {{tag}}'"
 						class="tag"
-						title="{{ctx.tagsdesc[tag]['description']}}"
-						style="background-color:{{ctx.tagsdesc[tag]['bgcolor']}};color:{{ctx.tagsdesc[tag]['fgcolor']}};cursor: pointer;"
+						title="{{ctx.tags_desc[tag]['description']}}"
+						style="background-color:{{ctx.tags_desc[tag]['bgcolor']}};color:{{ctx.tags_desc[tag]['fgcolor']}};cursor: pointer;"
 					>{{tag}}</span>
 				%end
 				</small>

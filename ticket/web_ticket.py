@@ -190,7 +190,7 @@ def index():
     ctx.tickets = tickets
     ctx.filter = filter
     ctx.orderdate = orderdate
-    ctx.tagsdesc = ticket.tickets.tagsdesc()
+    ctx.tags_desc = ticket.tickets.tags_desc()
 
     return dict(ctx=ctx)
 

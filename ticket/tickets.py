@@ -4,7 +4,7 @@ import ticket.db
 import ticket.user
 
 
-def tagsdesc():
+def tags_desc():
     """
     Retorna as descrições de tags.
     """
