@@ -13,6 +13,7 @@ import sqlite3
 
 import ticket.tickets
 
+from ticket.log import log
 from ticket.config import config
 
 def getdb():
@@ -50,7 +51,7 @@ def expire_old_sessions():
 
 def createdb(dbname):
     # Cria o banco de dados caso arquivo não exista
-    print ';; criando banco de dados %s' % dbname
+    log.info('criando banco de dados %s', dbname)
     db = sqlite3.connect(dbname)
     fp = file('schema.sql', 'r')
     sql = "\n".join(fp.readlines())
@@ -59,9 +60,9 @@ def createdb(dbname):
     c.executescript(sql)
     db.commit()
     db.close()
-    print ';; banco de dados vazio criado com sucesso!'
-    print ';; o primeiro login deverá ser feito com:'
-    print ';; usuario: admin     senha: admin'
+    log.info('banco de dados vazio criado com sucesso!')
+    log.info('o primeiro login deverá ser feito com:')
+    log.info('usuario: admin     senha: admin')
 
 def populatesearch(ticket_id):
     # Popula o índice de busca full-text para um ticket
@@ -75,4 +76,3 @@ def populatesearch(ticket_id):
     c.execute("delete from search where docid = :ticket_id", locals())
     c.execute("insert into search ( docid, text ) "
         "values ( :ticket_id, :text )", locals())
-

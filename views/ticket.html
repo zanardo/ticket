@@ -2,7 +2,7 @@
 
 <script type="text/javascript" src="/static/show-ticket.js"></script>
 
-%import urllib
+%import urllib.parse
 
 %datedue = ctx.ticket['datedue']
 %if datedue is None:
@@ -49,7 +49,7 @@
 				%bgcolor = '#00D6D6'
 				%fgcolor = '#4D4D4D'
 			%end
-			<a href="/?filter=t:{{urllib.quote(tag.encode('utf8'), '')}} o:p"
+			<a href="/?filter=t:{{urllib.parse.quote(tag.encode('utf8'), '')}} o:p"
 				class="tag"
 				title="{{description}}"
 				style="background-color:{{bgcolor}};color:{{fgcolor}};"

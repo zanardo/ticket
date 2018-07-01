@@ -15,6 +15,7 @@ from bottle import get, view, post, request, redirect
 import ticket.user
 import ticket.db
 from ticket.context import TemplateContext
+from ticket.log import log
 
 @get('/admin')
 @view('admin')
@@ -75,8 +76,8 @@ def editusersave(username):
     # Salva os dados de um usuário editado
     assert 'name' in request.forms
     assert 'email' in request.forms
-    name = request.forms.name.strip()
-    email = request.forms.email.strip()
+    name = request.forms.get("name").strip()
+    email = request.forms.get("email").strip()
     with ticket.db.db_trans() as c:
         c.execute("update users set name=:name, email=:email "
             "where username=:username", locals())
@@ -89,11 +90,11 @@ def editusersave(username):
 def newuser():
     # Cria um novo usuário
     assert 'username' in request.forms
-    username = request.forms.username
+    username = request.forms.get("username")
     if username.strip() == '':
         return 'usuário inválido'
     password = str(int(random.random() * 999999))
-    sha1password = sha1(password).hexdigest()
+    sha1password = sha1(password.encode("UTF-8")).hexdigest()
     with ticket.db.db_trans() as c:
         c.execute("insert into users (username, password, is_admin ) "
             "values (:username, :sha1password, 0)", locals())
@@ -135,11 +136,11 @@ def changeuseradminstatus(username, status):
 def reindexfts():
     # Recria o índice de Full Text Search
     with ticket.db.db_trans() as c:
-        print 'limpando índices'
+        log.info("limpando índices")
         c.execute("delete from search")
-        print 'iniciando recriação dos índices'
+        log.info('iniciando recriação dos índices')
         c.execute("select id from tickets order by id")
         for r in c:
-            print 'reindexando ticket #%s' % r['id']
+            log.debug('reindexando ticket #%s', r['id'])
             ticket.db.populatesearch(r['id'])
     return 'índices de full text search recriados!'

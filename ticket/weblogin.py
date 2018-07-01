@@ -29,8 +29,8 @@ def validatelogin():
     # Valida login do usuário
     assert 'user' in request.forms
     assert 'passwd' in request.forms
-    user = request.forms.user
-    passwd = request.forms.passwd
+    user = request.forms.get("user")
+    passwd = request.forms.get("passwd")
     if ticket.user.validateuserdb(user, passwd):
         session_id = ticket.user.makesession(user)
         response.set_cookie(ticket.user.cookie_session_name(), session_id)
@@ -65,9 +65,9 @@ def changepasswordsave():
     assert 'oldpasswd' in request.forms
     assert 'newpasswd' in request.forms
     assert 'newpasswd2' in request.forms
-    oldpasswd = request.forms.oldpasswd
-    newpasswd = request.forms.newpasswd
-    newpasswd2 = request.forms.newpasswd2
+    oldpasswd = request.forms.get("oldpasswd")
+    newpasswd = request.forms.get("newpasswd")
+    newpasswd2 = request.forms.get("newpasswd2")
     username = ticket.user.currentuser()
     if not ticket.user.validateuserdb(username, oldpasswd):
         return 'senha atual inválida!'
@@ -75,7 +75,7 @@ def changepasswordsave():
         return 'nova senha inválida!'
     if newpasswd != newpasswd2:
         return 'confirmação de nova senha diferente de nova senha!'
-    passwdsha1 = sha1(newpasswd).hexdigest()
+    passwdsha1 = sha1(newpasswd.encode("UTF-8")).hexdigest()
     with ticket.db.db_trans() as c:
         c.execute("update users set password = :passwdsha1 "
             "where username = :username", locals())

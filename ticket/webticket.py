@@ -21,6 +21,7 @@ import ticket.mail
 import ticket.tickets
 from ticket.context import TemplateContext
 from ticket.config import config
+from ticket.log import log
 
 # Listagem de tickets
 @route('/')
@@ -218,7 +219,7 @@ def newticket():
 def newticketpost():
     # Salva um novo ticket
     assert 'title' in request.forms
-    title = request.forms.title.strip()
+    title = request.forms.get("title").strip()
     if title == '':
         return 'erro: título inválido'
     username = ticket.user.currentuser()
@@ -370,7 +371,7 @@ def closeticket(ticket_id):
 def changetitle(ticket_id):
     # Altera título de um ticket
     assert 'text' in request.forms
-    title = request.forms.text.strip()
+    title = request.forms.get("text").strip()
     if title == '':
         return 'erro: título inválido'
     with ticket.db.db_trans() as c:
@@ -385,7 +386,7 @@ def changetitle(ticket_id):
 def changedatedue(ticket_id):
     # Altera data de previsão de solução de um ticket
     assert 'datedue' in request.forms
-    datedue = request.forms.datedue.strip()
+    datedue = request.forms.get("datedue").strip()
     if datedue != '':
         # Testando máscara
         if not re.match(r'^2\d{3}-\d{2}-\d{2}$', datedue):
@@ -421,7 +422,7 @@ def changeadminonly(ticket_id, toggle):
 def changetags(ticket_id):
     # Altera tags de um ticket
     assert 'text' in request.forms
-    tags = list(set(request.forms.text.strip().split()))
+    tags = list(set(request.forms.get("text").strip().split()))
     with ticket.db.db_trans() as c:
         c.execute("delete from tags where ticket_id = :ticket_id", locals())
         for tag in tags:
@@ -435,7 +436,7 @@ def changetags(ticket_id):
 def changedependencies(ticket_id):
     # Altera dependências de um ticket
     assert 'text' in request.forms
-    deps = request.forms.text
+    deps = request.forms.get("text")
     deps = deps.strip().split()
     # Validando dependências
     for dep in deps:
@@ -468,9 +469,9 @@ def changedependencies(ticket_id):
 def registerminutes(ticket_id):
     # Registra tempo trabalhado em um ticket
     assert 'minutes' in request.forms
-    if not re.match(r'^[\-0-9\.]+$', request.forms.minutes):
+    if not re.match(r'^[\-0-9\.]+$', request.forms.get("minutes")):
         return 'tempo inválido'
-    minutes = float(request.forms.minutes)
+    minutes = float(request.forms.get("minutes"))
     if minutes <= 0.0:
         return 'tempo inválido'
     username = ticket.user.currentuser()
@@ -491,9 +492,9 @@ def newnote(ticket_id):
 
     contacts = []
     if 'contacts' in request.forms:
-        contacts = request.forms.contacts.strip().split()
+        contacts = request.forms.get("contacts").strip().split()
 
-    note = request.forms.text
+    note = request.forms.get("text")
     if note.strip() == '':
         return 'nota inválida'
 
@@ -560,8 +561,8 @@ def reopenticket(ticket_id):
 def changepriority(ticket_id):
     # Altera a prioridade de um ticket
     assert 'prio' in request.forms
-    assert re.match(r'^[1-5]$', request.forms.prio)
-    priority = int(request.forms.prio)
+    assert re.match(r'^[1-5]$', request.forms.get("prio"))
+    priority = int(request.forms.get("prio"))
     with ticket.db.db_trans() as c:
         c.execute("update tickets set priority = :priority "
             "where id = :ticket_id", locals())
@@ -574,12 +575,12 @@ def uploadfile(ticket_id):
     # Anexa um arquivo ao ticket
     if not 'file' in request.files:
         return 'arquivo inválido'
-    filename = request.files.file.filename.decode('utf-8')
+    filename = request.files.get("file").filename
     maxfilesize = config("filemaxsize")
-    blob = ''
+    blob = b''
     filesize = 0
     while True:
-        chunk = request.files.file.file.read(4096)
+        chunk = request.files.get("file").file.read(4096)
         if not chunk:
             break
         chunksize = len(chunk)
@@ -587,7 +588,8 @@ def uploadfile(ticket_id):
             return 'erro: arquivo maior do que máximo permitido'
         filesize += chunksize
         blob += chunk
-    blob = buffer(zlib.compress(blob))
+    log.debug(type(blob))
+    blob = zlib.compress(blob)
     username = ticket.user.currentuser()
     with ticket.db.db_trans() as c:
         c.execute("insert into files ( ticket_id, name, user, size, contents ) "

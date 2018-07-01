@@ -1,6 +1,6 @@
 %rebase base title="Tickets", ctx=ctx, filter=ctx.filter
 
-%import urllib
+%import urllib.parse
 %data1 = ''
 %prio1 = ''
 <table class="tickets" width="100%">
@@ -47,7 +47,7 @@
 					%bgcolor = '#00D6D6'
 					%fgcolor = '#4D4D4D'
 				%end
-				<a href="/?filter=t:{{urllib.quote(tag.encode('utf8'), '')}} o:p"
+				<a href="/?filter=t:{{urllib.parse.quote(tag.encode('utf8'), '')}} o:p"
 					class="tag"
 					title="{{description}}"
 					style="background-color:{{bgcolor}};color:{{fgcolor}};"

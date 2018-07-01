@@ -43,7 +43,7 @@ def cookie_session_name():
 
 def validateuserdb(user, passwd):
     # Valida usuário e senha no banco de dados
-    passwdsha1 = sha1(passwd).hexdigest()
+    passwdsha1 = sha1(passwd.encode("UTF-8")).hexdigest()
     c = ticket.db.getcursor()
     c.execute("select username from users where username = :user "
         "and password = :passwdsha1", locals())
