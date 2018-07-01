@@ -2,10 +2,10 @@ import os.path
 
 from bottle import default_app, TEMPLATE_PATH
 
-import ticket.webadmin
-import ticket.weblogin
-import ticket.webticket
-import ticket.webstatic
+import ticket.web_admin
+import ticket.web_login
+import ticket.web_ticket
+import ticket.web_static
 
 TEMPLATE_PATH.insert(
     0,
