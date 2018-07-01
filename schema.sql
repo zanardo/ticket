@@ -17,7 +17,7 @@ create table tickets (
 	datemodified timestamp not null default (datetime('now', 'localtime')),
 	datedue timestamp,
 	dateclosed timestamp,
-	username text not null references users (username),
+	user text not null references users (username),
 	admin_only integer not null default (0)
 );
 create index idx_tickets_status on tickets (status);
@@ -26,7 +26,7 @@ create table comments (
 	id integer not null primary key,
 	ticket_id integer not null references tickets (id),
 	datecreated timestamp not null default (datetime('now', 'localtime')),
-	username text not null references users (username),
+	user text not null references users (username),
 	comment text not null
 );
 create index idx_comments_ticket_id on comments (ticket_id);
@@ -48,7 +48,7 @@ create table timetrack (
 	id integer not null primary key,
 	ticket_id integer not null references tickets (id),
 	datecreated timestamp not null default (datetime('now', 'localtime')),
-	username text not null references users (username),
+	user text not null references users (username),
 	minutes real not null
 );
 create index idx_timetrack_ticket_id on timetrack (ticket_id);
@@ -57,7 +57,7 @@ create table statustrack (
 	id integer not null primary key,
 	ticket_id integer not null references tickets (id),
 	datecreated timestamp not null default (datetime('now', 'localtime')),
-	username text not null references users (username),
+	user text not null references users (username),
 	status text not null
 );
 create index idx_statustrack_ticket_id on statustrack (ticket_id);
@@ -73,7 +73,7 @@ create table files (
 	ticket_id integer not null references tickets (id),
 	name text not null,
 	datecreated timestamp not null default (datetime('now', 'localtime')),
-	username text not null references users (username),
+	user text not null references users (username),
 	size integer not null check (size >= 0),
 	contents blob not null
 );
