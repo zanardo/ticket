@@ -22,7 +22,7 @@ def validatelogin():
     assert 'passwd' in request.forms
     user = request.forms.get("user")
     passwd = request.forms.get("passwd")
-    if ticket.user.validateuserdb(user, passwd):
+    if ticket.user.validate_user_db(user, passwd):
         session_id = ticket.user.makesession(user)
         response.set_cookie(ticket.user.cookie_session_name(), session_id)
         return redirect('/')
@@ -60,7 +60,7 @@ def changepasswordsave():
     newpasswd = request.forms.get("newpasswd")
     newpasswd2 = request.forms.get("newpasswd2")
     username = ticket.user.currentuser()
-    if not ticket.user.validateuserdb(username, oldpasswd):
+    if not ticket.user.validate_user_db(username, oldpasswd):
         return 'senha atual inválida!'
     if newpasswd.strip() == '' or newpasswd2.strip() == '':
         return 'nova senha inválida!'

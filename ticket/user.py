@@ -42,7 +42,7 @@ def cookie_session_name():
     return "ticket_session_%s" % config("port")
 
 
-def validateuserdb(user, passwd):
+def validate_user_db(user, passwd):
     """
     Valida usuário e senha no banco de dados.
     """
