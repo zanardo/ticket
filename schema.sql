@@ -85,6 +85,8 @@ create table dependencies (
 	primary key(ticket_id, blocks)
 );
 
+create virtual table search using fts3 (text);
+
 insert into users (username, password, is_admin)
 values ('admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 1);
 
