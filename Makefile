@@ -1,14 +1,35 @@
-all: venv
+PYTHON=python2
 
-venv: .venv/bin/activate
+all: .venv
 
-.venv/bin/activate: requirements.txt
-	test -d .venv || virtualenv-2.7 --no-site-packages --distribute .venv
-	. .venv/bin/activate; pip install -r requirements.txt
-	touch .venv/bin/activate
+.venv: setup.py
+	@test -d .venv || virtualenv -p $(PYTHON) .venv
+	@.venv/bin/pip install -e .
+	@touch .venv
 
-run-server-devel: venv
-	while :; do ./.venv/bin/python server.py --host 127.0.0.1 --port 5000 --debug ; sleep 0.5 ; done
+data:
+	mkdir -p data/
+	test -f data/ticket.db || sqlite3 data/ticket.db < schema.sql
 
-run-server: venv
-	./.venv/bin/python server.py --host 0.0.0.0 --port 5000
+clean:
+	@rm -rf .venv/ build/ dist/ *.egg-info/
+	@find . -type f -name '*.pyc' -delete
+	@find . -type d -name '__pycache__' -delete
+
+test: .venv
+	.venv/bin/python tests.py
+
+run: .venv
+	while :; do TICKET_SETTINGS=`pwd`/ticket.conf .venv/bin/python -m ticket ; sleep 1 ; done
+
+run-gunicorn: .venv
+	.venv/bin/gunicorn \
+		--bind 127.0.0.1:5000 \
+		--workers 2 \
+		--error-logfile - \
+		--name ticket \
+		--pid /tmp/ticket.pid \
+		--env TICKET_SETTINGS=`pwd`/ticket.conf \
+		ticket.app:app
+
+.PHONY: all data clean test run run-gunicorn
