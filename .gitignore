@@ -1,4 +1,8 @@
-**.db
+**.swp
 **.pyc
 .venv/
+build/
+dist/
+*.egg-info/
 config.py
+data/
