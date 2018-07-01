@@ -323,7 +323,7 @@ def getfile(id, name):
         "where files.id = :id", locals())
     row = c.fetchone()
     blob = zlib.decompress(row['contents'])
-    if not ticket.user.userisadmin(ticket.user.currentuser()) and row['admin_only'] == 1:
+    if not ticket.user.user_admin(ticket.user.currentuser()) and row['admin_only'] == 1:
         return 'você não tem permissão para acessar este recurso!'
     else:
         response.content_type = mime
