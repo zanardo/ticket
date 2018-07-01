@@ -7,7 +7,7 @@ import ticket.tickets
 from ticket.config import config
 
 
-def getdb():
+def get_db():
     """
     Retorna um handle de conexão de banco de dados por thread.
     """
@@ -25,7 +25,7 @@ def getcursor():
     """
     Retorna um novo cursor para acesso ao banco de dados.
     """
-    return getdb().cursor()
+    return get_db().cursor()
 
 
 @contextmanager
@@ -34,7 +34,7 @@ def db_trans():
     Abre uma transação no banco de dados e faz o commit ao finalizar o
     contexto, ou rollback caso algo falhe.
     """
-    dbh = getdb()
+    dbh = get_db()
     c = dbh.cursor()
     try:
         yield c     # Retorna novo cursor

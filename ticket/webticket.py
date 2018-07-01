@@ -304,7 +304,7 @@ def showticket(ticket_id):
 
     ctx.user = ticket.user.userident(ctx.username)
 
-    ticket.db.getdb().commit()
+    ticket.db.get_db().commit()
 
     # Renderiza template
     return dict(ctx=ctx)
