@@ -218,7 +218,7 @@ def newticketpost():
         c.execute("insert into tickets (title, user) "
             "values ( :title, :username )", locals())
         ticket_id = c.lastrowid
-        ticket.db.populatesearch(ticket_id)
+        ticket.db.populate_search(ticket_id)
 
     return redirect('/ticket/%s' % ticket_id)
 
@@ -368,7 +368,7 @@ def changetitle(ticket_id):
     with ticket.db.db_trans() as c:
         c.execute("update tickets set title = :title where id = :ticket_id",
             locals())
-        ticket.db.populatesearch(ticket_id)
+        ticket.db.populate_search(ticket_id)
     return redirect('/ticket/%s' % ticket_id)
 
 
@@ -501,7 +501,7 @@ def newnote(ticket_id):
         c.execute("update tickets "
             "set datemodified = datetime('now', 'localtime') "
             "where id = :ticket_id", locals())
-        ticket.db.populatesearch(ticket_id)
+        ticket.db.populate_search(ticket_id)
 
     user = ticket.user.userident(username)
 

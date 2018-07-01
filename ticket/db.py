@@ -56,7 +56,7 @@ def expire_old_sessions():
         """)
 
 
-def populatesearch(ticket_id):
+def populate_search(ticket_id):
     """
     Popula o índice de busca full-text para um ticket.
     """

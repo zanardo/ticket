@@ -133,5 +133,5 @@ def reindexfts():
         c.execute("select id from tickets order by id")
         for r in c:
             log.debug('reindexando ticket #%s', r['id'])
-            ticket.db.populatesearch(r['id'])
+            ticket.db.populate_search(r['id'])
     return 'índices de full text search recriados!'
