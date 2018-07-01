@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) J. A. Zanardo Jr. <zanardo@gmail.com>
-#
-# https://github.com/zanardo/ticket
-#
-# Para detalhes do licenciamento, ver COPYING na distribuição
-#
-
 from bottle import route, view, get, post, redirect, response, request
 
 import re

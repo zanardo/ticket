@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 CONFIG = {
     # Endereço onde o servidor irá ouvir as conexões
     "host": "127.0.0.1",

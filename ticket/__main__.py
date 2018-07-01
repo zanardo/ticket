@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Este script inicia o servidor de desenvolvimento, com o modo debug ativado.
 # **NÃO USAR EM PRODUÇÃO!**
 
