@@ -302,7 +302,7 @@ def showticket(ticket_id):
     ctx.blocks = ticket.tickets.ticketblocks(ticket_id)
     ctx.depends = ticket.tickets.ticketdepends(ticket_id)
 
-    ctx.user = ticket.user.userident(ctx.username)
+    ctx.user = ticket.user.user_ident(ctx.username)
 
     ticket.db.get_db().commit()
 
@@ -503,7 +503,7 @@ def newnote(ticket_id):
             "where id = :ticket_id", locals())
         ticket.db.populate_search(ticket_id)
 
-    user = ticket.user.userident(username)
+    user = ticket.user.user_ident(username)
 
     if len(contacts) > 0 and user['name'] and user['email']:
         title = ticket.tickets.tickettitle(ticket_id)

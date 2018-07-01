@@ -72,7 +72,7 @@ def validate_session(session_id):
     return bool(r)
 
 
-def userident(username):
+def user_ident(username):
     """
     Retorna o nome e e-mail de usuário.
     """
