@@ -213,7 +213,7 @@ def newticketpost():
     title = request.forms.get("title").strip()
     if title == '':
         return 'erro: título inválido'
-    username = ticket.user.currentuser()
+    username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
         c.execute("insert into tickets (title, user) "
             "values ( :title, :username )", locals())
@@ -323,7 +323,7 @@ def getfile(id, name):
         "where files.id = :id", locals())
     row = c.fetchone()
     blob = zlib.decompress(row['contents'])
-    if not ticket.user.user_admin(ticket.user.currentuser()) and row['admin_only'] == 1:
+    if not ticket.user.user_admin(ticket.user.current_user()) and row['admin_only'] == 1:
         return 'você não tem permissão para acessar este recurso!'
     else:
         response.content_type = mime
@@ -345,7 +345,7 @@ def closeticket(ticket_id):
         return 'os seguintes tickets bloqueiam este ticket e ' + \
                'estão em aberto: %s' % ' '.join([str(x) for x in blocks])
 
-    username = ticket.user.currentuser()
+    username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
         c.execute("update tickets set status = 1, "
             "dateclosed = datetime('now', 'localtime'), "
@@ -465,7 +465,7 @@ def registerminutes(ticket_id):
     minutes = float(request.forms.get("minutes"))
     if minutes <= 0.0:
         return 'tempo inválido'
-    username = ticket.user.currentuser()
+    username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
         c.execute("insert into timetrack (ticket_id, user, minutes ) "
             "values ( :ticket_id, :username, :minutes )", locals())
@@ -494,7 +494,7 @@ def newnote(ticket_id):
             ', '.join(contacts)
         )
 
-    username = ticket.user.currentuser()
+    username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
         c.execute("insert into comments ( ticket_id, user, comment ) "
             "values ( :ticket_id, :username, :note )", locals())
@@ -537,7 +537,7 @@ def reopenticket(ticket_id):
     if blocks:
         return 'os seguintes tickets são bloqueados por este ticket ' + \
                'e estão fechados: %s' % ' '.join([str(x) for x in blocks])
-    username = ticket.user.currentuser()
+    username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
         c.execute("update tickets set status = 0, dateclosed = null, "
             "datemodified = datetime('now', 'localtime') "
@@ -581,7 +581,7 @@ def uploadfile(ticket_id):
         blob += chunk
     log.debug(type(blob))
     blob = zlib.compress(blob)
-    username = ticket.user.currentuser()
+    username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
         c.execute("insert into files ( ticket_id, name, user, size, contents ) "
             "values ( :ticket_id, :filename, :username, :filesize, :blob ) ",

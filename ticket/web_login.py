@@ -59,7 +59,7 @@ def changepasswordsave():
     oldpasswd = request.forms.get("oldpasswd")
     newpasswd = request.forms.get("newpasswd")
     newpasswd2 = request.forms.get("newpasswd2")
-    username = ticket.user.currentuser()
+    username = ticket.user.current_user()
     if not ticket.user.validate_user_db(username, oldpasswd):
         return 'senha atual inválida!'
     if newpasswd.strip() == '' or newpasswd2.strip() == '':

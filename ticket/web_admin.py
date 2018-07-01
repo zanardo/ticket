@@ -31,7 +31,7 @@ def admin():
 @ticket.user.requires_admin
 def removeuser(username):
     # Apaga um usuário
-    if username == ticket.user.currentuser():
+    if username == ticket.user.current_user():
         return 'não é possível remover usuário corrente'
     with ticket.db.db_trans() as c:
         c.execute("delete from users where username = :username", locals())
@@ -99,7 +99,7 @@ def forceuserpassword(username):
     # Reseta senha de um usuário
     password = str(int(random.random() * 999999))
     sha1password = sha1(password).hexdigest()
-    if username == ticket.user.currentuser():
+    if username == ticket.user.current_user():
         return 'não é possível forçar nova senha de usuário corrente'
     with ticket.db.db_trans() as c:
         c.execute("update users set password = :sha1password "
@@ -112,7 +112,7 @@ def forceuserpassword(username):
 @ticket.user.requires_admin
 def changeuseradminstatus(username, status):
     # Altera status de administrador de um usuário
-    if username == ticket.user.currentuser():
+    if username == ticket.user.current_user():
         return 'não é possível alterar status de admin para usuário corrente'
     assert status in ( '0', '1' )
     with ticket.db.db_trans() as c:

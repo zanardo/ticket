@@ -29,7 +29,7 @@ def requires_admin(f):
     def decorated(*args, **kwargs):
         session_id = request.get_cookie(cookie_session_name())
         if not session_id or not validate_session(session_id) or \
-                not ticket.user.user_admin(currentuser()):
+                not ticket.user.user_admin(current_user()):
             return "não autorizado"
         return f(*args, **kwargs)
     return decorated
@@ -86,7 +86,7 @@ def user_ident(username):
     return dict(c.fetchone())
 
 
-def currentuser():
+def current_user():
     """
     Retorna o usuário corrente.
     """

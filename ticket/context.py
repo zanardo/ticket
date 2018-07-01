@@ -1,6 +1,6 @@
 from ticket import __version__
 from ticket.user import (
-    currentuser,
+    current_user,
     user_admin
 )
 from ticket.config import config
@@ -13,7 +13,7 @@ class TemplateContext(object):
     """
     def __init__(self):
         self.version = __version__
-        self.username = currentuser()
+        self.username = current_user()
         if self.username is not None:
             self.user_is_admin = user_admin(self.username)
         else:
