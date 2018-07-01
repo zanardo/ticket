@@ -113,7 +113,7 @@ def userisadmin(username):
     return c.fetchone()["is_admin"]
 
 
-def removesession(session_id):
+def remove_session(session_id):
     """
     Remove uma sessão do banco de dados.
     """

@@ -35,7 +35,7 @@ def logout():
     # Logout do usuário - remove sessão ativa
     session_id = request.get_cookie(ticket.user.cookie_session_name())
     if session_id:
-        ticket.user.removesession(session_id)
+        ticket.user.remove_session(session_id)
         response.delete_cookie(ticket.user.cookie_session_name())
         ticket.db.expire_old_sessions()
     return redirect('/login')
