@@ -20,6 +20,6 @@ test: .venv
 	.venv/bin/python tests.py
 
 run: .venv
-	while :; do TICKET_SETTINGS=`pwd`/ticket.conf .venv/bin/python -m ticket ; sleep 1 ; done
+	while :; do .venv/bin/python -m ticket ; sleep 1 ; done
 
 .PHONY: all data clean test run

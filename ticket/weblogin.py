@@ -12,13 +12,15 @@ from hashlib import sha1
 
 import ticket.user
 import ticket.db
+from ticket import __version__
+from ticket.context import TemplateContext
 
 # Tela de login
 @get('/login')
 @view('login')
 def login():
     # Retorna tela de login
-    return dict(version=ticket.VERSION)
+    return dict(version=__version__)
 
 
 # Valida login
@@ -53,7 +55,7 @@ def logout():
 @view('change-password')
 def changepassword():
     # Tela de alteração de senha do usuário
-    return dict(ctx=ticket.TemplateContext())
+    return dict(ctx=TemplateContext())
 
 
 @post('/change-password')

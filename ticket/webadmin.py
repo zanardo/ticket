@@ -14,8 +14,7 @@ from bottle import get, view, post, request, redirect
 
 import ticket.user
 import ticket.db
-
-import config
+from ticket.context import TemplateContext
 
 @get('/admin')
 @view('admin')
@@ -23,7 +22,7 @@ import config
 @ticket.user.requires_admin
 def admin():
     # Tela de administração
-    ctx = ticket.TemplateContext()
+    ctx = TemplateContext()
     ctx.users = []
     c = ticket.db.getcursor()
     c.execute("select username, is_admin, name, email from users "
@@ -53,7 +52,7 @@ def removeuser(username):
 @ticket.user.requires_admin
 def edituser(username):
     # Exibe tela de edição de usuários
-    ctx = ticket.TemplateContext()
+    ctx = TemplateContext()
     ctx.user = username
     c = ticket.db.getcursor()
     c.execute("select name, email from users where username = :username",

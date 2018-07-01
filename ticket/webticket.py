@@ -19,8 +19,8 @@ import ticket.db
 import ticket.user
 import ticket.mail
 import ticket.tickets
-
-import config
+from ticket.context import TemplateContext
+from ticket.config import config
 
 # Listagem de tickets
 @route('/')
@@ -155,7 +155,7 @@ def index():
         # Texto para busca
         search.append(t)
 
-    ctx = ticket.TemplateContext()
+    ctx = TemplateContext()
 
     # Caso usuário não seja administrador, vamos filtrar os
     # tickets que ele não tem acesso.
@@ -209,7 +209,7 @@ def index():
 @ticket.user.requires_auth
 def newticket():
     # Tela de novo ticket
-    return dict(ctx=ticket.TemplateContext())
+    return dict(ctx=TemplateContext())
 
 
 # Salva novo ticket
@@ -240,7 +240,7 @@ def showticket(ticket_id):
     c = ticket.db.getcursor()
     # Obtém dados do ticket
 
-    ctx = ticket.TemplateContext()
+    ctx = TemplateContext()
 
     sql_is_admin = ''
     if not ctx.user_is_admin:
@@ -526,7 +526,7 @@ def newnote(ticket_id):
         ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
 
         ticket.mail.sendmail(user['email'], contacts,
-            config.mailsmtp, subject, body)
+            config("mailsmtp"), subject, body)
 
     return redirect('/ticket/%s' % ticket_id)
 
@@ -575,7 +575,7 @@ def uploadfile(ticket_id):
     if not 'file' in request.files:
         return 'arquivo inválido'
     filename = request.files.file.filename.decode('utf-8')
-    maxfilesize = config.filemaxsize
+    maxfilesize = config("filemaxsize")
     blob = ''
     filesize = 0
     while True:

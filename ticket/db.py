@@ -13,12 +13,12 @@ import sqlite3
 
 import ticket.tickets
 
-import config
+from ticket.config import config
 
 def getdb():
     # Retorna um handle de conexão de banco de dados por thread
     if not hasattr(local, 'db'):
-        local.db = sqlite3.connect(config.dbname,
+        local.db = sqlite3.connect(config("dbname"),
                                    detect_types=sqlite3.PARSE_DECLTYPES)
         # Permite acessar resultados via dict() por nome da coluna
         local.db.row_factory = sqlite3.Row

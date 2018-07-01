@@ -6,7 +6,7 @@
 <table class="tickets" width="100%">
 	<th>Código</th><th></th><th>Título</th><th>Últ. Mod.</th><th>Palavras-Chave</th>
 %for tk in ctx.tickets:
-	%priobgcolor = ctx.config.priocolor[tk['priority']]
+	%priobgcolor = ctx.config("priocolor")[tk['priority']]
 	%if tk['status'] == 1:
 		%priobgcolor = ''
 	%end
@@ -14,7 +14,7 @@
 		<td valign="middle" align="right" class="ticketlabel">
 			{{tk['id']}}
 		</td>
-		<td title="{{ctx.config.priodesc[tk['priority']]}}" width="10px">
+		<td title="{{ctx.config('priodesc')[tk['priority']]}}" width="10px">
 			<div class="squareprio" style="background-color:{{priobgcolor}}">&nbsp;</div>
 		</td>
 		<td valign="middle" align="left">

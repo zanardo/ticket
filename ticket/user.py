@@ -7,7 +7,7 @@
 # Para detalhes do licenciamento, ver COPYING na distribuição
 #
 
-import config
+from ticket.config import config
 
 import ticket.db
 
@@ -39,7 +39,7 @@ def requires_admin(f):
 
 def cookie_session_name():
     # Retorna o nome do cookie para a sessão
-    return 'ticket_session_%s' % config.port
+    return 'ticket_session_%s' % config("port")
 
 def validateuserdb(user, passwd):
     # Valida usuário e senha no banco de dados

@@ -12,8 +12,6 @@ import re
 import ticket.db
 import ticket.user
 
-import config
-
 def tagsdesc():
     # Retorna as descrições de tags
     tagdesc = {}

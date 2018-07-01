@@ -37,7 +37,7 @@
 		%end
 		<b>Autor:</b> {{ctx.ticket['user']}}
 		<br>
-		<b>Prioridade:</b> {{ctx.config.priodesc[ctx.ticket['priority']]}}
+		<b>Prioridade:</b> {{ctx.config("priodesc")[ctx.ticket['priority']]}}
 		<p>
 		%for tag in sorted(ctx.tags):
 			%if tag in ctx.tagsdesc:
@@ -163,23 +163,23 @@
 						Palavras-Chave</a>
 					<a class="tab" onclick="return showPanel(this, 'title');">
 						Título</a>
-					%if 'timetrack' in ctx.config.features and ( ctx.ticket['status'] == 0 or ctx.timetrack ):
+					%if 'timetrack' in ctx.config("features") and ( ctx.ticket['status'] == 0 or ctx.timetrack ):
 						<a class="tab" onclick="return showPanel(this, 'minutes');">
 							Tempo</a> 
 					%end
-					%if 'fileattach' in ctx.config.features and ctx.ticket['status'] == 0:
+					%if 'fileattach' in ctx.config("features") and ctx.ticket['status'] == 0:
 						<a class="tab" onclick="return showPanel(this, 'file');">
 							Anexo</a>
 					%end
-					%if 'datedue' in ctx.config.features and ctx.ticket['status'] == 0:
+					%if 'datedue' in ctx.config("features") and ctx.ticket['status'] == 0:
 						<a class="tab" onclick="return showPanel(this, 'datedue');">
 							Previsão</a>
 					%end
-					%if 'adminonly' in ctx.config.features and ctx.user_is_admin:
+					%if 'adminonly' in ctx.config("features") and ctx.user_is_admin:
 						<a class="tab" onclick="return showPanel(this, 'security');">
 							Segurança</a>
 					%end
-					%if 'dependency' in ctx.config.features:
+					%if 'dependency' in ctx.config("features"):
 						<a class="tab" onclick="return showPanel(this, 'dependencies');">
 							Dependências</a>
 					%end
@@ -192,7 +192,7 @@
 				<textarea name="text" rows="10" cols="70" id="formnote"></textarea>
 				<p>
 				<input type="submit" name="submit" value="Adicionar nota">
-				%if 'mail' in ctx.config.features and ctx.user['name'] and ctx.user['email']:
+				%if 'mail' in ctx.config("features") and ctx.user['name'] and ctx.user['email']:
 					<p><br><br>
 						<div class="deschelp">
 							Opcional: enviar esta nota para os seguintes contatos por email:
@@ -206,11 +206,11 @@
 			<form method="post" action="/ticket/{{ctx.ticket['id']}}/priority"
 					enctype="multipart/form-data">
 				<select name="prio">
-					%for prio in ctx.config.priodesc:
+					%for prio in ctx.config("priodesc"):
 						%if prio == ctx.ticket['priority']:
-							<option value="{{prio}}" selected="selected">{{ctx.config.priodesc[prio]}}</option>
+							<option value="{{prio}}" selected="selected">{{ctx.config("priodesc")[prio]}}</option>
 						%else:
-							<option value="{{prio}}">{{ctx.config.priodesc[prio]}}</option>
+							<option value="{{prio}}">{{ctx.config("priodesc")[prio]}}</option>
 						%end
 					%end
 				</select>
