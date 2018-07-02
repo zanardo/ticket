@@ -4,8 +4,6 @@
 	<title>{{ title }}</title>
 	<link rel="stylesheet" type="text/css" href="/static/styles.css">
 	<meta charset="utf-8">
-	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700' rel='stylesheet' type='text/css'>
-	<link href='http://fonts.googleapis.com/css?family=Ubuntu:400,500' rel='stylesheet' type='text/css'>
 	<script type="text/javascript" src="/static/list-tickets.js"></script>
 </head>
 <body>
@@ -19,10 +17,10 @@
 		</div>
 		<div id="topusermenu">
 			<span title="logado como {{ctx.username}}">
-			<img src="/static/user-icon.png"></span> 
-			<a title="trocar senha" href="/change-password"><img src="/static/password-icon.png"></a> 
+			<img src="/static/user-icon.png"></span>
+			<a title="trocar senha" href="/change-password"><img src="/static/password-icon.png"></a>
 			%if ctx.user_is_admin:
-				<a title="administrar" href="/admin"><img src="/static/admin-icon.png"></a> 
+				<a title="administrar" href="/admin"><img src="/static/admin-icon.png"></a>
 			%end
 			<a title="sair" href="/logout"><img src="/static/logout-icon.png"></a>
 		</div>
