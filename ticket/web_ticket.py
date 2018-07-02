@@ -14,13 +14,15 @@ from ticket.context import TemplateContext
 from ticket.config import config
 from ticket.log import log
 
-# Listagem de tickets
+
 @route('/')
 @view('list-tickets')
 @ticket.user.requires_auth
 def index():
-    # Lista tickets utilizando critérios de um filtro
-    # A página padrão exibe os tickets ordenados por prioridade
+    """
+    Lista tickets utilizando critérios de um filtro.
+    """
+    # A página padrão exibe os tickets ordenados por prioridade.
     if 'filter' not in request.query.keys():
         return redirect('/?filter=o:p')
     filter = request.query.filter
@@ -46,7 +48,11 @@ def index():
     # F: fechados
     # A: abertos
     if re.match(r'^[TFA] ', filter):
-        tr = { 'T': '', 'A': u'and status = 0', 'F': u'and status = 1' }
+        tr = {
+            'T': '',
+            'A': u'and status = 0',
+            'F': u'and status = 1',
+        }
         status = tr[tokens[0]]
         tokens.pop(0)   # Removendo primeiro item
 
@@ -195,40 +201,50 @@ def index():
     return dict(ctx=ctx)
 
 
-# Tela de novo ticket
 @get('/ticket/new')
 @view('ticket-new')
 @ticket.user.requires_auth
 def newticket():
-    # Tela de novo ticket
+    """
+    Tela de novo ticket.
+    """
     return dict(ctx=TemplateContext())
 
 
-# Salva novo ticket
 @post('/ticket/new')
 @ticket.user.requires_auth
 def newticketpost():
-    # Salva um novo ticket
+    """
+    # Salva um novo ticket.
+    """
     assert 'title' in request.forms
     title = request.forms.get("title").strip()
     if title == '':
         return 'erro: título inválido'
     username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
-        c.execute("insert into tickets (title, user) "
-            "values ( :title, :username )", locals())
+        c.execute("""
+            insert into tickets (
+                title,
+                user
+            )
+            values (
+                :title,
+                :username
+            )
+        """, locals())
         ticket_id = c.lastrowid
         ticket.db.populate_search(ticket_id)
-
     return redirect('/ticket/%s' % ticket_id)
 
 
-# Exibe os detalhes de um ticket
 @get('/ticket/<ticket_id:int>')
 @view('ticket')
 @ticket.user.requires_auth
 def showticket(ticket_id):
-    # Exibe detalhes de um ticket
+    """
+    Exibe detalhes de um ticket.
+    """
     c = ticket.db.get_cursor()
     # Obtém dados do ticket
 
@@ -238,8 +254,11 @@ def showticket(ticket_id):
     if not ctx.user_is_admin:
         sql_is_admin = 'and admin_only = 0'
 
-    c.execute("select * from tickets where id = :ticket_id " + sql_is_admin,
-        locals())
+    c.execute("""
+        select *
+        from tickets
+        where id = :ticket_id
+    """ + sql_is_admin, locals())
     ctx.ticket = c.fetchone()
 
     if not ctx.ticket:
@@ -250,16 +269,26 @@ def showticket(ticket_id):
     ctx.comments = []
 
     # Mudanças de status
-    c.execute("select datecreated, user, status from statustrack "
-        "where ticket_id = :ticket_id", locals())
+    c.execute("""
+        select datecreated,
+            user,
+            status
+        from statustrack
+        where ticket_id = :ticket_id
+    """, locals())
     for r in c:
         reg = dict(r)
         reg['type'] = 'statustrack'
         ctx.comments.append(reg)
 
     # Comentários
-    c.execute("select datecreated, user, comment from comments "
-        "where ticket_id = :ticket_id", locals())
+    c.execute("""
+        select datecreated,
+            user,
+            comment
+        from comments
+        where ticket_id = :ticket_id
+    """, locals())
     for r in c:
         reg = dict(r)
         reg['comment'] = ticket.tickets.sanitizecomment(reg['comment'])
@@ -267,31 +296,49 @@ def showticket(ticket_id):
         ctx.comments.append(reg)
 
     # Registro de tempo
-    c.execute("select datecreated, user, minutes from timetrack "
-        "where ticket_id = :ticket_id", locals())
+    c.execute("""
+        select datecreated,
+            user,
+            minutes
+        from timetrack
+        where ticket_id = :ticket_id
+    """, locals())
     for r in c:
         reg = dict(r)
         reg['type'] = 'timetrack'
         ctx.comments.append(reg)
 
     # Arquivos anexos
-    c.execute("select datecreated, user, name, id from files "
-        "where ticket_id = :ticket_id", locals())
+    c.execute("""
+        select datecreated,
+            user,
+            name,
+            id
+        from files
+        where ticket_id = :ticket_id
+    """, locals())
     for r in c:
         reg = dict(r)
         reg['type'] = 'files'
         ctx.comments.append(reg)
 
     # Ordenando comentários por data
-    ctx.comments = sorted(ctx.comments,
-        key=lambda comments: comments['datecreated'])
+    ctx.comments = sorted(
+        ctx.comments,
+        key=lambda comments: comments['datecreated']
+    )
 
     # Obtém resumo de tempo trabalhado
 
     ctx.timetrack = []
-    c.execute("select user, sum(minutes) as minutes from timetrack "
-        "where ticket_id = :ticket_id group by user order by user",
-            locals())
+    c.execute("""
+        select user,
+            sum(minutes) as minutes
+        from timetrack
+        where ticket_id = :ticket_id
+        group by user
+        order by user
+    """, locals())
     for r in c:
         ctx.timetrack.append(dict(r))
 
@@ -309,18 +356,27 @@ def showticket(ticket_id):
     # Renderiza template
     return dict(ctx=ctx)
 
+
 @get('/ticket/file/<id:int>/:name')
 @ticket.user.requires_auth
 def getfile(id, name):
-    # Retorna um arquivo em anexo
+    """
+    Retorna um arquivo em anexo.
+    """
     mime = mimetypes.guess_type(name)[0]
     if mime is None:
         mime = 'application/octet-stream'
     c = ticket.db.get_cursor()
-    c.execute("select files.ticket_id as ticket_id, files.size as size "
-        ", files.contents as contents, tickets.admin_only as admin_only "
-        "from files join tickets on tickets.id = files.ticket_id "
-        "where files.id = :id", locals())
+    c.execute("""
+        select files.ticket_id as ticket_id,
+            files.size as size,
+            files.contents as contents,
+            tickets.admin_only as admin_only
+        from files
+        join tickets
+            on tickets.id = files.ticket_id
+        where files.id = :id
+    """, locals())
     row = c.fetchone()
     blob = zlib.decompress(row['contents'])
     if not ticket.user.user_admin(ticket.user.current_user()) and row['admin_only'] == 1:
@@ -333,13 +389,20 @@ def getfile(id, name):
 @post('/ticket/<ticket_id:int>/close')
 @ticket.user.requires_auth
 def closeticket(ticket_id):
-    # Fecha um ticket
+    """
+    # Fecha um ticket.
+    """
     # Verifica se existem tickets que bloqueiam este
     # ticket que ainda estão abertos.
     c = ticket.db.get_cursor()
-    c.execute("select d.ticket_id as ticket_id from dependencies as d "
-        "inner join tickets as t on t.id = d.ticket_id "
-        "where d.blocks = :ticket_id and t.status = 0", locals())
+    c.execute("""
+        select d.ticket_id as ticket_id
+        from dependencies as d
+            inner join tickets as t
+                on t.id = d.ticket_id
+        where d.blocks = :ticket_id
+            and t.status = 0
+    """, locals())
     blocks = [r['ticket_id'] for r in c]
     if blocks:
         return 'os seguintes tickets bloqueiam este ticket e ' + \
@@ -347,12 +410,25 @@ def closeticket(ticket_id):
 
     username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
-        c.execute("update tickets set status = 1, "
-            "dateclosed = datetime('now', 'localtime'), "
-            "datemodified = datetime('now', 'localtime') "
-            "where id = :ticket_id", locals())
-        c.execute("insert into statustrack (ticket_id, user, status ) "
-            "values (:ticket_id, :username, 'close')", locals())
+        c.execute("""
+            update tickets
+            set status = 1,
+                dateclosed = datetime('now', 'localtime'),
+                datemodified = datetime('now', 'localtime')
+            where id = :ticket_id
+        """, locals())
+        c.execute("""
+            insert into statustrack (
+                ticket_id,
+                user,
+                status
+            )
+            values (
+                :ticket_id,
+                :username,
+                'close'
+            )
+        """, locals())
 
     return redirect('/ticket/%s' % ticket_id)
 
@@ -360,14 +436,19 @@ def closeticket(ticket_id):
 @post('/ticket/<ticket_id:int>/title')
 @ticket.user.requires_auth
 def changetitle(ticket_id):
-    # Altera título de um ticket
+    """
+    # Altera título de um ticket.
+    """
     assert 'text' in request.forms
     title = request.forms.get("text").strip()
     if title == '':
         return 'erro: título inválido'
     with ticket.db.db_trans() as c:
-        c.execute("update tickets set title = :title where id = :ticket_id",
-            locals())
+        c.execute("""
+            update tickets
+            set title = :title
+            where id = :ticket_id
+        """, locals())
         ticket.db.populate_search(ticket_id)
     return redirect('/ticket/%s' % ticket_id)
 
@@ -375,7 +456,9 @@ def changetitle(ticket_id):
 @post('/ticket/<ticket_id:int>/datedue')
 @ticket.user.requires_auth
 def changedatedue(ticket_id):
-    # Altera data de previsão de solução de um ticket
+    """
+    # Altera data de previsão de solução de um ticket.
+    """
     assert 'datedue' in request.forms
     datedue = request.forms.get("datedue").strip()
     if datedue != '':
@@ -391,8 +474,11 @@ def changedatedue(ticket_id):
     else:
         datedue = None
     with ticket.db.db_trans() as c:
-        c.execute("update tickets set datedue = :datedue "
-            "where id = :ticket_id", locals())
+        c.execute("""
+            update tickets
+            set datedue = :datedue
+            where id = :ticket_id
+        """, locals())
     return redirect('/ticket/%s' % ticket_id)
 
 
@@ -400,32 +486,51 @@ def changedatedue(ticket_id):
 @ticket.user.requires_auth
 @ticket.user.requires_admin
 def changeadminonly(ticket_id, toggle):
-    # Tornar ticket somente visível para administradores
-    assert toggle in ( '0', '1' )
+    """
+    # Tornar ticket somente visível para administradores.
+    """
+    assert toggle in ('0', '1')
     with ticket.db.db_trans() as c:
-        c.execute("update tickets set admin_only = :toggle "
-            "where id = :ticket_id", locals())
+        c.execute("""
+            update tickets
+            set admin_only = :toggle
+            where id = :ticket_id
+        """, locals())
     return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/ticket/<ticket_id:int>/tags')
 @ticket.user.requires_auth
 def changetags(ticket_id):
-    # Altera tags de um ticket
+    """
+    # Altera tags de um ticket.
+    """
     assert 'text' in request.forms
     tags = list(set(request.forms.get("text").strip().split()))
     with ticket.db.db_trans() as c:
-        c.execute("delete from tags where ticket_id = :ticket_id", locals())
+        c.execute("""
+            delete from tags
+            where ticket_id = :ticket_id
+        """, locals())
         for tag in tags:
-            c.execute("insert into tags ( ticket_id, tag ) "
-                "values ( :ticket_id, :tag )", locals())
+            c.execute("""
+                insert into tags (
+                    ticket_id,
+                    tag
+                )
+                values (
+                    :ticket_id,
+                    :tag
+            )""", locals())
     return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/ticket/<ticket_id:int>/dependencies')
 @ticket.user.requires_auth
 def changedependencies(ticket_id):
-    # Altera dependências de um ticket
+    """
+    Altera dependências de um ticket.
+    """
     assert 'text' in request.forms
     deps = request.forms.get("text")
     deps = deps.strip().split()
@@ -447,18 +552,30 @@ def changedependencies(ticket_id):
         if ticket_id in ticket.tickets.ticketblocks(dep):
             return u'dependência circular: %s' % dep
     with ticket.db.db_trans() as c:
-        c.execute("delete from dependencies where ticket_id = :ticket_id",
-            locals())
+        c.execute("""
+            delete from dependencies
+            where ticket_id = :ticket_id
+        """. locals())
         for dep in deps:
-            c.execute("insert into dependencies ( ticket_id, blocks ) "
-                "values ( :ticket_id, :dep )", locals())
+            c.execute("""
+                insert into dependencies (
+                    ticket_id,
+                    blocks
+                )
+                values (
+                    :ticket_id,
+                    :dep
+                )
+            """, locals())
     return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/ticket/<ticket_id:int>/minutes')
 @ticket.user.requires_auth
 def registerminutes(ticket_id):
-    # Registra tempo trabalhado em um ticket
+    """
+    # Registra tempo trabalhado em um ticket.
+    """
     assert 'minutes' in request.forms
     if not re.match(r'^[\-0-9\.]+$', request.forms.get("minutes")):
         return 'tempo inválido'
@@ -467,18 +584,31 @@ def registerminutes(ticket_id):
         return 'tempo inválido'
     username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
-        c.execute("insert into timetrack (ticket_id, user, minutes ) "
-            "values ( :ticket_id, :username, :minutes )", locals())
-        c.execute("update tickets "
-            "set datemodified = datetime('now', 'localtime') "
-            "where id = :ticket_id", locals())
+        c.execute("""
+            insert into timetrack (
+                ticket_id,
+                user,
+                minutes
+            )
+            values (
+                :ticket_id,
+                :username,
+                :minutes
+            )""", locals())
+        c.execute("""
+            update tickets
+            set datemodified = datetime('now', 'localtime')
+            where id = :ticket_id
+        """, locals())
     return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/ticket/<ticket_id:int>/note')
 @ticket.user.requires_auth
 def newnote(ticket_id):
-    # Cria um novo comentário para um ticket
+    """
+    Cria um novo comentário para um ticket.
+    """
     assert 'text' in request.forms
 
     contacts = []
@@ -496,11 +626,23 @@ def newnote(ticket_id):
 
     username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
-        c.execute("insert into comments ( ticket_id, user, comment ) "
-            "values ( :ticket_id, :username, :note )", locals())
-        c.execute("update tickets "
-            "set datemodified = datetime('now', 'localtime') "
-            "where id = :ticket_id", locals())
+        c.execute("""
+            insert into comments (
+                ticket_id,
+                user,
+                comment
+            )
+            values (
+                :ticket_id,
+                :username,
+                :note
+            )
+            """, locals())
+        c.execute("""
+            update tickets
+            set datemodified = datetime('now', 'localtime')
+            where id = :ticket_id
+        """, locals())
         ticket.db.populate_search(ticket_id)
 
     user = ticket.user.user_ident(username)
@@ -515,10 +657,15 @@ def newnote(ticket_id):
 
 
 -- Este é um e-mail automático enviado pelo sistema ticket.
-        ''' % ( time.strftime('%Y-%m-%d %H:%M'), user['name'], note )
+        ''' % (time.strftime('%Y-%m-%d %H:%M'), user['name'], note)
 
-        ticket.mail.sendmail(user['email'], contacts,
-            config("mailsmtp"), subject, body)
+        ticket.mail.sendmail(
+            user['email'],
+            contacts,
+            config("mailsmtp"),
+            subject,
+            body
+        )
 
     return redirect('/ticket/%s' % ticket_id)
 
@@ -526,45 +673,73 @@ def newnote(ticket_id):
 @post('/ticket/<ticket_id:int>/reopen')
 @ticket.user.requires_auth
 def reopenticket(ticket_id):
-    # Reabre um ticket
+    """
+    Reabre um ticket.
+    """
     # Verifica se existem tickets bloqueados por este ticket
     # que estão fechados.
     c = ticket.db.get_cursor()
-    c.execute("select d.blocks as blocks from dependencies as d "
-        "inner join tickets as t on t.id = d.blocks "
-        "where d.ticket_id = :ticket_id and t.status = 1", locals())
+    c.execute("""
+        select d.blocks as blocks
+        from dependencies as d
+            inner join tickets as t
+                on t.id = d.blocks
+        where d.ticket_id = :ticket_id
+            and t.status = 1
+    """, locals())
     blocks = [r['blocks'] for r in c]
     if blocks:
         return 'os seguintes tickets são bloqueados por este ticket ' + \
                'e estão fechados: %s' % ' '.join([str(x) for x in blocks])
     username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
-        c.execute("update tickets set status = 0, dateclosed = null, "
-            "datemodified = datetime('now', 'localtime') "
-            "where id = :ticket_id", locals())
-        c.execute("insert into statustrack (ticket_id, user, status ) "
-            "values (:ticket_id, :username, 'reopen')", locals())
+        c.execute("""
+            update tickets
+            set status = 0,
+                dateclosed = null,
+                datemodified = datetime('now', 'localtime')
+            where id = :ticket_id
+        """, locals())
+        c.execute("""
+            insert into statustrack (
+                ticket_id,
+                user,
+                status
+            )
+            values (
+                :ticket_id,
+                :username,
+                'reopen'
+            )
+        """, locals())
     return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/ticket/<ticket_id:int>/priority')
 @ticket.user.requires_auth
 def changepriority(ticket_id):
-    # Altera a prioridade de um ticket
+    """
+    Altera a prioridade de um ticket.
+    """
     assert 'prio' in request.forms
     assert re.match(r'^[1-5]$', request.forms.get("prio"))
     priority = int(request.forms.get("prio"))
     with ticket.db.db_trans() as c:
-        c.execute("update tickets set priority = :priority "
-            "where id = :ticket_id", locals())
+        c.execute("""
+            update tickets
+            set priority = :priority
+            where id = :ticket_id
+        """, locals())
     return redirect('/ticket/%s' % ticket_id)
 
 
 @post('/ticket/<ticket_id:int>/upload')
 @ticket.user.requires_auth
 def uploadfile(ticket_id):
-    # Anexa um arquivo ao ticket
-    if not 'file' in request.files:
+    """
+    Anexa um arquivo ao ticket.
+    """
+    if 'file' not in request.files:
         return 'arquivo inválido'
     filename = request.files.get("file").filename
     maxfilesize = config("filemaxsize")
@@ -583,10 +758,25 @@ def uploadfile(ticket_id):
     blob = zlib.compress(blob)
     username = ticket.user.current_user()
     with ticket.db.db_trans() as c:
-        c.execute("insert into files ( ticket_id, name, user, size, contents ) "
-            "values ( :ticket_id, :filename, :username, :filesize, :blob ) ",
-                locals())
-        c.execute("update tickets "
-            "set datemodified = datetime('now', 'localtime') "
-            "where id = :ticket_id", locals())
+        c.execute("""
+            insert into files (
+                ticket_id,
+                name,
+                user,
+                size,
+                contents
+            )
+            values (
+                :ticket_id,
+                :filename,
+                :username,
+                :filesize,
+                :blob
+            )
+        """, locals())
+        c.execute("""
+            update tickets
+            set datemodified = datetime('now', 'localtime')
+            where id = :ticket_id
+        """, locals())
     return redirect('/ticket/%s' % ticket_id)
