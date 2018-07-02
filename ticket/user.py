@@ -141,3 +141,14 @@ def make_session(user):
             )
         """, locals())
     return session_id
+
+
+def expire_old_sessions():
+    """
+    Expira sessões mais antigas que 7 dias.
+    """
+    with ticket.db.db_trans() as c:
+        c.execute("""
+            delete from sessions
+            where julianday('now') - julianday(date_login) > 7
+        """)

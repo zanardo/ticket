@@ -45,17 +45,6 @@ def db_trans():
         dbh.commit()
 
 
-def expire_old_sessions():
-    """
-    Expira sessões mais antigas que 7 dias.
-    """
-    with db_trans() as c:
-        c.execute("""
-            delete from sessions
-            where julianday('now') - julianday(date_login) > 7
-        """)
-
-
 def populate_search(ticket_id):
     """
     Popula o índice de busca full-text para um ticket.

@@ -42,7 +42,7 @@ def logout():
     if session_id:
         ticket.user.remove_session(session_id)
         response.delete_cookie(ticket.user.cookie_session_name())
-        ticket.db.expire_old_sessions()
+        ticket.user.expire_old_sessions()
     return redirect("/login")
 
 
