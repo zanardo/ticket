@@ -1,5 +1,4 @@
 from bottle import get, view, redirect, request, post, response
-from hashlib import sha1
 
 import ticket.user
 import ticket.db
