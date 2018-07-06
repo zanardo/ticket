@@ -1,10 +1,11 @@
 import re
+from typing import Dict, List
 
 import ticket.db
 import ticket.user
 
 
-def tags_desc():
+def tags_desc() -> Dict[str, Dict[str, str]]:
     """
     Retorna as descrições de tags.
     """
@@ -26,7 +27,7 @@ def tags_desc():
     return tagdesc
 
 
-def ticketblocks(ticket_id):
+def ticketblocks(ticket_id) -> Dict[str, Dict[str, str]]:
     """
     Retorna quais ticket são bloqueados por um ticket.
     """
@@ -51,7 +52,7 @@ def ticketblocks(ticket_id):
     return deps
 
 
-def ticketdepends(ticket_id):
+def ticketdepends(ticket_id) -> Dict[str, Dict[str, str]]:
     """
     Retorna quais ticket dependem de um ticket.
     """
@@ -76,7 +77,7 @@ def ticketdepends(ticket_id):
     return deps
 
 
-def tickettags(ticket_id):
+def tickettags(ticket_id) -> List[str]:
     """
     Retorna tags de um ticket.
     """
@@ -89,7 +90,7 @@ def tickettags(ticket_id):
     return [r["tag"] for r in c]
 
 
-def tickettitle(ticket_id):
+def tickettitle(ticket_id) -> str:
     """
     Retorna o título de um ticket.
     """
@@ -102,7 +103,7 @@ def tickettitle(ticket_id):
     return c.fetchone()["title"]
 
 
-def sanitizecomment(comment):
+def sanitizecomment(comment) -> str:
     """
     Sanitiza o texto do comentário (quebras de linhas, links, etc).
     """
