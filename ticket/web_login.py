@@ -17,7 +17,7 @@ def login():
 
 
 @post("/login")
-def validatelogin():
+def validate_login():
     """
     Valida login do usuário.
     """
@@ -49,7 +49,7 @@ def logout():
 @get("/change-password")
 @ticket.user.requires_auth
 @view("change-password")
-def changepassword():
+def change_password():
     """
     Tela de alteração de senha do usuário.
     """
@@ -58,7 +58,7 @@ def changepassword():
 
 @post("/change-password")
 @ticket.user.requires_auth
-def changepasswordsave():
+def change_password_save():
     """
     Altera a senha do usuário.
     """
