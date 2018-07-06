@@ -154,3 +154,16 @@ def expire_old_sessions() -> None:
             delete from sessions
             where julianday('now') - julianday(date_login) > 7
         """)
+
+
+def change_password(user: str, password: str) -> None:
+    """
+    Altera a senha de um usuário.
+    """
+    passwd_sha1 = sha1(password.encode("UTF-8")).hexdigest()
+    with ticket.db.db_trans() as c:
+        c.execute("""
+            update users
+            set password = :passwd_sha1
+            where username = :user
+        """, locals())

@@ -75,11 +75,5 @@ def change_password_save():
         return "nova senha inválida!"
     if newpasswd != newpasswd2:
         return "confirmação de nova senha diferente de nova senha!"
-    passwdsha1 = sha1(newpasswd.encode("UTF-8")).hexdigest()
-    with ticket.db.db_trans() as c:
-        c.execute("""
-            update users
-            set password = :passwdsha1
-            where username = :username
-        """, locals())
+    ticket.user.change_password(username, newpasswd)
     return redirect("/")
