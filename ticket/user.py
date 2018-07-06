@@ -1,3 +1,5 @@
+from typing import Dict
+
 from ticket.config import config
 
 import ticket.db
@@ -35,14 +37,14 @@ def requires_admin(f):
     return decorated
 
 
-def cookie_session_name():
+def cookie_session_name() -> str:
     """
     Retorna o nome do cookie para a sessão.
     """
     return "ticket_session_%s" % config("port")
 
 
-def validate_user_db(user, passwd):
+def validate_user_db(user, passwd) -> bool:
     """
     Valida usuário e senha no banco de dados.
     """
@@ -58,7 +60,7 @@ def validate_user_db(user, passwd):
     return bool(r)
 
 
-def validate_session(session_id):
+def validate_session(session_id) -> bool:
     """
     Valida sessão ativa no banco de dados.
     """
@@ -72,7 +74,7 @@ def validate_session(session_id):
     return bool(r)
 
 
-def user_ident(username):
+def user_ident(username) -> Dict[str, str]:
     """
     Retorna o nome e e-mail de usuário.
     """
@@ -86,7 +88,7 @@ def user_ident(username):
     return dict(c.fetchone())
 
 
-def current_user():
+def current_user() -> str:
     """
     Retorna o usuário corrente.
     """
@@ -100,7 +102,7 @@ def current_user():
     return c.fetchone()["username"]
 
 
-def user_admin(username):
+def user_admin(username) -> bool:
     """
     Checa se usuário tem poderes administrativos.
     """
@@ -113,7 +115,7 @@ def user_admin(username):
     return c.fetchone()["is_admin"]
 
 
-def remove_session(session_id):
+def remove_session(session_id) -> None:
     """
     Remove uma sessão do banco de dados.
     """
@@ -124,7 +126,7 @@ def remove_session(session_id):
         """, locals())
 
 
-def make_session(user):
+def make_session(user) -> str:
     """
     Cria uma nova sessão no banco de dados.
     """
@@ -143,7 +145,7 @@ def make_session(user):
     return session_id
 
 
-def expire_old_sessions():
+def expire_old_sessions() -> None:
     """
     Expira sessões mais antigas que 7 dias.
     """
