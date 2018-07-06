@@ -7,7 +7,7 @@ import ticket.tickets
 from ticket.config import config
 
 
-def get_db():
+def get_db() -> sqlite3.Connection:
     """
     Retorna um handle de conexão de banco de dados por thread.
     """
@@ -21,7 +21,7 @@ def get_db():
     return local.db
 
 
-def get_cursor():
+def get_cursor() -> sqlite3.Cursor:
     """
     Retorna um novo cursor para acesso ao banco de dados.
     """
@@ -45,7 +45,7 @@ def db_trans():
         dbh.commit()
 
 
-def populate_search(ticket_id):
+def populate_search(ticket_id: int):
     """
     Popula o índice de busca full-text para um ticket.
     """
