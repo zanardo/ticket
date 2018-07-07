@@ -135,7 +135,7 @@ textarea {
 	margin-right: 5px;
 }
 
-#topusermenu a:link, 
+#topusermenu a:link,
 #topusermenu a:visited,
 #topusermenu a:active {
 	color: rgb(200,198,193);
@@ -345,4 +345,8 @@ a.tag:hover {
 .commentevent {
 	font-weight: bold;
 	font-size: 11px;
+}
+
+table.form-change-password td {
+	padding-bottom: 10px;
 }
