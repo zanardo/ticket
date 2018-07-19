@@ -128,7 +128,7 @@ def newuser():
                 0
             )
         """, locals())
-    return u"usuário %s criado com senha %s" % (username, password)
+    return "usuário %s criado com senha %s" % (username, password)
 
 
 @get("/admin/force-new-password/:username")
@@ -148,7 +148,7 @@ def forceuserpassword(username):
             set password = :sha1password
             where username = :username
         """, locals())
-    return u"usuário %s teve nova senha forçada: %s" % (username, password)
+    return "usuário %s teve nova senha forçada: %s" % (username, password)
 
 
 @get("/admin/change-user-admin-status/:username/:status")

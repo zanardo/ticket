@@ -26,7 +26,7 @@ def index():
         return redirect('/?filter=o:p')
     filter = request.query.filter
     if filter.strip() == '':
-        filter = u'o:p'
+        filter = 'o:p'
 
     # Redireciona ao ticket caso pesquisa seja #NNNNN
     m = re.match(r'^#(\d+)$', filter)
@@ -38,8 +38,8 @@ def index():
 
     limit = tags = user = date = prio = ''
     search = []
-    status = u'and status = 0'
-    order = u'order by datemodified desc'
+    status = 'and status = 0'
+    order = 'order by datemodified desc'
     orderdate = 'datemodified'
 
     # Abrangência dos filtros (status)
@@ -49,13 +49,13 @@ def index():
     if re.match(r'^[TFA] ', filter):
         tr = {
             'T': '',
-            'A': u'and status = 0',
-            'F': u'and status = 1',
+            'A': 'and status = 0',
+            'F': 'and status = 1',
         }
         status = tr[tokens[0]]
         tokens.pop(0)   # Removendo primeiro item
 
-    sql = u'select * from tickets where ( 1 = 1 ) '
+    sql = 'select * from tickets where ( 1 = 1 ) '
     sqlparams = []
 
     for t in tokens:
@@ -69,7 +69,7 @@ def index():
         # Palavra-chave (t:TAG)
         m = re.match(r'^t:(.+)$', t)
         if m:
-            sql += u'and id in ( select ticket_id from tags where tag  = ? ) '
+            sql += 'and id in ( select ticket_id from tags where tag  = ? ) '
             sqlparams.append(m.group(1))
             continue
 
@@ -78,19 +78,19 @@ def index():
         if m:
             o = m.group(1)
             if o == 'c':
-                order = u'order by datecreated desc '
+                order = 'order by datecreated desc '
                 orderdate = 'datecreated'
             elif o == 'm':
-                order = u'order by datemodified desc '
+                order = 'order by datemodified desc '
                 orderdate = 'datemodified'
             elif o == 'f':
-                order = u'order by dateclosed desc '
+                order = 'order by dateclosed desc '
                 orderdate = 'dateclosed'
             elif o == 'v':
-                order = u'order by datedue asc '
+                order = 'order by datedue asc '
                 orderdate = 'datedue'
             elif o == 'p':
-                order = u'order by priority asc, datecreated asc '
+                order = 'order by priority asc, datecreated asc '
                 orderdate = ''
             continue
 
@@ -98,7 +98,7 @@ def index():
         m = re.match(r'^u:(.+)$', t)
         if m:
             u = m.group(1)
-            sql += (u"and ( ( user = ? ) "
+            sql += ("and ( ( user = ? ) "
                 "or ( id in ( select ticket_id from comments where user = ? ) ) "
                 "or ( id in ( select ticket_id from timetrack where user = ? ) ) "
                 "or ( id in ( select ticket_id from statustrack where user = ? ) ) )" )
@@ -113,8 +113,8 @@ def index():
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
             dt = {'c': 'datecreated', 'm': 'datemodified',
                 'f': 'dateclosed', 'v': 'datedue'}[m.group(1)]
-            sql += ( u"and %s between '%s-%s-%s 00:00:00' "
-                     u"and '%s-%s-%s 23:59:59' " ) % ( dt, y1, m1, d1, y2, m2, d2 )
+            sql += ( "and %s between '%s-%s-%s 00:00:00' "
+                     "and '%s-%s-%s 23:59:59' " ) % ( dt, y1, m1, d1, y2, m2, d2 )
             continue
 
         # Data de criação, fechamento, modificação e previsão
@@ -124,7 +124,7 @@ def index():
             y1, m1, d1 = m.groups()[1:]
             dt = {'c': 'datecreated', 'm': 'datemodified',
                 'f': 'dateclosed', 'v': 'datedue'}[m.group(1)]
-            sql += ( u"and %s between '%s-%s-%s 00:00:00' "
+            sql += ( "and %s between '%s-%s-%s 00:00:00' "
                 "and '%s-%s-%s 23:59:59' " ) % ( dt, y1, m1, d1, y1, m1, d1 )
             continue
 
@@ -132,21 +132,21 @@ def index():
         m = re.match(r'^p:([1-5])-([1-5])$', t)
         if m:
             p1, p2 = m.groups()
-            sql += u"and priority between %s and %s " % (p1, p2)
+            sql += "and priority between %s and %s " % (p1, p2)
             continue
 
         # Prioridade (p:1)
         m = re.match(r'^p:([1-5])$', t)
         if m:
             p1 = m.group(1)
-            sql += u"and priority = %s " % (p1,)
+            sql += "and priority = %s " % (p1,)
             continue
 
         # Restrição de tickets (administrador, normal e todos)
         m = re.match(r'^r:([ant])$', t)
         if m:
             a = {'a': '1', 'n': '0', 't': 'admin_only'}[m.group(1)]
-            sql += u"and admin_only = %s " % a
+            sql += "and admin_only = %s " % a
             continue
 
         # Texto para busca
@@ -157,26 +157,26 @@ def index():
     # Caso usuário não seja administrador, vamos filtrar os
     # tickets que ele não tem acesso.
     if not ctx.user_is_admin:
-        sql += u"and admin_only = 0 "
+        sql += "and admin_only = 0 "
 
     searchstr = ''
     if len(search) > 0:
         s = ' '.join(search)
-        sql += u"and id in ( select docid from search where search match ? ) "
+        sql += "and id in ( select docid from search where search match ? ) "
         sqlparams.append(s)
 
     # Caso ordenação seja por data de previsão, mostrando
     # somente tickets com date de previsão preenchida.
     if orderdate == 'datedue':
-        sql += u'and datedue is not null '
+        sql += 'and datedue is not null '
 
     # Caso ordenação seja por data de fechamento, mostrando
     # somente os tickets fechados.
     if orderdate == 'dateclosed':
-        sql += u'and status = 1 '
+        sql += 'and status = 1 '
 
     if status:
-        sql += u"%s " % status
+        sql += "%s " % status
 
     if order:
         sql += "%s " % order
@@ -537,19 +537,19 @@ def changedependencies(ticket_id):
     for dep in deps:
         # Valida sintaxe
         if not re.match(r'^\d+$', dep):
-            return u'sintaxe inválida para dependência: %s' % dep
+            return 'sintaxe inválida para dependência: %s' % dep
         # Valida se não é o mesmo ticket
         dep = int(dep)
         if dep == ticket_id:
-            return u'ticket não pode bloquear ele mesmo'
+            return 'ticket não pode bloquear ele mesmo'
         # Valida se ticket existe
         with ticket.db.db_trans() as c:
             c.execute('SELECT count(*) FROM tickets WHERE id=:dep', locals())
             if c.fetchone()[0] == 0:
-                return u'ticket %s não existe' % dep
+                return 'ticket %s não existe' % dep
         # Valida dependência circular
         if ticket_id in ticket.tickets.ticketblocks(dep):
-            return u'dependência circular: %s' % dep
+            return 'dependência circular: %s' % dep
     with ticket.db.db_trans() as c:
         c.execute("""
             delete from dependencies
@@ -619,7 +619,7 @@ def newnote(ticket_id):
         return 'nota inválida'
 
     if len(contacts) > 0:
-        note += u' [Notificação enviada para: %s]' % (
+        note += ' [Notificação enviada para: %s]' % (
             ', '.join(contacts)
         )
 
@@ -648,8 +648,8 @@ def newnote(ticket_id):
 
     if len(contacts) > 0 and user['name'] and user['email']:
         title = ticket.tickets.tickettitle(ticket_id)
-        subject = u'#%s - %s' % (ticket_id, title)
-        body = u'''
+        subject = '#%s - %s' % (ticket_id, title)
+        body = '''
 [%s] (%s):
 
 %s
