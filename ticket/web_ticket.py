@@ -555,7 +555,7 @@ def changedependencies(ticket_id):
         c.execute("""
             delete from dependencies
             where ticket_id = :ticket_id
-        """. locals())
+        """, locals())
         for dep in deps:
             c.execute("""
                 insert into dependencies (
