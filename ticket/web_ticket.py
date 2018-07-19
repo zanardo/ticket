@@ -12,6 +12,7 @@ import ticket.mail
 import ticket.tickets
 from ticket.context import TemplateContext
 from ticket.log import log
+from ticket.config import cfg
 
 
 @route('/')
