@@ -1,10 +1,11 @@
 import smtplib
 from email.mime.text import MIMEText
 
+
 def sendmail(fromemail, toemail, smtpserver, subject, body):
     # Envia um e-mail
     for contact in toemail:
-        msg = MIMEText(body.encode('utf-8'))
+        msg = MIMEText(body)
         msg.set_charset('utf-8')
         msg['Subject'] = subject
         msg['From'] = fromemail
