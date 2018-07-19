@@ -1,7 +1,5 @@
 from typing import Dict
 
-from ticket.config import config
-
 import ticket.db
 
 from bottle import request, redirect
@@ -41,7 +39,7 @@ def cookie_session_name() -> str:
     """
     Retorna o nome do cookie para a sessão.
     """
-    return "ticket_session_%s" % config("port")
+    return "ticket_session"
 
 
 def validate_user_db(user, passwd) -> bool:

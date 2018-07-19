@@ -3,7 +3,7 @@ from ticket.user import (
     current_user,
     user_admin
 )
-from ticket.config import config
+from ticket.config import cfg, features, priodesc, priocolor
 from ticket.tickets import tags_desc
 
 
@@ -18,5 +18,8 @@ class TemplateContext(object):
             self.user_is_admin = user_admin(self.username)
         else:
             self.user_is_admin = 0
-        self.config = config
+        self.config = cfg
+        self.features = features
+        self.priocolor = priocolor
+        self.priodesc = priodesc
         self.tags_desc = tags_desc()

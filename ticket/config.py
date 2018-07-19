@@ -1,54 +1,57 @@
-CONFIG = {
-    # Endereço onde o servidor irá ouvir as conexões
-    "host": "127.0.0.1",
-    "port": 5000,
+import os
+import sys
+from configparser import ConfigParser
 
-    # Habilitar debug - não usar em produção!
-    "debug": False,
+from ticket.log import log
 
-    # Arquivo do banco de dados SQLite. Será criado automaticamente
-    # caso não exista.
-    "dbname": "data/ticket.db",
-
-    # Título das páginas.
-    "title": "ticket",
-
-    # Descrição das prioridades. É possível adicionar mais prioridades
-    # caso seja necessário.
-    "priodesc": {
-        1: 'Urgente',
-        2: 'Atenção',
-        3: 'Normal',
-        4: 'Baixa',
-        5: 'Baixíssima',
-    },
-
-    # Cores das prioridades.
-    "priocolor": {
-        1: '#FF8D8F',
-        2: '#99CC00',
-        3: '#FF9966',
-        4: '#6DF2B2',
-        5: '#9FEFF2',
-    },
-
-    # Tamanho máximo (em bytes) de arquivos anexados aos tickets
-    "filemaxsize": 128000,
-
-    # Servidor de e-mail para envio
-    "mailsmtp": '127.0.0.1',
-
-    # Funcionalidades ativas. Comentar a linha para desativar a funcionalidade.
-    "features": [
-        'timetrack',    # Tempo trabalhado
-        'adminonly',    # Restrição de tickets para administradores
-        'fileattach',   # Arquivos anexos
-        'dependency',   # Dependências entre tickets
-        'datedue',      # Data de previsão de solução
-        'mail',         # Envio de comentários por e-mail
-    ],
-}
+CONFIG_PATH = os.environ.get("TICKET_CONFIG")
+if not CONFIG_PATH:
+    log.error("variável de ambiente TICKET_CONFIG não definida!")
+    sys.exit(1)
+log.info("carregando configurações de <%s>", CONFIG_PATH)
+_config = ConfigParser()
+_config.read(CONFIG_PATH)
 
 
-def config(key):
-    return CONFIG.get(key)
+def get_features():
+    features = []
+    for feature in _config["features"]:
+        if _config.getboolean("features", feature):
+            features.append(feature)
+    return features
+
+
+def get_priodesc():
+    priodesc = {
+        1: "Urgente",
+        2: "Atenção",
+        3: "Normal",
+        4: "Baixa",
+        5: "Baixíssima",
+    }
+    for prio in _config["priodesc"]:
+        priodesc[int(prio)] = _config["priodesc"][prio]
+    return priodesc
+
+
+def get_priocolor():
+    priocolor = {
+        1: "#FF8D8F",
+        2: "#99CC00",
+        3: "#FF9966",
+        4: "#6DF2B2",
+        5: "#9FEFF2",
+    }
+    for prio in _config["priocolor"]:
+        priocolor[int(prio)] = _config["priocolor"][prio]
+    return priocolor
+
+
+def cfg(section, key):
+    return _config[section][str(key)]
+
+
+priodesc = get_priodesc()
+priocolor = get_priocolor()
+features = get_features()
+title = cfg("ticket", "title")

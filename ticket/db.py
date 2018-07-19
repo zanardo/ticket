@@ -1,10 +1,11 @@
+import os.path
 import sqlite3
 from contextlib import contextmanager
 
 from bottle import local
 
 import ticket.tickets
-from ticket.config import config
+from ticket.config import cfg
 
 
 def get_db() -> sqlite3.Connection:
@@ -13,7 +14,7 @@ def get_db() -> sqlite3.Connection:
     """
     if not hasattr(local, "db"):
         local.db = sqlite3.connect(
-            config("dbname"),
+            os.path.join(cfg("paths", "data"), "ticket.db"),
             detect_types=sqlite3.PARSE_DECLTYPES
         )
         # Permite acessar resultados via dict() por nome da coluna

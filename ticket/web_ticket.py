@@ -11,7 +11,6 @@ import ticket.user
 import ticket.mail
 import ticket.tickets
 from ticket.context import TemplateContext
-from ticket.config import config
 from ticket.log import log
 
 
@@ -662,7 +661,7 @@ def newnote(ticket_id):
         ticket.mail.sendmail(
             user['email'],
             contacts,
-            config("mailsmtp"),
+            cfg("smtp", "host"),
             subject,
             body
         )
@@ -742,7 +741,7 @@ def uploadfile(ticket_id):
     if 'file' not in request.files:
         return 'arquivo inválido'
     filename = request.files.get("file").filename
-    maxfilesize = config("filemaxsize")
+    maxfilesize = int(cfg("attachments", "max-size"))
     blob = b''
     filesize = 0
     while True:
