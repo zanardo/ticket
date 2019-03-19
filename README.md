@@ -10,7 +10,7 @@ SQLite para armazenar os dados, simplificando sua instalação e manutenção.
 
 ## dependências
 
-ticket precisa do Python 2.7 e do virtualenv.
+ticket precisa do Python 3.5+ e do virtualenv.
 
 ## instalando ticket
 
