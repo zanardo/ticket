@@ -29,11 +29,11 @@ Iniciar o servidor web:
 
     $ make run-server
 
-Como padrão, o servidor web escuta no host ``127.0.0.1``, e na porta ``5000``.
-O banco de dados default é no arquivo ``ticket.db``, o qual será criado
+Como padrão, o servidor web escuta no host `127.0.0.1`, e na porta `5000`.
+O banco de dados default é no arquivo `ticket.db`, o qual será criado
 automaticamente na primeira inicialização. As configurações poderão ser
-alteradas editando-se o arquivo ``config.py`` e reiniciando o aplicativo.
+alteradas editando-se o arquivo `config.py` e reiniciando o aplicativo.
 
-Agora basta acessar o sistema via navegador. O usuário padrão é ``admin`` com
-senha ``admin``. Ao acessar o sistema, crie um usuário para você, dê poderes de
-administrador, e exclua o usuário padrão ``admin``.
+Agora basta acessar o sistema via navegador. O usuário padrão é `admin` com
+senha `admin`. Ao acessar o sistema, crie um usuário para você, dê poderes de
+administrador, e exclua o usuário padrão `admin`.
