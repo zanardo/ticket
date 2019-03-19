@@ -37,7 +37,7 @@ def index():
     # Dividindo filtro em tokens separados por espaços
     tokens = filter.strip().split()
 
-    limit = tags = user = date = prio = ""
+    limit = ""
     search = []
     status = "and status = 0"
     order = "order by datemodified desc"
@@ -167,7 +167,6 @@ def index():
     if not ctx.user_is_admin:
         sql += "and admin_only = 0 "
 
-    searchstr = ""
     if len(search) > 0:
         s = " ".join(search)
         sql += "and id in ( select docid from search where search match ? ) "
