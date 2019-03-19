@@ -1,8 +1,5 @@
 from ticket import __version__
-from ticket.user import (
-    current_user,
-    user_admin
-)
+from ticket.user import current_user, user_admin
 from ticket.config import cfg, features, priodesc, priocolor
 from ticket.tickets import tags_desc
 
@@ -11,6 +8,7 @@ class TemplateContext(object):
     """
     Objeto para simplificar passagem de dados para templates.
     """
+
     def __init__(self):
         self.version = __version__
         self.username = current_user()

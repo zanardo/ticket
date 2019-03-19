@@ -15,7 +15,7 @@ def get_db() -> sqlite3.Connection:
     if not hasattr(local, "db"):
         local.db = sqlite3.connect(
             os.path.join(cfg("paths", "data"), "ticket.db"),
-            detect_types=sqlite3.PARSE_DECLTYPES
+            detect_types=sqlite3.PARSE_DECLTYPES,
         )
         # Permite acessar resultados via dict() por nome da coluna
         local.db.row_factory = sqlite3.Row
@@ -38,7 +38,7 @@ def db_trans():
     dbh = get_db()
     c = dbh.cursor()
     try:
-        yield c     # Retorna novo cursor
+        yield c  # Retorna novo cursor
     except Exception:
         dbh.rollback()
         raise
@@ -51,20 +51,27 @@ def populate_search(ticket_id: int):
     Popula o índice de busca full-text para um ticket.
     """
     text = ""
-    c = get_cursor()     # Utiliza transação do caller
+    c = get_cursor()  # Utiliza transação do caller
     text += " " + ticket.tickets.tickettitle(ticket_id) + " "
-    c.execute("""
+    c.execute(
+        """
         select comment
         from comments
         where ticket_id = :ticket_id
-    """, locals())
+    """,
+        locals(),
+    )
     for r in c:
         text += " " + r["comment"] + " "
-    c.execute("""
+    c.execute(
+        """
         delete from search
         where docid = :ticket_id
-    """, locals())
-    c.execute("""
+    """,
+        locals(),
+    )
+    c.execute(
+        """
         insert into search (
             docid,
             text
@@ -72,4 +79,6 @@ def populate_search(ticket_id: int):
         values (
             :ticket_id,
             :text
-        )""", locals())
+        )""",
+        locals(),
+    )

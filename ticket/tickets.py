@@ -100,7 +100,6 @@ def tickettitle(ticket_id) -> str:
         from tickets
         where id = :ticket_id
     """, locals())
-    return c.fetchone()["title"]
 
 
 def sanitizecomment(comment) -> str:

@@ -20,14 +20,16 @@ def admin():
     ctx = TemplateContext()
     ctx.users = []
     c = ticket.db.get_cursor()
-    c.execute("""
+    c.execute(
+        """
         select username,
             is_admin,
             name,
             email
         from users
         order by username
-    """)
+    """
+    )
     for user in c:
         user = dict(user)
         user["name"] = user["name"] or ""
@@ -46,10 +48,13 @@ def removeuser(username):
     if username == ticket.user.current_user():
         return "não é possível remover usuário corrente"
     with ticket.db.db_trans() as c:
-        c.execute("""
+        c.execute(
+            """
             delete from users
             where username = :username
-        """, locals())
+        """,
+            locals(),
+        )
     return redirect("/admin")
 
 
@@ -64,12 +69,15 @@ def edituser(username):
     ctx = TemplateContext()
     ctx.user = username
     c = ticket.db.get_cursor()
-    c.execute("""
+    c.execute(
+        """
         select name,
             email
         from users
         where username = :username
-    """, locals())
+    """,
+        locals(),
+    )
     r = c.fetchone()
     ctx.name = ""
     ctx.email = ""
@@ -93,12 +101,15 @@ def editusersave(username):
     name = request.forms.get("name").strip()
     email = request.forms.get("email").strip()
     with ticket.db.db_trans() as c:
-        c.execute("""
+        c.execute(
+            """
             update users
             set name=:name,
                 email=:email
             where username=:username
-        """, locals())
+        """,
+            locals(),
+        )
     return redirect("/admin")
 
 
@@ -116,7 +127,8 @@ def newuser():
     password = str(int(random.random() * 999999))
     sha1password = sha1(password.encode("UTF-8")).hexdigest()
     with ticket.db.db_trans() as c:
-        c.execute("""
+        c.execute(
+            """
             insert into users (
                 username,
                 password,
@@ -127,7 +139,9 @@ def newuser():
                 :sha1password,
                 0
             )
-        """, locals())
+        """,
+            locals(),
+        )
     return "usuário %s criado com senha %s" % (username, password)
 
 
@@ -143,11 +157,14 @@ def forceuserpassword(username):
     if username == ticket.user.current_user():
         return "não é possível forçar nova senha de usuário corrente"
     with ticket.db.db_trans() as c:
-        c.execute("""
+        c.execute(
+            """
             update users
             set password = :sha1password
             where username = :username
-        """, locals())
+        """,
+            locals(),
+        )
     return "usuário %s teve nova senha forçada: %s" % (username, password)
 
 
@@ -162,11 +179,14 @@ def changeuseradminstatus(username, status):
         return "não é possível alterar status de admin para usuário corrente"
     assert status in ("0", "1")
     with ticket.db.db_trans() as c:
-        c.execute("""
+        c.execute(
+            """
             update users
             set is_admin = :status
             where username = :username
-        """, locals())
+        """,
+            locals(),
+        )
     return redirect("/admin")
 
 
@@ -179,15 +199,19 @@ def reindexfts():
     """
     with ticket.db.db_trans() as c:
         log.info("limpando índices")
-        c.execute("""
+        c.execute(
+            """
             delete from search
-        """)
+        """
+        )
         log.info("iniciando recriação dos índices")
-        c.execute("""
+        c.execute(
+            """
             select id
             from tickets
             order by id
-        """)
+        """
+        )
         for r in c:
             log.debug("reindexando ticket #%s", r["id"])
             ticket.db.populate_search(r["id"])
