@@ -222,7 +222,7 @@ def newticket():
 @ticket.user.requires_auth
 def newticketpost():
     """
-    # Salva um novo ticket.
+    Salva um novo ticket.
     """
     assert "title" in request.forms
     title = request.forms.get("title").strip()
@@ -422,7 +422,7 @@ def getfile(id, name):
 @ticket.user.requires_auth
 def closeticket(ticket_id):
     """
-    # Fecha um ticket.
+    Fecha um ticket.
     """
     # Verifica se existem tickets que bloqueiam este
     # ticket que ainda estão abertos.
@@ -480,7 +480,7 @@ def closeticket(ticket_id):
 @ticket.user.requires_auth
 def changetitle(ticket_id):
     """
-    # Altera título de um ticket.
+    Altera título de um ticket.
     """
     assert "text" in request.forms
     title = request.forms.get("text").strip()
@@ -503,7 +503,7 @@ def changetitle(ticket_id):
 @ticket.user.requires_auth
 def changedatedue(ticket_id):
     """
-    # Altera data de previsão de solução de um ticket.
+    Altera data de previsão de solução de um ticket.
     """
     assert "datedue" in request.forms
     datedue = request.forms.get("datedue").strip()
@@ -536,7 +536,7 @@ def changedatedue(ticket_id):
 @ticket.user.requires_admin
 def changeadminonly(ticket_id, toggle):
     """
-    # Tornar ticket somente visível para administradores.
+    Tornar ticket somente visível para administradores.
     """
     assert toggle in ("0", "1")
     with ticket.db.db_trans() as c:
@@ -555,7 +555,7 @@ def changeadminonly(ticket_id, toggle):
 @ticket.user.requires_auth
 def changetags(ticket_id):
     """
-    # Altera tags de um ticket.
+    Altera tags de um ticket.
     """
     assert "text" in request.forms
     tags = list(set(request.forms.get("text").strip().split()))
@@ -638,7 +638,7 @@ def changedependencies(ticket_id):
 @ticket.user.requires_auth
 def registerminutes(ticket_id):
     """
-    # Registra tempo trabalhado em um ticket.
+    Registra tempo trabalhado em um ticket.
     """
     assert "minutes" in request.forms
     if not re.match(r"^[\-0-9\.]+$", request.forms.get("minutes")):

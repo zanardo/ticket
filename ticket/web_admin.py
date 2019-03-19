@@ -43,7 +43,7 @@ def admin():
 @ticket.user.requires_admin
 def removeuser(username):
     """
-    # Apaga um usuário.
+    Apaga um usuário.
     """
     if username == ticket.user.current_user():
         return "não é possível remover usuário corrente"
@@ -195,7 +195,7 @@ def changeuseradminstatus(username, status):
 @ticket.user.requires_admin
 def reindexfts():
     """
-    # Recria o índice de Full Text Search.
+    Recria o índice de Full Text Search.
     """
     with ticket.db.db_trans() as c:
         log.info("limpando índices")
