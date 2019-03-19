@@ -11,18 +11,20 @@ def tags_desc() -> Dict[str, Dict[str, str]]:
     """
     tagdesc = {}
     c = ticket.db.get_cursor()
-    c.execute("""
+    c.execute(
+        """
         select tag,
             description,
             bgcolor,
             fgcolor
         from tagsdesc
-    """)
+    """
+    )
     for r in c:
         tagdesc[r["tag"]] = {
             "description": r["description"] or "",
             "bgcolor": r["bgcolor"] or "#00D6D6",
-            "fgcolor": r["fgcolor"] or "#4D4D4D"
+            "fgcolor": r["fgcolor"] or "#4D4D4D",
         }
     return tagdesc
 
@@ -33,7 +35,8 @@ def ticketblocks(ticket_id) -> Dict[str, Dict[str, str]]:
     """
     deps = {}
     c = ticket.db.get_cursor()
-    c.execute("""
+    c.execute(
+        """
         select d.blocks,
             t.title,
             t.status,
@@ -42,13 +45,11 @@ def ticketblocks(ticket_id) -> Dict[str, Dict[str, str]]:
             inner join tickets as t
                 on t.id = d.blocks
         where d.ticket_id = :ticket_id
-    """, locals())
+    """,
+        locals(),
+    )
     for r in c:
-        deps[r[0]] = {
-            "title": r[1],
-            "status": r[2],
-            "admin_only": r[3],
-        }
+        deps[r[0]] = {"title": r[1], "status": r[2], "admin_only": r[3]}
     return deps
 
 
@@ -58,7 +59,8 @@ def ticketdepends(ticket_id) -> Dict[str, Dict[str, str]]:
     """
     deps = {}
     c = ticket.db.get_cursor()
-    c.execute("""
+    c.execute(
+        """
         select d.ticket_id,
             t.title,
             t.status,
@@ -67,13 +69,11 @@ def ticketdepends(ticket_id) -> Dict[str, Dict[str, str]]:
             inner join tickets as t
                 on t.id = d.ticket_id
         where d.blocks = :ticket_id
-    """, locals())
+    """,
+        locals(),
+    )
     for r in c:
-        deps[r[0]] = {
-            "title": r[1],
-            "status": r[2],
-            "admin_only": r[3]
-        }
+        deps[r[0]] = {"title": r[1], "status": r[2], "admin_only": r[3]}
     return deps
 
 
@@ -82,11 +82,14 @@ def tickettags(ticket_id) -> List[str]:
     Retorna tags de um ticket.
     """
     c = ticket.db.get_cursor()
-    c.execute("""
+    c.execute(
+        """
         select tag
         from tags
         where ticket_id = :ticket_id
-    """, locals())
+    """,
+        locals(),
+    )
     return [r["tag"] for r in c]
 
 
@@ -95,11 +98,14 @@ def tickettitle(ticket_id) -> str:
     Retorna o título de um ticket.
     """
     c = ticket.db.get_cursor()
-    c.execute("""
+    c.execute(
+        """
         select title
         from tickets
         where id = :ticket_id
-    """, locals())
+    """,
+        locals(),
+    )
     return c.fetchone()["title"]
 
 
