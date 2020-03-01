@@ -10,13 +10,13 @@ SQLite para armazenar os dados, simplificando sua instalação e manutenção.
 
 ## dependências
 
-ticket precisa do Python 3.5+ e do virtualenv.
+ticket precisa do Python 3.7.
 
 ## instalando ticket
 
 A última versão estável do sistema ticket pode ser obtida utilizando o Git:
 
-    $ git clone git://github.com/zanardo/ticket
+    $ git clone https://github.com/zanardo/ticket
 
 Instalar as dependências:
 
@@ -27,10 +27,10 @@ Instalar as dependências:
 
 Iniciar o servidor web:
 
-    $ make run-server
+    $ make run
 
-Como padrão, o servidor web escuta no host `127.0.0.1`, e na porta `5000`.
-O banco de dados default é no arquivo `ticket.db`, o qual será criado
+Como padrão, o servidor web escuta no host `127.0.0.1`, e na porta `5000`. O
+banco de dados default é no arquivo `ticket.db`, o qual será criado
 automaticamente na primeira inicialização. As configurações poderão ser
 alteradas editando-se o arquivo `config.py` e reiniciando o aplicativo.
 
