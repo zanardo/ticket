@@ -14,16 +14,9 @@ SQLite para armazenar os dados, simplificando sua instalação e manutenção.
 
 ## Instalando ticket
 
-A última versão estável do sistema ticket pode ser obtida utilizando o Git:
+Criando o virtualenv do Python e instalando as dependências:
 
 ```bash
-git clone https://github.com/zanardo/ticket
-```
-
-Instalar as dependências:
-
-```bash
-cd ticket
 make
 ```
 
