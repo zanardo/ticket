@@ -6,5 +6,5 @@ setup(
     name="ticket",
     version=__version__,
     packages=["ticket"],
-    install_requires=["bottle==0.12.16"],
+    install_requires=["bottle==0.12.18"],
 )
