@@ -1,12 +1,19 @@
 SHELL ?= /bin/bash
 PYTHON ?= python3
 
-all: .venv
+all: .venv/pip-sync-ok
 
-.venv: setup.py
-	@test -d .venv || virtualenv -p $(PYTHON) .venv
-	@.venv/bin/pip install -e .
-	@touch .venv
+requirements.txt: requirements.in
+	.venv/bin/pip-compile
+
+.venv:
+	$(PYTHON) -m venv .venv
+	.venv/bin/pip install -U pip
+	.venv/bin/pip install pip-tools
+
+.venv/pip-sync-ok: .venv
+	.venv/bin/pip-sync
+	touch .venv/pip-sync-ok
 
 data:
 	mkdir -p data/
