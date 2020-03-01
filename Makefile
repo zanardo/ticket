@@ -13,7 +13,7 @@ requirements.txt: requirements.in
 
 .venv/pip-sync-ok: .venv requirements.txt
 	.venv/bin/pip-sync
-	touch .venv/pip-sync-ok
+	@touch .venv/pip-sync-ok
 
 data:
 	mkdir -p data/
@@ -28,6 +28,6 @@ test: .venv/pip-sync-ok
 	.venv/bin/python tests.py
 
 run: .venv/pip-sync-ok
-	while :; do TICKET_CONFIG=ticket.ini .venv/bin/python -m ticket ; sleep 1 ; done
+	@while :; do TICKET_CONFIG=ticket.ini .venv/bin/python -m ticket ; sleep 1 ; done
 
 .PHONY: all data clean test run
