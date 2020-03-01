@@ -1,4 +1,5 @@
-PYTHON=python3
+SHELL ?= /bin/bash
+PYTHON ?= python3
 
 all: .venv
 
