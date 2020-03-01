@@ -1,33 +1,39 @@
 # ticket
 
-ticket é um sistema simples de chamados para pequenos departamentos de TI, para
-o acompanhamento de casos em aberto sobre qualquer coisa (bugs de software,
+`ticket` é um sistema simples de chamados para pequenos departamentos de TI,
+para o acompanhamento de casos em aberto sobre qualquer coisa (bugs de software,
 tarefas, demandas de helpdesk, etc).
 
 Ele é desenvolvido em Python, e possui poucas dependências de bibliotecas
 externas. ticket embute seu próprio servidor web e utiliza um banco de dados
 SQLite para armazenar os dados, simplificando sua instalação e manutenção.
 
-## dependências
+## Dependências
 
-ticket precisa do Python 3.7.
+`ticket` precisa do Python 3.7.
 
-## instalando ticket
+## Instalando ticket
 
 A última versão estável do sistema ticket pode ser obtida utilizando o Git:
 
-    $ git clone https://github.com/zanardo/ticket
+```bash
+git clone https://github.com/zanardo/ticket
+```
 
 Instalar as dependências:
 
-    $ cd ticket
-    $ make
+```bash
+cd ticket
+make
+```
 
-## iniciando ticket
+## Iniciando ticket
 
 Iniciar o servidor web:
 
-    $ make run
+```bash
+make run
+```
 
 Como padrão, o servidor web escuta no host `127.0.0.1`, e na porta `5000`. O
 banco de dados default é no arquivo `ticket.db`, o qual será criado
