@@ -24,9 +24,6 @@ clean:
 	@find . -type f -name '*.pyc' -delete
 	@find . -type d -name '__pycache__' -delete
 
-test: .venv/pip-sync-ok
-	.venv/bin/python tests.py
-
 run: .venv/pip-sync-ok
 	@while :; do TICKET_CONFIG=ticket.ini .venv/bin/python -m ticket ; sleep 1 ; done
 
