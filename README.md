@@ -12,6 +12,21 @@ SQLite para armazenar os dados, simplificando sua instalação e manutenção.
 No momento, o aplicativo está no meio de uma transição do Python 2 para Python
 3. Não é recomendável usar este branch em produção.
 
+## Funcionalidades
+
+- Criação de tickets sem burocracia - somente um campo texto para o título é obrigatório.
+- Lista tickets por ordem de criação, modificação, e fechamento.
+- Filtros avançados para faixas de datas, tags, etc.
+- Dependência entre tickets (depende de e bloqueia).
+- Envio automático de e-mails das novas notas.
+- Bilhetagem de tempo de trabalho nos tickets.
+- Agendamento de tickets (com data limite).
+- Criação de tags coloridas.
+- Definição de prioridades.
+- Múltiplos usuários.
+- Anexos nos tickets.
+- Busca _full-text_.
+
 ## Dependências
 
 `ticket` precisa do Python 3.7.
