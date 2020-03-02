@@ -1,5 +1,6 @@
 SHELL ?= /bin/bash
 PYTHON ?= python3
+TAG=$(shell git describe --tags | sed -e 's/^v//')
 
 .PHONY: all
 all: .venv/pip-sync-ok
@@ -30,3 +31,15 @@ clean:
 .PHONY: run
 run: .venv/pip-sync-ok
 	@while :; do TICKET_CONFIG=ticket.ini .venv/bin/python -m ticket ; sleep 1 ; done
+
+.PHONY: docker-build
+docker-build:
+	docker build -t zanardo/ticket:$(TAG) .
+
+.PHONY: docker-run
+docker-run: docker-build
+	docker run --rm -it \
+		-v /etc/localtime:/etc/localtime \
+		-v ticket_dev:/app/data \
+		-p 127.0.0.1:5000:5000 \
+		zanardo/ticket:$(TAG)
