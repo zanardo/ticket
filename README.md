@@ -24,6 +24,18 @@ Criando o virtualenv do Python e instalando as dependências:
 make
 ```
 
+## Configurando ticket
+
+Edite arquivo `ticket.ini` caso queira alterar alguma configuração.
+
+## Criando o banco de dados vazio
+
+O comando abaixo cria um novo banco de dados SQLite no diretório `./data`:
+
+```bash
+make data
+```
+
 ## Iniciando ticket
 
 Iniciar o servidor web:
