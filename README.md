@@ -8,7 +8,7 @@ Ele é desenvolvido em Python, e possui poucas dependências de bibliotecas
 externas. ticket embute seu próprio servidor web e utiliza um banco de dados
 SQLite para armazenar os dados, simplificando sua instalação e manutenção.
 
-**ATENÇÃO**: O branch `master` possui a versão de desenvolvimento do `ticket'.
+**ATENÇÃO**: O branch `master` possui a versão de desenvolvimento do `ticket`.
 No momento, o aplicativo está no meio de uma transição do Python 2 para Python
 3. Não é recomendável usar este branch em produção.
 
