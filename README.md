@@ -41,7 +41,7 @@ make
 
 ## Configurando ticket
 
-Edite arquivo `ticket.ini` caso queira alterar alguma configuração.
+Edite o arquivo `ticket.ini` caso queira alterar alguma configuração.
 
 ## Criando o banco de dados vazio
 
