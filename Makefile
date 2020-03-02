@@ -1,5 +1,6 @@
 SHELL ?= /bin/bash
 PYTHON ?= python3
+DOCKER_REPO ?= zanardo
 TAG=$(shell git describe --tags | sed -e 's/^v//')
 
 .PHONY: all
@@ -34,7 +35,7 @@ run: .venv/pip-sync-ok
 
 .PHONY: docker-build
 docker-build:
-	docker build -t zanardo/ticket:$(TAG) .
+	docker build -t $(DOCKER_REPO)/ticket:$(TAG) .
 
 .PHONY: docker-run
 docker-run: docker-build
@@ -42,4 +43,4 @@ docker-run: docker-build
 		-v /etc/localtime:/etc/localtime \
 		-v ticket_dev:/app/data \
 		-p 127.0.0.1:5000:5000 \
-		zanardo/ticket:$(TAG)
+		$(DOCKER_REPO)/ticket:$(TAG)
