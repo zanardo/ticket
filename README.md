@@ -52,3 +52,13 @@ alteradas editando-se o arquivo `config.py` e reiniciando o aplicativo.
 Agora basta acessar o sistema via navegador. O usuário padrão é `admin` com
 senha `admin`. Ao acessar o sistema, crie um usuário para você, dê poderes de
 administrador, e exclua o usuário padrão `admin`.
+
+## Screenshots
+
+### Lista de tickets
+
+![Lista de tickets](./assets/readme-list.png)
+
+### Detalhe de um ticket
+
+![Detalhe de um ticket](./assets/readme-detail.png)
