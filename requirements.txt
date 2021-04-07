@@ -4,4 +4,5 @@
 #
 #    pip-compile
 #
-bottle==0.12.18           # via -r requirements.in
+bottle==0.12.19
+    # via -r requirements.in
