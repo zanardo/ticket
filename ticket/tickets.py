@@ -46,7 +46,7 @@ def ticketblocks(ticket_id) -> Dict[str, Dict[str, str]]:
                 on t.id = d.blocks
         where d.ticket_id = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     for r in c:
         deps[r[0]] = {"title": r[1], "status": r[2], "admin_only": r[3]}
@@ -70,7 +70,7 @@ def ticketdepends(ticket_id) -> Dict[str, Dict[str, str]]:
                 on t.id = d.ticket_id
         where d.blocks = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     for r in c:
         deps[r[0]] = {"title": r[1], "status": r[2], "admin_only": r[3]}
@@ -88,7 +88,7 @@ def tickettags(ticket_id) -> List[str]:
         from tags
         where ticket_id = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     return [r["tag"] for r in c]
 
@@ -104,7 +104,7 @@ def tickettitle(ticket_id) -> str:
         from tickets
         where id = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     return c.fetchone()["title"]
 

@@ -59,7 +59,7 @@ def populate_search(ticket_id: int):
         from comments
         where ticket_id = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     for r in c:
         text += " " + r["comment"] + " "
@@ -68,7 +68,7 @@ def populate_search(ticket_id: int):
         delete from search
         where docid = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     c.execute(
         """
@@ -80,5 +80,5 @@ def populate_search(ticket_id: int):
             :ticket_id,
             :text
         )""",
-        locals(),
+        {"ticket_id": ticket_id, "text": text},
     )

@@ -53,7 +53,7 @@ def removeuser(username):
             delete from users
             where username = :username
         """,
-            locals(),
+            {"username": username},
         )
     return redirect("/admin")
 
@@ -76,7 +76,7 @@ def edituser(username):
         from users
         where username = :username
     """,
-        locals(),
+        {"username": username},
     )
     r = c.fetchone()
     ctx.name = ""
@@ -108,7 +108,7 @@ def editusersave(username):
                 email=:email
             where username=:username
         """,
-            locals(),
+            {"name": name, "email": email, "username": username},
         )
     return redirect("/admin")
 
@@ -140,7 +140,7 @@ def newuser():
                 0
             )
         """,
-            locals(),
+            {"username": username, "sha1password": sha1password},
         )
     return "usuário %s criado com senha %s" % (username, password)
 
@@ -163,7 +163,7 @@ def forceuserpassword(username):
             set password = :sha1password
             where username = :username
         """,
-            locals(),
+            {"sha1password": sha1password, "username": username},
         )
     return "usuário %s teve nova senha forçada: %s" % (username, password)
 
@@ -185,7 +185,7 @@ def changeuseradminstatus(username, status):
             set is_admin = :status
             where username = :username
         """,
-            locals(),
+            {"status": status, "username": username},
         )
     return redirect("/admin")
 

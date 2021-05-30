@@ -62,7 +62,7 @@ def validate_user_db(user, passwd) -> bool:
         where username = :user
             and password = :passwdsha1
         """,
-        locals(),
+        {"user": user, "passwdsha1": passwdsha1},
     )
     r = c.fetchone()
     return bool(r)
@@ -79,7 +79,7 @@ def validate_session(session_id) -> bool:
         from sessions
         where session_id = :session_id
     """,
-        locals(),
+        {"session_id": session_id},
     )
     r = c.fetchone()
     return bool(r)
@@ -97,7 +97,7 @@ def user_ident(username) -> Dict[str, str]:
         from users
         where username=:username
     """,
-        locals(),
+        {"username": username},
     )
     return dict(c.fetchone())
 
@@ -114,7 +114,7 @@ def current_user() -> str:
         from sessions
         where session_id = :session_id
     """,
-        locals(),
+        {"session_id": session_id},
     )
     return c.fetchone()["username"]
 
@@ -130,7 +130,7 @@ def user_admin(username) -> bool:
         from users
         where username = :username
     """,
-        locals(),
+        {"username": username},
     )
     return c.fetchone()["is_admin"]
 
@@ -145,7 +145,7 @@ def remove_session(session_id) -> None:
             delete from sessions
             where session_id = :session_id
         """,
-            locals(),
+            {"session_id": session_id},
         )
 
 
@@ -166,7 +166,7 @@ def make_session(user) -> str:
                 :user
             )
         """,
-            locals(),
+            {"session_id": session_id, "user": user},
         )
     return session_id
 
@@ -196,5 +196,5 @@ def change_password(user: str, password: str) -> None:
             set password = :passwd_sha1
             where username = :user
         """,
-            locals(),
+            {"passwd_sha1": passwd_sha1, "user": user},
         )

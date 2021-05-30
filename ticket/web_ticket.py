@@ -248,7 +248,7 @@ def newticketpost():
                 :username
             )
         """,
-            locals(),
+            {"title": title, "username": username},
         )
         ticket_id = c.lastrowid
         ticket.db.populate_search(ticket_id)
@@ -278,7 +278,7 @@ def showticket(ticket_id):
         where id = :ticket_id
     """
         + sql_is_admin,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     ctx.ticket = c.fetchone()
 
@@ -298,7 +298,7 @@ def showticket(ticket_id):
         from statustrack
         where ticket_id = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     for r in c:
         reg = dict(r)
@@ -314,7 +314,7 @@ def showticket(ticket_id):
         from comments
         where ticket_id = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     for r in c:
         reg = dict(r)
@@ -331,7 +331,7 @@ def showticket(ticket_id):
         from timetrack
         where ticket_id = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     for r in c:
         reg = dict(r)
@@ -348,7 +348,7 @@ def showticket(ticket_id):
         from files
         where ticket_id = :ticket_id
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     for r in c:
         reg = dict(r)
@@ -372,7 +372,7 @@ def showticket(ticket_id):
         group by user
         order by user
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     for r in c:
         ctx.timetrack.append(dict(r))
@@ -413,7 +413,7 @@ def getfile(id, name):
             on tickets.id = files.ticket_id
         where files.id = :id
     """,
-        locals(),
+        {"id": id},
     )
     row = c.fetchone()
     blob = zlib.decompress(row["contents"])
@@ -445,7 +445,7 @@ def closeticket(ticket_id):
         where d.blocks = :ticket_id
             and t.status = 0
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     blocks = [r["ticket_id"] for r in c]
     if blocks:
@@ -464,7 +464,7 @@ def closeticket(ticket_id):
                 datemodified = datetime('now', 'localtime')
             where id = :ticket_id
         """,
-            locals(),
+            {"ticket_id": ticket_id},
         )
         c.execute(
             """
@@ -479,7 +479,7 @@ def closeticket(ticket_id):
                 'close'
             )
         """,
-            locals(),
+            {"ticket_id": ticket_id, "username": username},
         )
 
     return redirect("/ticket/%s" % ticket_id)
@@ -502,7 +502,7 @@ def changetitle(ticket_id):
             set title = :title
             where id = :ticket_id
         """,
-            locals(),
+            {"title": title, "ticket_id": ticket_id},
         )
         ticket.db.populate_search(ticket_id)
     return redirect("/ticket/%s" % ticket_id)
@@ -535,7 +535,7 @@ def changedatedue(ticket_id):
             set datedue = :datedue
             where id = :ticket_id
         """,
-            locals(),
+            {"datedue": datedue, "ticket_id": ticket_id},
         )
     return redirect("/ticket/%s" % ticket_id)
 
@@ -555,7 +555,7 @@ def changeadminonly(ticket_id, toggle):
             set admin_only = :toggle
             where id = :ticket_id
         """,
-            locals(),
+            {"toggle": toggle, "ticket_id": ticket_id},
         )
     return redirect("/ticket/%s" % ticket_id)
 
@@ -587,7 +587,7 @@ def changetags(ticket_id):
                     :ticket_id,
                     :tag
             )""",
-                locals(),
+                {"ticket_id": ticket_id, "tag": tag},
             )
     return redirect("/ticket/%s" % ticket_id)
 
@@ -638,7 +638,7 @@ def changedependencies(ticket_id):
                     :dep
                 )
             """,
-                locals(),
+                {"ticket_id": ticket_id, "dep": dep},
             )
     return redirect("/ticket/%s" % ticket_id)
 
@@ -669,7 +669,7 @@ def registerminutes(ticket_id):
                 :username,
                 :minutes
             )""",
-            locals(),
+            {"ticket_id": ticket_id, "username": username, "minutes": minutes},
         )
         c.execute(
             """
@@ -677,7 +677,7 @@ def registerminutes(ticket_id):
             set datemodified = datetime('now', 'localtime')
             where id = :ticket_id
         """,
-            locals(),
+            {"ticket_id": ticket_id},
         )
     return redirect("/ticket/%s" % ticket_id)
 
@@ -716,7 +716,7 @@ def newnote(ticket_id):
                 :note
             )
             """,
-            locals(),
+            {"ticket_id": ticket_id, "username": username, "note": note},
         )
         c.execute(
             """
@@ -724,7 +724,7 @@ def newnote(ticket_id):
             set datemodified = datetime('now', 'localtime')
             where id = :ticket_id
         """,
-            locals(),
+            {"ticket_id": ticket_id},
         )
         ticket.db.populate_search(ticket_id)
 
@@ -771,7 +771,7 @@ def reopenticket(ticket_id):
         where d.ticket_id = :ticket_id
             and t.status = 1
     """,
-        locals(),
+        {"ticket_id": ticket_id},
     )
     blocks = [r["blocks"] for r in c]
     if blocks:
@@ -789,7 +789,7 @@ def reopenticket(ticket_id):
                 datemodified = datetime('now', 'localtime')
             where id = :ticket_id
         """,
-            locals(),
+            {"ticket_id": ticket_id},
         )
         c.execute(
             """
@@ -804,7 +804,7 @@ def reopenticket(ticket_id):
                 'reopen'
             )
         """,
-            locals(),
+            {"ticket_id": ticket_id, "username": username},
         )
     return redirect("/ticket/%s" % ticket_id)
 
@@ -825,7 +825,7 @@ def changepriority(ticket_id):
             set priority = :priority
             where id = :ticket_id
         """,
-            locals(),
+            {"priority": priority, "ticket_id": ticket_id},
         )
     return redirect("/ticket/%s" % ticket_id)
 
@@ -872,7 +872,13 @@ def uploadfile(ticket_id):
                 :blob
             )
         """,
-            locals(),
+            {
+                "ticket_id": ticket_id,
+                "filename": filename,
+                "username": username,
+                "filesize": filesize,
+                "blob": blob,
+            },
         )
         c.execute(
             """
@@ -880,6 +886,6 @@ def uploadfile(ticket_id):
             set datemodified = datetime('now', 'localtime')
             where id = :ticket_id
         """,
-            locals(),
+            {"ticket_id": ticket_id},
         )
     return redirect("/ticket/%s" % ticket_id)
