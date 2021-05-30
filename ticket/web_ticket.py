@@ -95,12 +95,18 @@ def index():
         m = re.match(r"^u:(.+)$", t)
         if m:
             u = m.group(1)
-            sql += (
-                "and ( ( user = ? ) "
-                "or ( id in ( select ticket_id from comments where user = ? ) ) "
-                "or ( id in ( select ticket_id from timetrack where user = ? ) ) "
-                "or ( id in ( select ticket_id from statustrack where user = ? ) ) )"
-            )
+            sql += """
+                and ( ( user = ? )
+                or ( id in
+                    ( select ticket_id from comments where user = ? )
+                )
+                or ( id in
+                    ( select ticket_id from timetrack where user = ? )
+                )
+                or ( id in
+                    ( select ticket_id from statustrack where user = ? ) )
+                )
+            """
             sqlparams += [u, u, u, u]
             continue
 
