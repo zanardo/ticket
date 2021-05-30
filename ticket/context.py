@@ -1,7 +1,7 @@
 from ticket import __version__
-from ticket.user import current_user, user_admin
-from ticket.config import cfg, features, priodesc, priocolor
+from ticket.config import cfg, features, priocolor, priodesc
 from ticket.tickets import tags_desc
+from ticket.user import current_user, user_admin
 
 
 class TemplateContext(object):

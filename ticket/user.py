@@ -1,11 +1,11 @@
-from typing import Dict
-
-import ticket.db
-
-from bottle import request, redirect
 from functools import wraps
 from hashlib import sha1
+from typing import Dict
 from uuid import uuid4
+
+from bottle import redirect, request
+
+import ticket.db
 
 
 def requires_auth(f):

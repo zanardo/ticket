@@ -1,7 +1,7 @@
-from bottle import get, view, redirect, request, post, response
+from bottle import get, post, redirect, request, response, view
 
-import ticket.user
 import ticket.db
+import ticket.user
 from ticket import __version__
 from ticket.context import TemplateContext
 

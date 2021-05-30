@@ -22,14 +22,26 @@ def get_features():
 
 
 def get_priodesc():
-    priodesc = {1: "Urgente", 2: "Atenção", 3: "Normal", 4: "Baixa", 5: "Baixíssima"}
+    priodesc = {
+        1: "Urgente",
+        2: "Atenção",
+        3: "Normal",
+        4: "Baixa",
+        5: "Baixíssima",
+    }
     for prio in _config["priodesc"]:
         priodesc[int(prio)] = _config["priodesc"][prio]
     return priodesc
 
 
 def get_priocolor():
-    priocolor = {1: "#FF8D8F", 2: "#99CC00", 3: "#FF9966", 4: "#6DF2B2", 5: "#9FEFF2"}
+    priocolor = {
+        1: "#FF8D8F",
+        2: "#99CC00",
+        3: "#FF9966",
+        4: "#6DF2B2",
+        5: "#9FEFF2",
+    }
     for prio in _config["priocolor"]:
         priocolor[int(prio)] = _config["priocolor"][prio]
     return priocolor

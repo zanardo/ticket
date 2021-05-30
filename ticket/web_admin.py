@@ -1,10 +1,10 @@
 import random
-
 from hashlib import sha1
-from bottle import get, view, post, request, redirect
 
-import ticket.user
+from bottle import get, post, redirect, request, view
+
 import ticket.db
+import ticket.user
 from ticket.context import TemplateContext
 from ticket.log import log
 

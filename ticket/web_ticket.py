@@ -1,18 +1,18 @@
-from bottle import route, view, get, post, redirect, response, request
-
+import mimetypes
 import re
 import time
 import zlib
-import mimetypes
+
+from bottle import get, post, redirect, request, response, route, view
 
 import ticket
 import ticket.db
-import ticket.user
 import ticket.mail
 import ticket.tickets
+import ticket.user
+from ticket.config import cfg
 from ticket.context import TemplateContext
 from ticket.log import log
-from ticket.config import cfg
 
 
 @route("/")
@@ -105,7 +105,9 @@ def index():
             continue
 
         # Faixa de data de criação, fechamento, modificação e previsão
-        m = re.match(r"^d([fmcv]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$", t)
+        m = re.match(
+            r"^d([fmcv]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$", t
+        )
         if m:
             dt = ""
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
@@ -348,7 +350,9 @@ def showticket(ticket_id):
         ctx.comments.append(reg)
 
     # Ordenando comentários por data
-    ctx.comments = sorted(ctx.comments, key=lambda comments: comments["datecreated"])
+    ctx.comments = sorted(
+        ctx.comments, key=lambda comments: comments["datecreated"]
+    )
 
     # Obtém resumo de tempo trabalhado
 
