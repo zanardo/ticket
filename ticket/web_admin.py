@@ -5,6 +5,7 @@ from bottle import get, post, redirect, request, view
 
 import ticket.db
 import ticket.user
+from ticket.admin import all_users
 from ticket.context import TemplateContext
 from ticket.log import log
 
@@ -18,23 +19,7 @@ def admin():
     Tela de administração.
     """
     ctx = TemplateContext()
-    ctx.users = []
-    c = ticket.db.get_cursor()
-    c.execute(
-        """
-        select username,
-            is_admin,
-            name,
-            email
-        from users
-        order by username
-    """
-    )
-    for user in c:
-        user = dict(user)
-        user["name"] = user["name"] or ""
-        user["email"] = user["email"] or ""
-        ctx.users.append(user)
+    ctx.users = all_users()
     return dict(ctx=ctx)
 
 

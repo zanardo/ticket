@@ -10,25 +10,25 @@
 	<th>usuário</th><th>nome</th><th>e-mail</th><th>administrador</th><th>ações</th>
 	%for user in ctx.users:
 		<tr>
-			<td> {{user['username']}} </td>
-			<td> {{user['name']}} </td>
-			<td> {{user['email']}} </td>
+			<td> {{user.username}} </td>
+			<td> {{user.name or ""}} </td>
+			<td> {{user.email or ""}} </td>
 			<td>
-				%if user['is_admin']:
+				%if user.is_admin:
 					sim
 				%else:
 					não
 				%end
 			</td>
 			<td>
-				<a href="/admin/edit-user/{{user['username']}}">editar</a> 
-				%if ctx.username != user['username']:
-					<a href="/admin/remove-user/{{user['username']}}">excluir</a>
-					<a href="/admin/force-new-password/{{user['username']}}">forçar nova senha</a>
+				<a href="/admin/edit-user/{{user.username}}">editar</a>
+				%if ctx.username != user.username:
+					<a href="/admin/remove-user/{{user.username}}">excluir</a>
+					<a href="/admin/force-new-password/{{user.username}}">forçar nova senha</a>
 					%if user['is_admin']:
-						<a href="/admin/change-user-admin-status/{{user['username']}}/0">retirar admin</a>
+						<a href="/admin/change-user-admin-status/{{user.username}}/0">retirar admin</a>
 					%else:
-						<a href="/admin/change-user-admin-status/{{user['username']}}/1">tornar admin</a>
+						<a href="/admin/change-user-admin-status/{{user.username}}/1">tornar admin</a>
 					%end
 				%end
 			</td>
