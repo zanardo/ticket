@@ -5,7 +5,7 @@ from bottle import get, post, redirect, request, view
 
 import ticket.db
 import ticket.user
-from ticket.admin import all_users
+from ticket.admin import all_users, user_remove
 from ticket.context import TemplateContext
 from ticket.log import log
 
@@ -32,14 +32,7 @@ def removeuser(username):
     """
     if username == ticket.user.current_user():
         return "não é possível remover usuário corrente"
-    with ticket.db.db_trans() as c:
-        c.execute(
-            """
-            delete from users
-            where username = :username
-        """,
-            {"username": username},
-        )
+    user_remove(username)
     return redirect("/admin")
 
 

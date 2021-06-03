@@ -29,3 +29,17 @@ def all_users() -> list[User]:
                 )
             )
     return users
+
+
+def user_remove(username: str):
+    """
+    Remove um usuário.
+    """
+    with db.db_trans() as c:
+        c.execute(
+            """
+            delete from users
+            where username = :username
+            """,
+            {"username": username},
+        )
