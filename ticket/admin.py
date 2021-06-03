@@ -136,3 +136,25 @@ def user_password_save(username: str, password: str):
             """,
             {"password": password, "username": username},
         )
+
+
+def recreate_fts():
+    """
+    Recria os índices full-text-search do SQLite. Bom quando-se altera algum
+    texto diretamente no banco de dados.
+    """
+    with db.db_trans() as c:
+        c.execute(
+            """
+            delete from search
+            """
+        )
+        c.execute(
+            """
+            select id
+            from tickets
+            order by id
+            """
+        )
+        for r in c:
+            db.populate_search(r["id"])

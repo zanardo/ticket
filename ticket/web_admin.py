@@ -6,6 +6,7 @@ import ticket.db
 import ticket.user
 from ticket.admin import (
     all_users,
+    recreate_fts,
     user,
     user_new,
     user_password_save,
@@ -13,7 +14,6 @@ from ticket.admin import (
     user_save,
 )
 from ticket.context import TemplateContext
-from ticket.log import log
 from ticket.models import User
 
 
@@ -136,22 +136,5 @@ def reindexfts():
     """
     Recria o índice de Full Text Search.
     """
-    with ticket.db.db_trans() as c:
-        log.info("limpando índices")
-        c.execute(
-            """
-            delete from search
-        """
-        )
-        log.info("iniciando recriação dos índices")
-        c.execute(
-            """
-            select id
-            from tickets
-            order by id
-        """
-        )
-        for r in c:
-            log.debug("reindexando ticket #%s", r["id"])
-            ticket.db.populate_search(r["id"])
+    recreate_fts()
     return "índices de full text search recriados!"
