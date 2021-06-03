@@ -121,3 +121,19 @@ def user_new(user: User, password: str):
                 "is_admin": user.is_admin,
             },
         )
+
+
+def user_password_save(username: str, password: str):
+    """
+    Salva uma nova senha para um usuário.
+    """
+    password = sha1(password.encode("UTF-8")).hexdigest()
+    with db.db_trans() as c:
+        c.execute(
+            """
+            update users
+            set password = :password
+            where username = :username
+            """,
+            {"password": password, "username": username},
+        )

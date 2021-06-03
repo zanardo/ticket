@@ -1,11 +1,17 @@
 import random
-from hashlib import sha1
 
 from bottle import get, post, redirect, request, view
 
 import ticket.db
 import ticket.user
-from ticket.admin import all_users, user, user_new, user_remove, user_save
+from ticket.admin import (
+    all_users,
+    user,
+    user_new,
+    user_password_save,
+    user_remove,
+    user_save,
+)
 from ticket.context import TemplateContext
 from ticket.log import log
 from ticket.models import User
@@ -97,18 +103,9 @@ def forceuserpassword(username):
     Reseta senha de um usuário.
     """
     password = str(int(random.random() * 999999))
-    sha1password = sha1(password).hexdigest()
     if username == ticket.user.current_user():
         return "não é possível forçar nova senha de usuário corrente"
-    with ticket.db.db_trans() as c:
-        c.execute(
-            """
-            update users
-            set password = :sha1password
-            where username = :username
-        """,
-            {"sha1password": sha1password, "username": username},
-        )
+    user_password_save(username, password)
     return "usuário %s teve nova senha forçada: %s" % (username, password)
 
 
