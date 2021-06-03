@@ -1,3 +1,5 @@
+from hashlib import sha1
+
 from ticket import db
 from ticket.models import User
 
@@ -90,5 +92,32 @@ def user_save(user: User):
                 "email": user.email,
                 "is_admin": user.is_admin,
                 "username": user.username,
+            },
+        )
+
+
+def user_new(user: User, password: str):
+    """
+    Salva um novo usuário.
+    """
+    password = sha1(password.encode("UTF-8")).hexdigest()
+    with db.db_trans() as c:
+        c.execute(
+            """
+            insert into users (
+                username,
+                password,
+                is_admin
+            )
+            values (
+                :username,
+                :password,
+                0
+            )
+            """,
+            {
+                "username": user.username,
+                "password": password,
+                "is_admin": user.is_admin,
             },
         )

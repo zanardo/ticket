@@ -5,9 +5,10 @@ from bottle import get, post, redirect, request, view
 
 import ticket.db
 import ticket.user
-from ticket.admin import all_users, user, user_remove, user_save
+from ticket.admin import all_users, user, user_new, user_remove, user_save
 from ticket.context import TemplateContext
 from ticket.log import log
+from ticket.models import User
 
 
 @get("/admin")
@@ -79,24 +80,12 @@ def newuser():
     username = request.forms.get("username")
     if username.strip() == "":
         return "usuário inválido"
+    user_data = User(username=username, is_admin=False, name=None, email=None)
     password = str(int(random.random() * 999999))
-    sha1password = sha1(password.encode("UTF-8")).hexdigest()
-    with ticket.db.db_trans() as c:
-        c.execute(
-            """
-            insert into users (
-                username,
-                password,
-                is_admin
-            )
-            values (
-                :username,
-                :sha1password,
-                0
-            )
-        """,
-            {"username": username, "sha1password": sha1password},
-        )
+    user_new(
+        user=user_data,
+        password=password,
+    )
     return "usuário %s criado com senha %s" % (username, password)
 
 
