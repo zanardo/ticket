@@ -5,7 +5,7 @@ from bottle import get, post, redirect, request, view
 
 import ticket.db
 import ticket.user
-from ticket.admin import all_users, user_remove
+from ticket.admin import all_users, user, user_remove
 from ticket.context import TemplateContext
 from ticket.log import log
 
@@ -45,26 +45,11 @@ def edituser(username):
     Exibe tela de edição de usuários.
     """
     ctx = TemplateContext()
+    user_data = user(username)
     ctx.user = username
-    c = ticket.db.get_cursor()
-    c.execute(
-        """
-        select name,
-            email
-        from users
-        where username = :username
-    """,
-        {"username": username},
-    )
-    r = c.fetchone()
-    ctx.name = ""
-    ctx.email = ""
-    if not r:
-        return "usuário %s não encontrado!" % username
-    else:
-        ctx.name = r["name"] or ""
-        ctx.email = r["email"] or ""
-        return dict(ctx=ctx)
+    ctx.name = user_data.name or ""
+    ctx.email = user_data.email or ""
+    return dict(ctx=ctx)
 
 
 @post("/admin/edit-user/:username")

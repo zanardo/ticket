@@ -43,3 +43,30 @@ def user_remove(username: str):
             """,
             {"username": username},
         )
+
+
+def user(username: str) -> User:
+    """
+    Retorna os dados de um usuário específico.
+    """
+    with db.db_trans() as c:
+        c.execute(
+            """
+            select username,
+                is_admin,
+                name,
+                email
+            from users
+            where username = :username
+            """,
+            {"username": username},
+        )
+        row = c.fetchone()
+        if not row:
+            raise ValueError(f"usuário {username} não encontrado!")
+        return User(
+            username=row["username"],
+            is_admin=row["is_admin"],
+            name=row["name"],
+            email=row["email"],
+        )
