@@ -119,15 +119,13 @@ def changeuseradminstatus(username, status):
     if username == ticket.user.current_user():
         return "não é possível alterar status de admin para usuário corrente"
     assert status in ("0", "1")
-    with ticket.db.db_trans() as c:
-        c.execute(
-            """
-            update users
-            set is_admin = :status
-            where username = :username
-        """,
-            {"status": status, "username": username},
-        )
+    if status == "1":
+        admin = True
+    else:
+        admin = False
+    user_data = user(username)
+    user_data.is_admin = admin
+    user_save(user_data)
     return redirect("/admin")
 
 
