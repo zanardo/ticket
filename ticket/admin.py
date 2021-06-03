@@ -1,7 +1,6 @@
-from hashlib import sha1
-
 from ticket import db
 from ticket.models import User
+from ticket.utils import hash_password
 
 
 def all_users() -> list[User]:
@@ -100,7 +99,7 @@ def user_new(user: User, password: str):
     """
     Salva um novo usuário.
     """
-    password = sha1(password.encode("UTF-8")).hexdigest()
+    password = hash_password(password)
     with db.db_trans() as c:
         c.execute(
             """
@@ -127,7 +126,7 @@ def user_password_save(username: str, password: str):
     """
     Salva uma nova senha para um usuário.
     """
-    password = sha1(password.encode("UTF-8")).hexdigest()
+    password = hash_password(password)
     with db.db_trans() as c:
         c.execute(
             """
