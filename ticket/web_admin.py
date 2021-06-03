@@ -5,7 +5,7 @@ from bottle import get, post, redirect, request, view
 
 import ticket.db
 import ticket.user
-from ticket.admin import all_users, user, user_remove
+from ticket.admin import all_users, user, user_remove, user_save
 from ticket.context import TemplateContext
 from ticket.log import log
 
@@ -61,18 +61,10 @@ def editusersave(username):
     """
     assert "name" in request.forms
     assert "email" in request.forms
-    name = request.forms.get("name").strip()
-    email = request.forms.get("email").strip()
-    with ticket.db.db_trans() as c:
-        c.execute(
-            """
-            update users
-            set name=:name,
-                email=:email
-            where username=:username
-        """,
-            {"name": name, "email": email, "username": username},
-        )
+    user_data = user(username)
+    user_data.name = request.forms.get("name").strip()
+    user_data.email = request.forms.get("email").strip()
+    user_save(user_data)
     return redirect("/admin")
 
 

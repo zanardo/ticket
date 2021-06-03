@@ -70,3 +70,25 @@ def user(username: str) -> User:
             name=row["name"],
             email=row["email"],
         )
+
+
+def user_save(user: User):
+    """
+    Salva os dados de um usuário.
+    """
+    with db.db_trans() as c:
+        c.execute(
+            """
+            update users
+            set name = :name
+                , email = :email
+                , is_admin = :is_admin
+            where username = :username
+            """,
+            {
+                "name": user.name,
+                "email": user.email,
+                "is_admin": user.is_admin,
+                "username": user.username,
+            },
+        )
