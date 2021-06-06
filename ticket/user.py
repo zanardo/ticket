@@ -1,5 +1,4 @@
 from functools import wraps
-from hashlib import sha1
 from typing import Dict
 from uuid import uuid4
 
