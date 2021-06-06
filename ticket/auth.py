@@ -4,7 +4,8 @@ from uuid import uuid4
 
 from bottle import redirect, request
 
-import ticket.db
+import ticket.auth
+from ticket import db
 from ticket.utils import hash_password
 
 
@@ -53,7 +54,7 @@ def validate_user_db(user: str, passwd: str) -> bool:
     """
     Valida usuário e senha no banco de dados.
     """
-    c = ticket.db.get_cursor()
+    c = db.get_cursor()
     c.execute(
         """
         select username
@@ -71,7 +72,7 @@ def validate_session(session_id: str) -> bool:
     """
     Valida sessão ativa no banco de dados.
     """
-    c = ticket.db.get_cursor()
+    c = db.get_cursor()
     c.execute(
         """
         select session_id
@@ -88,7 +89,7 @@ def user_ident(username: str) -> Dict[str, str]:
     """
     Retorna o nome e e-mail de usuário.
     """
-    c = ticket.db.get_cursor()
+    c = db.get_cursor()
     c.execute(
         """
         select name,
@@ -106,7 +107,7 @@ def current_user() -> str:
     Retorna o usuário corrente.
     """
     session_id = request.get_cookie(ticket.auth.cookie_session_name())
-    c = ticket.db.get_cursor()
+    c = db.get_cursor()
     c.execute(
         """
         select username
@@ -122,7 +123,7 @@ def user_admin(username: str) -> bool:
     """
     Checa se usuário tem poderes administrativos.
     """
-    c = ticket.db.get_cursor()
+    c = db.get_cursor()
     c.execute(
         """
         select is_admin
@@ -138,7 +139,7 @@ def remove_session(session_id: str) -> None:
     """
     Remove uma sessão do banco de dados.
     """
-    with ticket.db.db_trans() as c:
+    with db.db_trans() as c:
         c.execute(
             """
             delete from sessions
@@ -152,7 +153,7 @@ def make_session(user: str) -> str:
     """
     Cria uma nova sessão no banco de dados.
     """
-    with ticket.db.db_trans() as c:
+    with db.db_trans() as c:
         session_id = str(uuid4())
         c.execute(
             """
@@ -174,7 +175,7 @@ def expire_old_sessions():
     """
     Expira sessões mais antigas que 7 dias.
     """
-    with ticket.db.db_trans() as c:
+    with db.db_trans() as c:
         c.execute(
             """
             delete from sessions
@@ -187,7 +188,7 @@ def change_password(user: str, password: str) -> None:
     """
     Altera a senha de um usuário.
     """
-    with ticket.db.db_trans() as c:
+    with db.db_trans() as c:
         c.execute(
             """
             update users

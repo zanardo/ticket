@@ -3,7 +3,6 @@ import random
 from bottle import get, post, redirect, request, view
 
 import ticket.auth
-import ticket.db
 from ticket.admin import (
     all_users,
     recreate_fts,

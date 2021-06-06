@@ -1,7 +1,6 @@
 from bottle import get, post, redirect, request, response, view
 
 import ticket.auth
-import ticket.db
 from ticket import __version__
 from ticket.context import TemplateContext
 
