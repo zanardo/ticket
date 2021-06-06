@@ -6,6 +6,7 @@ from uuid import uuid4
 from bottle import redirect, request
 
 import ticket.db
+from ticket.utils import hash_password
 
 
 def requires_auth(f):
@@ -53,7 +54,6 @@ def validate_user_db(user, passwd) -> bool:
     """
     Valida usuário e senha no banco de dados.
     """
-    passwdsha1 = sha1(passwd.encode("UTF-8")).hexdigest()
     c = ticket.db.get_cursor()
     c.execute(
         """
@@ -62,7 +62,7 @@ def validate_user_db(user, passwd) -> bool:
         where username = :user
             and password = :passwdsha1
         """,
-        {"user": user, "passwdsha1": passwdsha1},
+        {"user": user, "passwdsha1": hash_password(passwd)},
     )
     r = c.fetchone()
     return bool(r)
@@ -188,7 +188,6 @@ def change_password(user: str, password: str) -> None:
     """
     Altera a senha de um usuário.
     """
-    passwd_sha1 = sha1(password.encode("UTF-8")).hexdigest()
     with ticket.db.db_trans() as c:
         c.execute(
             """
@@ -196,5 +195,5 @@ def change_password(user: str, password: str) -> None:
             set password = :passwd_sha1
             where username = :user
         """,
-            {"passwd_sha1": passwd_sha1, "user": user},
+            {"passwd_sha1": hash_password(password), "user": user},
         )
