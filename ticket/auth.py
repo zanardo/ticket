@@ -49,7 +49,7 @@ def cookie_session_name() -> str:
     return "ticket_session"
 
 
-def validate_user_db(user, passwd) -> bool:
+def validate_user_db(user: str, passwd: str) -> bool:
     """
     Valida usuário e senha no banco de dados.
     """
@@ -67,7 +67,7 @@ def validate_user_db(user, passwd) -> bool:
     return bool(r)
 
 
-def validate_session(session_id) -> bool:
+def validate_session(session_id: str) -> bool:
     """
     Valida sessão ativa no banco de dados.
     """
@@ -84,7 +84,7 @@ def validate_session(session_id) -> bool:
     return bool(r)
 
 
-def user_ident(username) -> Dict[str, str]:
+def user_ident(username: str) -> Dict[str, str]:
     """
     Retorna o nome e e-mail de usuário.
     """
@@ -118,7 +118,7 @@ def current_user() -> str:
     return c.fetchone()["username"]
 
 
-def user_admin(username) -> bool:
+def user_admin(username: str) -> bool:
     """
     Checa se usuário tem poderes administrativos.
     """
@@ -134,7 +134,7 @@ def user_admin(username) -> bool:
     return c.fetchone()["is_admin"]
 
 
-def remove_session(session_id) -> None:
+def remove_session(session_id: str) -> None:
     """
     Remove uma sessão do banco de dados.
     """
@@ -148,7 +148,7 @@ def remove_session(session_id) -> None:
         )
 
 
-def make_session(user) -> str:
+def make_session(user: str) -> str:
     """
     Cria uma nova sessão no banco de dados.
     """
@@ -170,7 +170,7 @@ def make_session(user) -> str:
     return session_id
 
 
-def expire_old_sessions() -> None:
+def expire_old_sessions():
     """
     Expira sessões mais antigas que 7 dias.
     """
