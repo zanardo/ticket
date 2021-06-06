@@ -8,11 +8,19 @@ from bottle import get, post, redirect, request, response, route, view
 import ticket
 import ticket.auth
 import ticket.mail
-import ticket.tickets
 from ticket import db
 from ticket.config import cfg
 from ticket.context import TemplateContext
 from ticket.log import log
+
+from .tickets import (
+    sanitizecomment,
+    tags_desc,
+    ticketblocks,
+    ticketdepends,
+    tickettags,
+    tickettitle,
+)
 
 
 @route("/")
@@ -204,13 +212,13 @@ def index():
     tickets = []
     for t in c:
         ticketdict = dict(t)
-        ticketdict["tags"] = ticket.tickets.tickettags(t["id"])
+        ticketdict["tags"] = tickettags(t["id"])
         tickets.append(ticketdict)
 
     ctx.tickets = tickets
     ctx.filter = filter
     ctx.orderdate = orderdate
-    ctx.tags_desc = ticket.tickets.tags_desc()
+    ctx.tags_desc = tags_desc()
 
     return dict(ctx=ctx)
 
@@ -318,7 +326,7 @@ def showticket(ticket_id):
     )
     for r in c:
         reg = dict(r)
-        reg["comment"] = ticket.tickets.sanitizecomment(reg["comment"])
+        reg["comment"] = sanitizecomment(reg["comment"])
         reg["type"] = "comments"
         ctx.comments.append(reg)
 
@@ -378,11 +386,11 @@ def showticket(ticket_id):
         ctx.timetrack.append(dict(r))
 
     # Obtém palavras-chave
-    ctx.tags = ticket.tickets.tickettags(ticket_id)
+    ctx.tags = tickettags(ticket_id)
 
     # Obtém dependências
-    ctx.blocks = ticket.tickets.ticketblocks(ticket_id)
-    ctx.depends = ticket.tickets.ticketdepends(ticket_id)
+    ctx.blocks = ticketblocks(ticket_id)
+    ctx.depends = ticketdepends(ticket_id)
 
     ctx.user = ticket.auth.user_ident(ctx.username)
 
@@ -616,7 +624,7 @@ def changedependencies(ticket_id):
             if c.fetchone()[0] == 0:
                 return "ticket %s não existe" % dep
         # Valida dependência circular
-        if ticket_id in ticket.tickets.ticketblocks(dep):
+        if ticket_id in ticketblocks(dep):
             return "dependência circular: %s" % dep
     with db.db_trans() as c:
         c.execute(
@@ -731,7 +739,7 @@ def newnote(ticket_id):
     user = ticket.auth.user_ident(username)
 
     if len(contacts) > 0 and user["name"] and user["email"]:
-        title = ticket.tickets.tickettitle(ticket_id)
+        title = tickettitle(ticket_id)
         subject = "#%s - %s" % (ticket_id, title)
         body = """
 [%s] (%s):
