@@ -11,9 +11,8 @@ from ticket import db
 from ticket.config import cfg
 from ticket.context import TemplateContext
 from ticket.log import log
-
-from .mail import sendmail
-from .tickets import (
+from ticket.mail import sendmail
+from ticket.tickets import (
     sanitizecomment,
     tags_desc,
     ticketblocks,
