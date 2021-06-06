@@ -2,7 +2,6 @@ import random
 
 from bottle import get, post, redirect, request, view
 
-import ticket.auth
 from ticket.admin import (
     all_users,
     recreate_fts,
@@ -12,14 +11,15 @@ from ticket.admin import (
     user_remove,
     user_save,
 )
+from ticket.auth import current_user, requires_admin, requires_auth
 from ticket.context import TemplateContext
 from ticket.models import User
 
 
 @get("/admin")
 @view("admin")
-@ticket.auth.requires_auth
-@ticket.auth.requires_admin
+@requires_auth
+@requires_admin
 def admin():
     """
     Tela de administração.
@@ -30,13 +30,13 @@ def admin():
 
 
 @get("/admin/remove-user/:username")
-@ticket.auth.requires_auth
-@ticket.auth.requires_admin
+@requires_auth
+@requires_admin
 def removeuser(username):
     """
     Apaga um usuário.
     """
-    if username == ticket.auth.current_user():
+    if username == current_user():
         return "não é possível remover usuário corrente"
     user_remove(username)
     return redirect("/admin")
@@ -44,8 +44,8 @@ def removeuser(username):
 
 @get("/admin/edit-user/:username")
 @view("edit-user")
-@ticket.auth.requires_auth
-@ticket.auth.requires_admin
+@requires_auth
+@requires_admin
 def edituser(username):
     """
     Exibe tela de edição de usuários.
@@ -59,8 +59,8 @@ def edituser(username):
 
 
 @post("/admin/edit-user/:username")
-@ticket.auth.requires_auth
-@ticket.auth.requires_admin
+@requires_auth
+@requires_admin
 def editusersave(username):
     """
     Salva os dados de um usuário editado.
@@ -75,8 +75,8 @@ def editusersave(username):
 
 
 @post("/admin/save-new-user")
-@ticket.auth.requires_auth
-@ticket.auth.requires_admin
+@requires_auth
+@requires_admin
 def newuser():
     """
     Cria um novo usuário.
@@ -95,27 +95,27 @@ def newuser():
 
 
 @get("/admin/force-new-password/:username")
-@ticket.auth.requires_auth
-@ticket.auth.requires_admin
+@requires_auth
+@requires_admin
 def forceuserpassword(username):
     """
     Reseta senha de um usuário.
     """
     password = str(int(random.random() * 999999))
-    if username == ticket.auth.current_user():
+    if username == current_user():
         return "não é possível forçar nova senha de usuário corrente"
     user_password_save(username, password)
     return "usuário %s teve nova senha forçada: %s" % (username, password)
 
 
 @get("/admin/change-user-admin-status/:username/:status")
-@ticket.auth.requires_auth
-@ticket.auth.requires_admin
+@requires_auth
+@requires_admin
 def changeuseradminstatus(username, status):
     """
     Altera status de administrador de um usuário.
     """
-    if username == ticket.auth.current_user():
+    if username == current_user():
         return "não é possível alterar status de admin para usuário corrente"
     assert status in ("0", "1")
     if status == "1":
@@ -129,8 +129,8 @@ def changeuseradminstatus(username, status):
 
 
 @get("/admin/reindex-fts")
-@ticket.auth.requires_auth
-@ticket.auth.requires_admin
+@requires_auth
+@requires_admin
 def reindexfts():
     """
     Recria o índice de Full Text Search.
