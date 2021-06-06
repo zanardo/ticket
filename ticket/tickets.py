@@ -1,7 +1,7 @@
 import re
 from typing import Dict, List
 
-from ticket import db
+from ticket.db import get_cursor
 
 
 def tags_desc() -> Dict[str, Dict[str, str]]:
@@ -9,7 +9,7 @@ def tags_desc() -> Dict[str, Dict[str, str]]:
     Retorna as descrições de tags.
     """
     tagdesc = {}
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(
         """
         select tag,
@@ -33,7 +33,7 @@ def ticket_blocks(ticket_id) -> Dict[str, Dict[str, str]]:
     Retorna quais ticket são bloqueados por um ticket.
     """
     deps = {}
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(
         """
         select d.blocks,
@@ -57,7 +57,7 @@ def ticket_depends(ticket_id) -> Dict[str, Dict[str, str]]:
     Retorna quais ticket dependem de um ticket.
     """
     deps = {}
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(
         """
         select d.ticket_id,
@@ -80,7 +80,7 @@ def ticket_tags(ticket_id) -> List[str]:
     """
     Retorna tags de um ticket.
     """
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(
         """
         select tag
@@ -96,7 +96,7 @@ def ticket_title(ticket_id) -> str:
     """
     Retorna o título de um ticket.
     """
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(
         """
         select title

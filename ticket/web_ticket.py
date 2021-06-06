@@ -5,7 +5,6 @@ import zlib
 
 from bottle import get, post, redirect, request, response, route, view
 
-from ticket import db
 from ticket.auth import (
     current_user,
     requires_admin,
@@ -15,6 +14,7 @@ from ticket.auth import (
 )
 from ticket.config import cfg
 from ticket.context import TemplateContext
+from ticket.db import db_trans, get_cursor, get_db, populate_search
 from ticket.log import log
 from ticket.mail import send_mail
 from ticket.tickets import (
@@ -211,7 +211,7 @@ def index():
     if limit:
         sql += "%s " % limit
 
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(sql, sqlparams)
     tickets = []
     for t in c:
@@ -248,7 +248,7 @@ def newticketpost():
     if title == "":
         return "erro: título inválido"
     username = current_user()
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             insert into tickets (
@@ -263,7 +263,7 @@ def newticketpost():
             {"title": title, "username": username},
         )
         ticket_id = c.lastrowid
-        db.populate_search(ticket_id)
+        populate_search(ticket_id)
     return redirect("/ticket/%s" % ticket_id)
 
 
@@ -274,7 +274,7 @@ def showticket(ticket_id):
     """
     Exibe detalhes de um ticket.
     """
-    c = db.get_cursor()
+    c = get_cursor()
     # Obtém dados do ticket
 
     ctx = TemplateContext()
@@ -398,7 +398,7 @@ def showticket(ticket_id):
 
     ctx.user = user_ident(ctx.username)
 
-    db.get_db().commit()
+    get_db().commit()
 
     # Renderiza template
     return dict(ctx=ctx)
@@ -413,7 +413,7 @@ def getfile(id, name):
     mime = mimetypes.guess_type(name)[0]
     if mime is None:
         mime = "application/octet-stream"
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(
         """
         select files.ticket_id as ticket_id,
@@ -444,7 +444,7 @@ def closeticket(ticket_id):
     """
     # Verifica se existem tickets que bloqueiam este
     # ticket que ainda estão abertos.
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(
         """
         select d.ticket_id as ticket_id
@@ -464,7 +464,7 @@ def closeticket(ticket_id):
         )
 
     username = current_user()
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             update tickets
@@ -504,7 +504,7 @@ def changetitle(ticket_id):
     title = request.forms.get("text").strip()
     if title == "":
         return "erro: título inválido"
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             update tickets
@@ -513,7 +513,7 @@ def changetitle(ticket_id):
         """,
             {"title": title, "ticket_id": ticket_id},
         )
-        db.populate_search(ticket_id)
+        populate_search(ticket_id)
     return redirect("/ticket/%s" % ticket_id)
 
 
@@ -537,7 +537,7 @@ def changedatedue(ticket_id):
         datedue += " 23:59:59"
     else:
         datedue = None
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             update tickets
@@ -557,7 +557,7 @@ def changeadminonly(ticket_id, toggle):
     Tornar ticket somente visível para administradores.
     """
     assert toggle in ("0", "1")
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             update tickets
@@ -577,7 +577,7 @@ def changetags(ticket_id):
     """
     assert "text" in request.forms
     tags = list(set(request.forms.get("text").strip().split()))
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             delete from tags
@@ -620,14 +620,14 @@ def changedependencies(ticket_id):
         if dep == ticket_id:
             return "ticket não pode bloquear ele mesmo"
         # Valida se ticket existe
-        with db.db_trans() as c:
+        with db_trans() as c:
             c.execute("SELECT count(*) FROM tickets WHERE id=:dep", locals())
             if c.fetchone()[0] == 0:
                 return "ticket %s não existe" % dep
         # Valida dependência circular
         if ticket_id in ticket_blocks(dep):
             return "dependência circular: %s" % dep
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             delete from dependencies
@@ -665,7 +665,7 @@ def registerminutes(ticket_id):
     if minutes <= 0.0:
         return "tempo inválido"
     username = current_user()
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             insert into timetrack (
@@ -711,7 +711,7 @@ def newnote(ticket_id):
         note += " [Notificação enviada para: %s]" % (", ".join(contacts))
 
     username = current_user()
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             insert into comments (
@@ -735,7 +735,7 @@ def newnote(ticket_id):
         """,
             {"ticket_id": ticket_id},
         )
-        db.populate_search(ticket_id)
+        populate_search(ticket_id)
 
     user = user_ident(username)
 
@@ -768,7 +768,7 @@ def reopenticket(ticket_id):
     """
     # Verifica se existem tickets bloqueados por este ticket
     # que estão fechados.
-    c = db.get_cursor()
+    c = get_cursor()
     c.execute(
         """
         select d.blocks as blocks
@@ -787,7 +787,7 @@ def reopenticket(ticket_id):
             + "e estão fechados: %s" % " ".join([str(x) for x in blocks])
         )
     username = current_user()
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             update tickets
@@ -825,7 +825,7 @@ def changepriority(ticket_id):
     assert "prio" in request.forms
     assert re.match(r"^[1-5]$", request.forms.get("prio"))
     priority = int(request.forms.get("prio"))
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             update tickets
@@ -861,7 +861,7 @@ def uploadfile(ticket_id):
     log.debug(type(blob))
     blob = zlib.compress(blob)
     username = current_user()
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             insert into files (

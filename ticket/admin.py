@@ -1,4 +1,4 @@
-from ticket import db
+from ticket.db import db_trans, populate_search
 from ticket.models import User
 from ticket.utils import hash_password
 
@@ -9,7 +9,7 @@ def all_users() -> list[User]:
     administração.
     """
     users: list[User] = []
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             select username,
@@ -36,7 +36,7 @@ def user_remove(username: str):
     """
     Remove um usuário.
     """
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             delete from users
@@ -50,7 +50,7 @@ def user(username: str) -> User:
     """
     Retorna os dados de um usuário específico.
     """
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             select username,
@@ -77,7 +77,7 @@ def user_save(user: User):
     """
     Salva os dados de um usuário.
     """
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             update users
@@ -100,7 +100,7 @@ def user_new(user: User, password: str):
     Salva um novo usuário.
     """
     password = hash_password(password)
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             insert into users (
@@ -127,7 +127,7 @@ def user_password_save(username: str, password: str):
     Salva uma nova senha para um usuário.
     """
     password = hash_password(password)
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             update users
@@ -143,7 +143,7 @@ def recreate_fts():
     Recria os índices full-text-search do SQLite. Bom quando-se altera algum
     texto diretamente no banco de dados.
     """
-    with db.db_trans() as c:
+    with db_trans() as c:
         c.execute(
             """
             delete from search
@@ -157,4 +157,4 @@ def recreate_fts():
             """
         )
         for r in c:
-            db.populate_search(r["id"])
+            populate_search(r["id"])
