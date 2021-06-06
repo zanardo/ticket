@@ -1,7 +1,15 @@
 from bottle import get, post, redirect, request, response, view
 
-import ticket.auth
 from ticket import __version__
+from ticket.auth import (
+    cookie_session_name,
+    current_user,
+    expire_old_sessions,
+    make_session,
+    remove_session,
+    requires_auth,
+    validate_user_db,
+)
 from ticket.context import TemplateContext
 
 
@@ -23,9 +31,9 @@ def validate_login():
     assert "passwd" in request.forms
     user = request.forms.get("user")
     passwd = request.forms.get("passwd")
-    if ticket.auth.validate_user_db(user, passwd):
-        session_id = ticket.auth.make_session(user)
-        response.set_cookie(ticket.auth.cookie_session_name(), session_id)
+    if validate_user_db(user, passwd):
+        session_id = make_session(user)
+        response.set_cookie(cookie_session_name(), session_id)
         return redirect("/")
     else:
         return "usuário ou senha inválidos"
@@ -36,16 +44,16 @@ def logout():
     """
     Logout do usuário - remove sessão ativa.
     """
-    session_id = request.get_cookie(ticket.auth.cookie_session_name())
+    session_id = request.get_cookie(cookie_session_name())
     if session_id:
-        ticket.auth.remove_session(session_id)
-        response.delete_cookie(ticket.auth.cookie_session_name())
-        ticket.auth.expire_old_sessions()
+        remove_session(session_id)
+        response.delete_cookie(cookie_session_name())
+        expire_old_sessions()
     return redirect("/login")
 
 
 @get("/change-password")
-@ticket.auth.requires_auth
+@requires_auth
 @view("change-password")
 def change_password():
     """
@@ -55,7 +63,7 @@ def change_password():
 
 
 @post("/change-password")
-@ticket.auth.requires_auth
+@requires_auth
 def change_password_save():
     """
     Altera a senha do usuário.
@@ -66,12 +74,12 @@ def change_password_save():
     oldpasswd = request.forms.get("oldpasswd")
     newpasswd = request.forms.get("newpasswd")
     newpasswd2 = request.forms.get("newpasswd2")
-    username = ticket.auth.current_user()
-    if not ticket.auth.validate_user_db(username, oldpasswd):
+    username = current_user()
+    if not validate_user_db(username, oldpasswd):
         return "senha atual inválida!"
     if newpasswd.strip() == "" or newpasswd2.strip() == "":
         return "nova senha inválida!"
     if newpasswd != newpasswd2:
         return "confirmação de nova senha diferente de nova senha!"
-    ticket.auth.change_password(username, newpasswd)
+    change_password(username, newpasswd)
     return redirect("/")
