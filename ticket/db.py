@@ -4,7 +4,6 @@ from contextlib import contextmanager
 
 from bottle import local
 
-import ticket.tickets
 from ticket.config import cfg
 
 
@@ -52,7 +51,17 @@ def populate_search(ticket_id: int):
     """
     text = ""
     c = get_cursor()  # Utiliza transação do caller
-    text += " " + ticket.tickets.ticket_title(ticket_id) + " "
+    c.execute(
+        """
+        select title
+        from tickets
+        where id = :ticket_id
+        """,
+        {"ticket_id": ticket_id},
+    )
+    title = c.fetchone()[0]
+
+    text += " " + title + " "
     c.execute(
         """
         select comment
