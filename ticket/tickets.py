@@ -2,7 +2,6 @@ import re
 from typing import Dict, List
 
 import ticket.db
-import ticket.user
 
 
 def tags_desc() -> Dict[str, Dict[str, str]]:

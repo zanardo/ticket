@@ -6,10 +6,10 @@ import zlib
 from bottle import get, post, redirect, request, response, route, view
 
 import ticket
+import ticket.auth
 import ticket.db
 import ticket.mail
 import ticket.tickets
-import ticket.user
 from ticket.config import cfg
 from ticket.context import TemplateContext
 from ticket.log import log
@@ -17,7 +17,7 @@ from ticket.log import log
 
 @route("/")
 @view("list-tickets")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def index():
     """
     Lista tickets utilizando critérios de um filtro.
@@ -217,7 +217,7 @@ def index():
 
 @get("/ticket/new")
 @view("ticket-new")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def newticket():
     """
     Tela de novo ticket.
@@ -226,7 +226,7 @@ def newticket():
 
 
 @post("/ticket/new")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def newticketpost():
     """
     Salva um novo ticket.
@@ -235,7 +235,7 @@ def newticketpost():
     title = request.forms.get("title").strip()
     if title == "":
         return "erro: título inválido"
-    username = ticket.user.current_user()
+    username = ticket.auth.current_user()
     with ticket.db.db_trans() as c:
         c.execute(
             """
@@ -257,7 +257,7 @@ def newticketpost():
 
 @get("/ticket/<ticket_id:int>")
 @view("ticket")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def showticket(ticket_id):
     """
     Exibe detalhes de um ticket.
@@ -384,7 +384,7 @@ def showticket(ticket_id):
     ctx.blocks = ticket.tickets.ticketblocks(ticket_id)
     ctx.depends = ticket.tickets.ticketdepends(ticket_id)
 
-    ctx.user = ticket.user.user_ident(ctx.username)
+    ctx.user = ticket.auth.user_ident(ctx.username)
 
     ticket.db.get_db().commit()
 
@@ -393,7 +393,7 @@ def showticket(ticket_id):
 
 
 @get("/ticket/file/<id:int>/:name")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def getfile(id, name):
     """
     Retorna um arquivo em anexo.
@@ -418,7 +418,7 @@ def getfile(id, name):
     row = c.fetchone()
     blob = zlib.decompress(row["contents"])
     if (
-        not ticket.user.user_admin(ticket.user.current_user())
+        not ticket.auth.user_admin(ticket.auth.current_user())
         and row["admin_only"] == 1
     ):
         return "você não tem permissão para acessar este recurso!"
@@ -428,7 +428,7 @@ def getfile(id, name):
 
 
 @post("/ticket/<ticket_id:int>/close")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def closeticket(ticket_id):
     """
     Fecha um ticket.
@@ -454,7 +454,7 @@ def closeticket(ticket_id):
             + "estão em aberto: %s" % " ".join([str(x) for x in blocks])
         )
 
-    username = ticket.user.current_user()
+    username = ticket.auth.current_user()
     with ticket.db.db_trans() as c:
         c.execute(
             """
@@ -486,7 +486,7 @@ def closeticket(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/title")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def changetitle(ticket_id):
     """
     Altera título de um ticket.
@@ -509,7 +509,7 @@ def changetitle(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/datedue")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def changedatedue(ticket_id):
     """
     Altera data de previsão de solução de um ticket.
@@ -541,8 +541,8 @@ def changedatedue(ticket_id):
 
 
 @get("/ticket/<ticket_id:int>/admin-only/:toggle")
-@ticket.user.requires_auth
-@ticket.user.requires_admin
+@ticket.auth.requires_auth
+@ticket.auth.requires_admin
 def changeadminonly(ticket_id, toggle):
     """
     Tornar ticket somente visível para administradores.
@@ -561,7 +561,7 @@ def changeadminonly(ticket_id, toggle):
 
 
 @post("/ticket/<ticket_id:int>/tags")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def changetags(ticket_id):
     """
     Altera tags de um ticket.
@@ -593,7 +593,7 @@ def changetags(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/dependencies")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def changedependencies(ticket_id):
     """
     Altera dependências de um ticket.
@@ -644,7 +644,7 @@ def changedependencies(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/minutes")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def registerminutes(ticket_id):
     """
     Registra tempo trabalhado em um ticket.
@@ -655,7 +655,7 @@ def registerminutes(ticket_id):
     minutes = float(request.forms.get("minutes"))
     if minutes <= 0.0:
         return "tempo inválido"
-    username = ticket.user.current_user()
+    username = ticket.auth.current_user()
     with ticket.db.db_trans() as c:
         c.execute(
             """
@@ -683,7 +683,7 @@ def registerminutes(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/note")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def newnote(ticket_id):
     """
     Cria um novo comentário para um ticket.
@@ -701,7 +701,7 @@ def newnote(ticket_id):
     if len(contacts) > 0:
         note += " [Notificação enviada para: %s]" % (", ".join(contacts))
 
-    username = ticket.user.current_user()
+    username = ticket.auth.current_user()
     with ticket.db.db_trans() as c:
         c.execute(
             """
@@ -728,7 +728,7 @@ def newnote(ticket_id):
         )
         ticket.db.populate_search(ticket_id)
 
-    user = ticket.user.user_ident(username)
+    user = ticket.auth.user_ident(username)
 
     if len(contacts) > 0 and user["name"] and user["email"]:
         title = ticket.tickets.tickettitle(ticket_id)
@@ -754,7 +754,7 @@ def newnote(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/reopen")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def reopenticket(ticket_id):
     """
     Reabre um ticket.
@@ -779,7 +779,7 @@ def reopenticket(ticket_id):
             "os seguintes tickets são bloqueados por este ticket "
             + "e estão fechados: %s" % " ".join([str(x) for x in blocks])
         )
-    username = ticket.user.current_user()
+    username = ticket.auth.current_user()
     with ticket.db.db_trans() as c:
         c.execute(
             """
@@ -810,7 +810,7 @@ def reopenticket(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/priority")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def changepriority(ticket_id):
     """
     Altera a prioridade de um ticket.
@@ -831,7 +831,7 @@ def changepriority(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/upload")
-@ticket.user.requires_auth
+@ticket.auth.requires_auth
 def uploadfile(ticket_id):
     """
     Anexa um arquivo ao ticket.
@@ -853,7 +853,7 @@ def uploadfile(ticket_id):
         blob += chunk
     log.debug(type(blob))
     blob = zlib.compress(blob)
-    username = ticket.user.current_user()
+    username = ticket.auth.current_user()
     with ticket.db.db_trans() as c:
         c.execute(
             """

@@ -34,7 +34,7 @@ def requires_admin(f):
         if (
             not session_id
             or not validate_session(session_id)
-            or not ticket.user.user_admin(current_user())
+            or not ticket.auth.user_admin(current_user())
         ):
             return "não autorizado"
         return f(*args, **kwargs)
@@ -105,7 +105,7 @@ def current_user() -> str:
     """
     Retorna o usuário corrente.
     """
-    session_id = request.get_cookie(ticket.user.cookie_session_name())
+    session_id = request.get_cookie(ticket.auth.cookie_session_name())
     c = ticket.db.get_cursor()
     c.execute(
         """
