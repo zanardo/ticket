@@ -6,8 +6,8 @@ import zlib
 from bottle import get, post, redirect, request, response, route, view
 
 import ticket
-import ticket.auth
 from ticket import db
+from ticket.auth import requires_auth
 from ticket.config import cfg
 from ticket.context import TemplateContext
 from ticket.log import log
@@ -24,7 +24,7 @@ from ticket.tickets import (
 
 @route("/")
 @view("list-tickets")
-@ticket.auth.requires_auth
+@requires_auth
 def index():
     """
     Lista tickets utilizando critérios de um filtro.
@@ -224,7 +224,7 @@ def index():
 
 @get("/ticket/new")
 @view("ticket-new")
-@ticket.auth.requires_auth
+@requires_auth
 def newticket():
     """
     Tela de novo ticket.
@@ -233,7 +233,7 @@ def newticket():
 
 
 @post("/ticket/new")
-@ticket.auth.requires_auth
+@requires_auth
 def newticketpost():
     """
     Salva um novo ticket.
@@ -264,7 +264,7 @@ def newticketpost():
 
 @get("/ticket/<ticket_id:int>")
 @view("ticket")
-@ticket.auth.requires_auth
+@requires_auth
 def showticket(ticket_id):
     """
     Exibe detalhes de um ticket.
@@ -400,7 +400,7 @@ def showticket(ticket_id):
 
 
 @get("/ticket/file/<id:int>/:name")
-@ticket.auth.requires_auth
+@requires_auth
 def getfile(id, name):
     """
     Retorna um arquivo em anexo.
@@ -435,7 +435,7 @@ def getfile(id, name):
 
 
 @post("/ticket/<ticket_id:int>/close")
-@ticket.auth.requires_auth
+@requires_auth
 def closeticket(ticket_id):
     """
     Fecha um ticket.
@@ -493,7 +493,7 @@ def closeticket(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/title")
-@ticket.auth.requires_auth
+@requires_auth
 def changetitle(ticket_id):
     """
     Altera título de um ticket.
@@ -516,7 +516,7 @@ def changetitle(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/datedue")
-@ticket.auth.requires_auth
+@requires_auth
 def changedatedue(ticket_id):
     """
     Altera data de previsão de solução de um ticket.
@@ -548,7 +548,7 @@ def changedatedue(ticket_id):
 
 
 @get("/ticket/<ticket_id:int>/admin-only/:toggle")
-@ticket.auth.requires_auth
+@requires_auth
 @ticket.auth.requires_admin
 def changeadminonly(ticket_id, toggle):
     """
@@ -568,7 +568,7 @@ def changeadminonly(ticket_id, toggle):
 
 
 @post("/ticket/<ticket_id:int>/tags")
-@ticket.auth.requires_auth
+@requires_auth
 def changetags(ticket_id):
     """
     Altera tags de um ticket.
@@ -600,7 +600,7 @@ def changetags(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/dependencies")
-@ticket.auth.requires_auth
+@requires_auth
 def changedependencies(ticket_id):
     """
     Altera dependências de um ticket.
@@ -651,7 +651,7 @@ def changedependencies(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/minutes")
-@ticket.auth.requires_auth
+@requires_auth
 def registerminutes(ticket_id):
     """
     Registra tempo trabalhado em um ticket.
@@ -690,7 +690,7 @@ def registerminutes(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/note")
-@ticket.auth.requires_auth
+@requires_auth
 def newnote(ticket_id):
     """
     Cria um novo comentário para um ticket.
@@ -759,7 +759,7 @@ def newnote(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/reopen")
-@ticket.auth.requires_auth
+@requires_auth
 def reopenticket(ticket_id):
     """
     Reabre um ticket.
@@ -815,7 +815,7 @@ def reopenticket(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/priority")
-@ticket.auth.requires_auth
+@requires_auth
 def changepriority(ticket_id):
     """
     Altera a prioridade de um ticket.
@@ -836,7 +836,7 @@ def changepriority(ticket_id):
 
 
 @post("/ticket/<ticket_id:int>/upload")
-@ticket.auth.requires_auth
+@requires_auth
 def uploadfile(ticket_id):
     """
     Anexa um arquivo ao ticket.
