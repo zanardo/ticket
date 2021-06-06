@@ -7,12 +7,12 @@ from bottle import get, post, redirect, request, response, route, view
 
 import ticket
 import ticket.auth
-import ticket.mail
 from ticket import db
 from ticket.config import cfg
 from ticket.context import TemplateContext
 from ticket.log import log
 
+from .mail import sendmail
 from .tickets import (
     sanitizecomment,
     tags_desc,
@@ -754,9 +754,7 @@ def newnote(ticket_id):
             note,
         )
 
-        ticket.mail.sendmail(
-            user["email"], contacts, cfg("smtp", "host"), subject, body
-        )
+        sendmail(user["email"], contacts, cfg("smtp", "host"), subject, body)
 
     return redirect("/ticket/%s" % ticket_id)
 
