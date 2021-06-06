@@ -52,7 +52,7 @@ def populate_search(ticket_id: int):
     """
     text = ""
     c = get_cursor()  # Utiliza transação do caller
-    text += " " + ticket.tickets.tickettitle(ticket_id) + " "
+    text += " " + ticket.tickets.ticket_title(ticket_id) + " "
     c.execute(
         """
         select comment

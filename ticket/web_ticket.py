@@ -13,12 +13,12 @@ from ticket.context import TemplateContext
 from ticket.log import log
 from ticket.mail import sendmail
 from ticket.tickets import (
-    sanitizecomment,
+    sanitize_comment,
     tags_desc,
-    ticketblocks,
-    ticketdepends,
-    tickettags,
-    tickettitle,
+    ticket_blocks,
+    ticket_depends,
+    ticket_tags,
+    ticket_title
 )
 
 
@@ -211,7 +211,7 @@ def index():
     tickets = []
     for t in c:
         ticketdict = dict(t)
-        ticketdict["tags"] = tickettags(t["id"])
+        ticketdict["tags"] = ticket_tags(t["id"])
         tickets.append(ticketdict)
 
     ctx.tickets = tickets
@@ -325,7 +325,7 @@ def showticket(ticket_id):
     )
     for r in c:
         reg = dict(r)
-        reg["comment"] = sanitizecomment(reg["comment"])
+        reg["comment"] = sanitize_comment(reg["comment"])
         reg["type"] = "comments"
         ctx.comments.append(reg)
 
@@ -385,11 +385,11 @@ def showticket(ticket_id):
         ctx.timetrack.append(dict(r))
 
     # Obtém palavras-chave
-    ctx.tags = tickettags(ticket_id)
+    ctx.tags = ticket_tags(ticket_id)
 
     # Obtém dependências
-    ctx.blocks = ticketblocks(ticket_id)
-    ctx.depends = ticketdepends(ticket_id)
+    ctx.blocks = ticket_blocks(ticket_id)
+    ctx.depends = ticket_depends(ticket_id)
 
     ctx.user = ticket.auth.user_ident(ctx.username)
 
@@ -623,7 +623,7 @@ def changedependencies(ticket_id):
             if c.fetchone()[0] == 0:
                 return "ticket %s não existe" % dep
         # Valida dependência circular
-        if ticket_id in ticketblocks(dep):
+        if ticket_id in ticket_blocks(dep):
             return "dependência circular: %s" % dep
     with db.db_trans() as c:
         c.execute(
@@ -738,7 +738,7 @@ def newnote(ticket_id):
     user = ticket.auth.user_ident(username)
 
     if len(contacts) > 0 and user["name"] and user["email"]:
-        title = tickettitle(ticket_id)
+        title = ticket_title(ticket_id)
         subject = "#%s - %s" % (ticket_id, title)
         body = """
 [%s] (%s):

@@ -28,7 +28,7 @@ def tags_desc() -> Dict[str, Dict[str, str]]:
     return tagdesc
 
 
-def ticketblocks(ticket_id) -> Dict[str, Dict[str, str]]:
+def ticket_blocks(ticket_id) -> Dict[str, Dict[str, str]]:
     """
     Retorna quais ticket são bloqueados por um ticket.
     """
@@ -52,7 +52,7 @@ def ticketblocks(ticket_id) -> Dict[str, Dict[str, str]]:
     return deps
 
 
-def ticketdepends(ticket_id) -> Dict[str, Dict[str, str]]:
+def ticket_depends(ticket_id) -> Dict[str, Dict[str, str]]:
     """
     Retorna quais ticket dependem de um ticket.
     """
@@ -76,7 +76,7 @@ def ticketdepends(ticket_id) -> Dict[str, Dict[str, str]]:
     return deps
 
 
-def tickettags(ticket_id) -> List[str]:
+def ticket_tags(ticket_id) -> List[str]:
     """
     Retorna tags de um ticket.
     """
@@ -92,7 +92,7 @@ def tickettags(ticket_id) -> List[str]:
     return [r["tag"] for r in c]
 
 
-def tickettitle(ticket_id) -> str:
+def ticket_title(ticket_id) -> str:
     """
     Retorna o título de um ticket.
     """
@@ -108,7 +108,7 @@ def tickettitle(ticket_id) -> str:
     return c.fetchone()["title"]
 
 
-def sanitizecomment(comment) -> str:
+def sanitize_comment(comment) -> str:
     """
     Sanitiza o texto do comentário (quebras de linhas, links, etc).
     """
