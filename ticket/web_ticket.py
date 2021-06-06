@@ -5,9 +5,14 @@ import zlib
 
 from bottle import get, post, redirect, request, response, route, view
 
-import ticket
 from ticket import db
-from ticket.auth import requires_auth
+from ticket.auth import (
+    current_user,
+    requires_admin,
+    requires_auth,
+    user_admin,
+    user_ident,
+)
 from ticket.config import cfg
 from ticket.context import TemplateContext
 from ticket.log import log
@@ -242,7 +247,7 @@ def newticketpost():
     title = request.forms.get("title").strip()
     if title == "":
         return "erro: título inválido"
-    username = ticket.auth.current_user()
+    username = current_user()
     with db.db_trans() as c:
         c.execute(
             """
@@ -391,7 +396,7 @@ def showticket(ticket_id):
     ctx.blocks = ticket_blocks(ticket_id)
     ctx.depends = ticket_depends(ticket_id)
 
-    ctx.user = ticket.auth.user_ident(ctx.username)
+    ctx.user = user_ident(ctx.username)
 
     db.get_db().commit()
 
@@ -424,10 +429,7 @@ def getfile(id, name):
     )
     row = c.fetchone()
     blob = zlib.decompress(row["contents"])
-    if (
-        not ticket.auth.user_admin(ticket.auth.current_user())
-        and row["admin_only"] == 1
-    ):
+    if not user_admin(current_user()) and row["admin_only"] == 1:
         return "você não tem permissão para acessar este recurso!"
     else:
         response.content_type = mime
@@ -461,7 +463,7 @@ def closeticket(ticket_id):
             + "estão em aberto: %s" % " ".join([str(x) for x in blocks])
         )
 
-    username = ticket.auth.current_user()
+    username = current_user()
     with db.db_trans() as c:
         c.execute(
             """
@@ -549,7 +551,7 @@ def changedatedue(ticket_id):
 
 @get("/ticket/<ticket_id:int>/admin-only/:toggle")
 @requires_auth
-@ticket.auth.requires_admin
+@requires_admin
 def changeadminonly(ticket_id, toggle):
     """
     Tornar ticket somente visível para administradores.
@@ -662,7 +664,7 @@ def registerminutes(ticket_id):
     minutes = float(request.forms.get("minutes"))
     if minutes <= 0.0:
         return "tempo inválido"
-    username = ticket.auth.current_user()
+    username = current_user()
     with db.db_trans() as c:
         c.execute(
             """
@@ -708,7 +710,7 @@ def newnote(ticket_id):
     if len(contacts) > 0:
         note += " [Notificação enviada para: %s]" % (", ".join(contacts))
 
-    username = ticket.auth.current_user()
+    username = current_user()
     with db.db_trans() as c:
         c.execute(
             """
@@ -735,7 +737,7 @@ def newnote(ticket_id):
         )
         db.populate_search(ticket_id)
 
-    user = ticket.auth.user_ident(username)
+    user = user_ident(username)
 
     if len(contacts) > 0 and user["name"] and user["email"]:
         title = ticket_title(ticket_id)
@@ -784,7 +786,7 @@ def reopenticket(ticket_id):
             "os seguintes tickets são bloqueados por este ticket "
             + "e estão fechados: %s" % " ".join([str(x) for x in blocks])
         )
-    username = ticket.auth.current_user()
+    username = current_user()
     with db.db_trans() as c:
         c.execute(
             """
@@ -858,7 +860,7 @@ def uploadfile(ticket_id):
         blob += chunk
     log.debug(type(blob))
     blob = zlib.compress(blob)
-    username = ticket.auth.current_user()
+    username = current_user()
     with db.db_trans() as c:
         c.execute(
             """
