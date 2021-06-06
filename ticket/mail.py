@@ -2,7 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 
-def sendmail(
+def send_mail(
     fromemail: str, toemail: str, smtpserver: str, subject: str, body: str
 ):
     # Envia um e-mail
