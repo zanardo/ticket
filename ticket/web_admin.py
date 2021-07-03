@@ -119,11 +119,11 @@ def changeuseradminstatus(username, status):
         return "não é possível alterar status de admin para usuário corrente"
     assert status in ("0", "1")
     if status == "1":
-        admin = True
+        is_admin = True
     else:
-        admin = False
+        is_admin = False
     user_data = user(username)
-    user_data.is_admin = admin
+    user_data.is_admin = is_admin
     user_save(user_data)
     return redirect("/admin")
 
