@@ -5,8 +5,7 @@ from ticket.utils import hash_password
 
 def all_users() -> list[User]:
     """
-    Retorna a lista de todos os usuários com seus dados, para tela de
-    administração.
+    Retorna a lista de todos os usuários com seus dados, para tela de administração.
     """
     users: list[User] = []
     with db_trans() as c:
@@ -140,8 +139,8 @@ def user_password_save(username: str, password: str):
 
 def recreate_fts():
     """
-    Recria os índices full-text-search do SQLite. Bom quando-se altera algum
-    texto diretamente no banco de dados.
+    Recria os índices full-text-search do SQLite. Bom quando-se altera algum texto
+    diretamente no banco de dados.
     """
     with db_trans() as c:
         c.execute(

@@ -1,5 +1,5 @@
-# Este script inicia o servidor de desenvolvimento, com o modo debug ativado.
-# **NÃO USAR EM PRODUÇÃO!**
+# Este script inicia o servidor de desenvolvimento, com o modo debug ativado. **NÃO USAR
+# EM PRODUÇÃO!**
 
 import os
 import sys

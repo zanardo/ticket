@@ -66,7 +66,7 @@ function doCron() {
   cron = setTimeout(doCron, 1000);
 }
 
-document.onkeydown = function(evt) {
+document.onkeydown = function (evt) {
   evt = evt || window.event;
   if (
     selectedTab == null &&

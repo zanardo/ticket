@@ -123,9 +123,7 @@ def index():
             continue
 
         # Faixa de data de criação, fechamento, modificação e previsão
-        m = re.match(
-            r"^d([fmcv]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$", t
-        )
+        m = re.match(r"^d([fmcv]):(\d{4})(\d{2})(\d{2})-(\d{4})(\d{2})(\d{2})$", t)
         if m:
             dt = ""
             y1, m1, d1, y2, m2, d2 = m.groups()[1:]
@@ -135,9 +133,15 @@ def index():
                 "f": "dateclosed",
                 "v": "datedue",
             }[m.group(1)]
-            sql += (
-                "and %s between '%s-%s-%s 00:00:00' " "and '%s-%s-%s 23:59:59' "
-            ) % (dt, y1, m1, d1, y2, m2, d2)
+            sql += ("and %s between '%s-%s-%s 00:00:00' " "and '%s-%s-%s 23:59:59' ") % (
+                dt,
+                y1,
+                m1,
+                d1,
+                y2,
+                m2,
+                d2,
+            )
             continue
 
         # Data de criação, fechamento, modificação e previsão
@@ -151,9 +155,15 @@ def index():
                 "f": "dateclosed",
                 "v": "datedue",
             }[m.group(1)]
-            sql += (
-                "and %s between '%s-%s-%s 00:00:00' " "and '%s-%s-%s 23:59:59' "
-            ) % (dt, y1, m1, d1, y1, m1, d1)
+            sql += ("and %s between '%s-%s-%s 00:00:00' " "and '%s-%s-%s 23:59:59' ") % (
+                dt,
+                y1,
+                m1,
+                d1,
+                y1,
+                m1,
+                d1,
+            )
             continue
 
         # Faixa de prioridade (p:1-2)
@@ -182,8 +192,8 @@ def index():
 
     ctx = TemplateContext()
 
-    # Caso usuário não seja administrador, vamos filtrar os
-    # tickets que ele não tem acesso.
+    # Caso usuário não seja administrador, vamos filtrar os tickets que ele não tem
+    # acesso.
     if not ctx.user_is_admin:
         sql += "and admin_only = 0 "
 
@@ -192,13 +202,12 @@ def index():
         sql += "and id in ( select docid from search where search match ? ) "
         sqlparams.append(s)
 
-    # Caso ordenação seja por data de previsão, mostrando
-    # somente tickets com date de previsão preenchida.
+    # Caso ordenação seja por data de previsão, mostrando somente tickets com date de
+    # previsão preenchida.
     if orderdate == "datedue":
         sql += "and datedue is not null "
 
-    # Caso ordenação seja por data de fechamento, mostrando
-    # somente os tickets fechados.
+    # Caso ordenação seja por data de fechamento, mostrando somente os tickets fechados.
     if orderdate == "dateclosed":
         sql += "and status = 1 "
 
@@ -368,9 +377,7 @@ def showticket(ticket_id):
         ctx.comments.append(reg)
 
     # Ordenando comentários por data
-    ctx.comments = sorted(
-        ctx.comments, key=lambda comments: comments["datecreated"]
-    )
+    ctx.comments = sorted(ctx.comments, key=lambda comments: comments["datecreated"])
 
     # Obtém resumo de tempo trabalhado
 
@@ -442,8 +449,7 @@ def closeticket(ticket_id):
     """
     Fecha um ticket.
     """
-    # Verifica se existem tickets que bloqueiam este
-    # ticket que ainda estão abertos.
+    # Verifica se existem tickets que bloqueiam este ticket que ainda estão abertos.
     c = get_cursor()
     c.execute(
         """
@@ -766,8 +772,7 @@ def reopenticket(ticket_id):
     """
     Reabre um ticket.
     """
-    # Verifica se existem tickets bloqueados por este ticket
-    # que estão fechados.
+    # Verifica se existem tickets bloqueados por este ticket que estão fechados.
     c = get_cursor()
     c.execute(
         """

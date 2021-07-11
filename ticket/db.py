@@ -31,8 +31,8 @@ def get_cursor() -> sqlite3.Cursor:
 @contextmanager
 def db_trans():
     """
-    Abre uma transação no banco de dados e faz o commit ao finalizar o
-    contexto, ou rollback caso algo falhe.
+    Abre uma transação no banco de dados e faz o commit ao finalizar o contexto, ou
+    rollback caso algo falhe.
     """
     dbh = get_db()
     c = dbh.cursor()

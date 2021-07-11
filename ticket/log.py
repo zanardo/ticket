@@ -1,6 +1,5 @@
 """
-Este módulo exporta o objeto "log", usado para logging nos outros módulos
-da aplicação.
+Este módulo exporta o objeto "log", usado para logging nos outros módulos da aplicação.
 """
 
 import logging

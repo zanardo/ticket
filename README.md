@@ -59,12 +59,12 @@ Iniciar o servidor web:
 make run
 ```
 
-Como padrão, o servidor web escuta no host `127.0.0.1`, e na porta `5000`. O
-caminho do banco de dados é definido em `ticket.ini`, em `paths.data`.
+Como padrão, o servidor web escuta no host `127.0.0.1`, e na porta `5000`. O caminho do
+banco de dados é definido em `ticket.ini`, em `paths.data`.
 
-Agora basta acessar o sistema via navegador. O usuário padrão é `admin` com
-senha `admin`. Ao acessar o sistema, crie um usuário para você, dê poderes de
-administrador, e exclua o usuário padrão `admin`.
+Agora basta acessar o sistema via navegador. O usuário padrão é `admin` com senha `admin`.
+Ao acessar o sistema, crie um usuário para você, dê poderes de administrador, e exclua o
+usuário padrão `admin`.
 
 ## Screenshots
 
